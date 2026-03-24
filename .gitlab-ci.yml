@@ -13,4 +13,4 @@ deploy_job:
   script:
     - rsync -avz --delete ./ root@$SERVER_IP:/var/www/html/fatura/
   only:
-    - main
+    - master
