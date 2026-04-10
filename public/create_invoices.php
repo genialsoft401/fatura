@@ -188,7 +188,7 @@ require_once '../app/views/layout_creation.php';
                         <div class="col-md-6 mb-3">
                             <label for="series" class="form-label"><?= t('Série') ?>:</label>
                             <select class="form-control" id="series" name="series" required>
-                                <option selected><?=date('Y')?></option>
+                                <option selected><?= date('Y') ?></option>
                             </select>
                         </div>
 
@@ -213,19 +213,19 @@ require_once '../app/views/layout_creation.php';
                         </div>
 
                     </div>
-                    
+
 
                 </div>
 
                 <!-- ================= STEP 3 ================= -->
                 <div class="form-step" data-step="3">
 
-                <div class="d-flex gap-2 mb-2 justify-content-between">
-                    <h4><?= t('Itens') ?></h4>
-                    <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#itemModal">
-                        <i data-lucide="plus"></i> Novo Produto/Serviço
-                    </a>
-                </div>
+                    <div class="d-flex gap-2 mb-2 justify-content-between">
+                        <h4><?= t('Itens') ?></h4>
+                        <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#itemModal">
+                            <i data-lucide="plus"></i> Novo Produto/Serviço
+                        </a>
+                    </div>
 
                     <hr>
                     <div class="row mt-3">
@@ -345,6 +345,8 @@ require_once '../app/views/layout_creation.php';
                 <div class="mt-4 d-flex justify-content-between">
                     <button type="button" id="prevBtn" class="btn btn-light d-none">← Anterior</button>
                     <button type="button" id="nextBtn" class="btn btn-primary">Próximo →</button>
+                    <button id="saveInvoiceBtn" type="button" class="btn btn-primary d-none"><?= t('Salvar Rascunho') ?></button>
+
                 </div>
 
             </form>
@@ -356,6 +358,7 @@ require_once '../app/views/layout_creation.php';
 
         const steps = document.querySelectorAll(".form-step");
         const nextBtn = document.getElementById("nextBtn");
+        const saveBtn = document.getElementById("saveInvoiceBtn");
         const prevBtn = document.getElementById("prevBtn");
         const form = document.getElementById("formFatura");
 
@@ -367,7 +370,8 @@ require_once '../app/views/layout_creation.php';
             if (current) current.classList.add("active");
 
             prevBtn.classList.toggle("d-none", step === 1);
-            nextBtn.innerText = step === steps.length ? "Finalizar" : "Próximo →";
+            step === steps.length ? saveBtn.classList.remove("d-none") : nextBtn.classList.remove("d-none");
+            step < steps.length ? saveBtn.classList.add("d-none") : nextBtn.classList.add("d-none");
 
             updateStepper();
             updateProgress();
@@ -463,15 +467,15 @@ require_once '../app/views/layout_creation.php';
             }
         });
 
-    //     document.getElementById("addItem").addEventListener("click", () => {
-    //         const div = document.createElement("div");
-    //         div.className = "item-row d-flex gap-2 mb-2";
-    //         div.innerHTML = `
-    //     <input class="form-control price" placeholder="Preço">
-    //     <input class="form-control qty" placeholder="Qtd">
-    // `;
-    //         document.getElementById("items").appendChild(div);
-    //     });
+        //     document.getElementById("addItem").addEventListener("click", () => {
+        //         const div = document.createElement("div");
+        //         div.className = "item-row d-flex gap-2 mb-2";
+        //         div.innerHTML = `
+        //     <input class="form-control price" placeholder="Preço">
+        //     <input class="form-control qty" placeholder="Qtd">
+        // `;
+        //         document.getElementById("items").appendChild(div);
+        //     });
 
         /* AUTO SAVE + CALC */
         form.addEventListener("input", () => {
@@ -497,5 +501,3 @@ require_once '../app/views/layout_creation.php';
 </body>
 
 </html>
-
-

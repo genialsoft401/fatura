@@ -180,6 +180,7 @@ return array (
   'Selecione um contato...' => 'Selecione um contacto...',
   'Registro' => 'Registo',
   'Salvar Fatura' => 'Salvar Factura',
+  'Salvar Rascunho' => 'Salvar Rascunho',
   'Status' => 'Estado',
   'Editar Empresa' => 'Editar Empresa',
   'Alterar Logo' => 'Alterar Logótipo',

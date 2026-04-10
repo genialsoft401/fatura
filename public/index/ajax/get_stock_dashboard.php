@@ -23,6 +23,19 @@ try {
     $depots = $stmt->fetch()['total'] ?? 0;
 
     /* =========================
+       🔹 TOTAL DEPÓSITOS CRESCIMENTO
+    ========================= */
+    $stmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT s.id) AS total
+        FROM stocks s
+        WHERE s.company_id = :company_id
+        AND s.created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH);
+    ");
+    $stmt->execute(['company_id' => $company_id]);
+    $increase_depots = $stmt->fetch()['total'] ?? 0;
+
+
+    /* =========================
        🔹 TOTAL PRODUTOS
     ========================= */
     $stmt = $pdo->prepare("
@@ -33,6 +46,20 @@ try {
     ");
     $stmt->execute([$company_id]);
     $products = $stmt->fetch()['total'] ?? 0;
+
+    /* =========================
+       🔹 TOTAL PRODUTOS CRESCIMENTO
+    ========================= */
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*) as total
+        FROM stock_items si
+        INNER JOIN stocks s ON s.id = si.stock_id
+        WHERE s.company_id = :company_id
+        AND si.updated_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+    ");
+    $stmt->execute(['company_id' => $company_id]);
+    $increase_products = $stmt->fetch()['total'] ?? 0;
+
 
     /* =========================
        🔹 VALOR TOTAL
@@ -46,6 +73,38 @@ try {
     $stmt->execute([$company_id]);
     $total_value = $stmt->fetch()['total'] ?? 0;
 
+
+    /* =========================
+   🔹 VALOR MOVIMENTADO (UPDATED)
+========================= */
+
+    // PERÍODO ANTERIOR (3–6 meses)
+    $stmt = $pdo->prepare("
+    SELECT COALESCE(SUM(si.quantity * si.unit_price), 0) as total
+    FROM stock_items si
+    INNER JOIN stocks s ON s.id = si.stock_id
+    WHERE s.company_id = :company_id
+    AND si.updated_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+    AND si.updated_at < DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+");
+    $stmt->execute(['company_id' => $company_id]);
+    $previous_total = (float) $stmt->fetch()['total'];
+
+    // PERÍODO ATUAL (últimos 3 meses)
+    $stmt = $pdo->prepare("
+    SELECT COALESCE(SUM(si.quantity * si.unit_price), 0) as total
+    FROM stock_items si
+    INNER JOIN stocks s ON s.id = si.stock_id
+    WHERE s.company_id = :company_id
+    AND si.updated_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+");
+    $stmt->execute(['company_id' => $company_id]);
+    $current_total = (float) $stmt->fetch()['total'];
+
+    // CRESCIMENTO %
+    $growth_percent = $previous_total > 0
+        ? (($current_total - $previous_total) / $previous_total) * 100
+        : 0;
     /* =========================
        🔹 STOCK BAIXO
     ========================= */
@@ -118,14 +177,16 @@ try {
                 "depots" => (int)$depots,
                 "products" => (int)$products,
                 "total_value" => (float)$total_value,
-                "low_stock" => (int)$low_stock
+                "low_stock" => (int)$low_stock,
+                "increase_depots" => (int)$increase_depots,
+                "increase_products" => (int)$increase_products,
+                "increase_total_value" => (float)$growth_percent
             ],
             "depots" => $depots_list,
             "low_stock" => $low_items,
             "purchases" => $purchases
         ]
     ]);
-
 } catch (Exception $e) {
     echo json_encode([
         "success" => false,

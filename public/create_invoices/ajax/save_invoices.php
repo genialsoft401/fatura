@@ -1,176 +1,194 @@
 <?php
 require_once '../../../app/config/db.php';
 require_once '../../../app/helpers/subscription.php';
-header('Content-Type: application/json'); 
+
+header('Content-Type: application/json');
 session_start();
 
-// Recebe os dados da fatura e dos itens
+// 🔥 DEBUG (remove em produção)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Recebe dados
 $invoiceData = $_POST['invoice'] ?? [];
 $itemData = $_POST['items'] ?? [];
 
-// Prepara os dados da fatura
+// Converte invoice array
 $fatura = [];
 foreach ($invoiceData as $field) {
     $fatura[$field['name']] = $field['value'];
 }
 
-// Extrai o ID da fatura para edição, se existir
-$editInvoiceId = 0;
-if (isset($fatura['edit_invoice_id']) && !empty($fatura['edit_invoice_id'])) {
-    $editInvoiceId = intval($fatura['edit_invoice_id']);
-    unset($fatura['edit_invoice_id']); // Remove do array para não tentar inserir/atualizar como coluna
-}
+// Detecta edição
+$editInvoiceId = !empty($fatura['edit_invoice_id']) ? (int)$fatura['edit_invoice_id'] : 0;
+unset($fatura['edit_invoice_id']);
 
 try {
     $pdo->beginTransaction();
 
-    // Assinatura/Plano: bloquear emissão se expirado e respeitar limite mensal
+    // 🔐 Validação sessão
     $companyIdSession = (int)($_SESSION['user']['company_id'] ?? 0);
-    if ($companyIdSession) {
-        subscription_assert_active($pdo, $companyIdSession);
-        // apenas na criação (não bloquear edição)
-        if ($editInvoiceId <= 0) {
-            subscription_check_limit($pdo, $companyIdSession, 'invoice');
-        }
+    if (!$companyIdSession) {
+        throw new Exception("Sessão inválida.");
     }
 
-    $contactId = null;
-    // Verifica se um contato existente foi selecionado (contact_id do elemento select)
-    if (isset($fatura['contact_id']) && !empty($fatura['contact_id'])) {
-        $contactId = intval($fatura['contact_id']);
-    } else {
-        // Nenhum contato existente selecionado, assume que novos detalhes de contato são fornecidos
-        $newContactFields = [
-            'name' => $fatura['name'] ?? null,
-            'email' => $fatura['email'] ?? null,
-            'contributor' => $fatura['contributor'] ?? null,
-            'address' => $fatura['address'] ?? null,
-            'po_box' => $fatura['po_box'] ?? null,
-            'country' => $fatura['country'] ?? null,
-            'city' => $fatura['city'] ?? null,
-            'company_id' => $_SESSION['user']['company_id'] // Novos contatos são vinculados à empresa do usuário atual
-            // Adicione outros campos de contato se eles fizerem parte do formulário de novo contato em create_invoices.php
-            // e.g., 'telephone' => $fatura['telephone'] ?? null,
-        ];
+    subscription_assert_active($pdo, $companyIdSession);
 
-        // Validação básica para novo contato
-        if (empty($newContactFields['name']) || empty($newContactFields['email'])) {
-            throw new Exception('Nome e e-mail do novo contato são obrigatórios.');
+    if ($editInvoiceId <= 0) {
+        subscription_check_limit($pdo, $companyIdSession, 'invoice');
+    }
+
+    // =========================
+    // 📌 CONTACTO
+    // =========================
+    if (!empty($fatura['contact_id'])) {
+        $contactId = (int)$fatura['contact_id'];
+    } else {
+
+        if (empty($fatura['name']) || empty($fatura['email'])) {
+            throw new Exception('Nome e e-mail do contato são obrigatórios.');
         }
 
-        // Verifica se um contato com este e-mail já existe para a empresa
         $stmt = $pdo->prepare("SELECT id FROM contact WHERE email = ? AND company_id = ?");
-        $stmt->execute([$newContactFields['email'], $newContactFields['company_id']]);
-        $existingContact = $stmt->fetch(PDO::FETCH_ASSOC);
+        $stmt->execute([$fatura['email'], $companyIdSession]);
 
-        if ($existingContact) {
-            $contactId = $existingContact['id']; // Usa o contato existente
-            // Opcionalmente, atualize os detalhes do contato existente aqui, se necessário
+        $existing = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            $contactId = $existing['id'];
         } else {
-            // Filtra valores nulos para inserção para evitar problemas com colunas não anuláveis
-            $filteredNewContactFields = array_filter($newContactFields, function($value) { return $value !== null; });
+            $stmt = $pdo->prepare("
+                INSERT INTO contact (name,email,contributor,address,po_box,country,city,company_id)
+                VALUES (?,?,?,?,?,?,?,?)
+            ");
 
-            $insertContactSql = "INSERT INTO contact (" . implode(", ", array_keys($filteredNewContactFields)) . ") VALUES (" . implode(", ", array_fill(0, count($filteredNewContactFields), "?")) . ")";
-            $stmt = $pdo->prepare($insertContactSql);
-            $stmt->execute(array_values($filteredNewContactFields));
+            $stmt->execute([
+                $fatura['name'],
+                $fatura['email'],
+                $fatura['contributor'] ?? null,
+                $fatura['address'] ?? null,
+                $fatura['po_box'] ?? null,
+                $fatura['country'] ?? null,
+                $fatura['city'] ?? null,
+                $companyIdSession
+            ]);
+
             $contactId = $pdo->lastInsertId();
         }
     }
 
-    // Remove campos relacionados ao contato de $fatura, pois eles já foram tratados
-    $contactFormFields = ['contact_id', 'name', 'email', 'telephone', 'address', 'contributor', 'po_box', 'country', 'city'];
-    foreach ($contactFormFields as $field) {
-        unset($fatura[$field]);
+    // Remove campos extras
+    foreach (['contact_id', 'name', 'email', 'telephone', 'address', 'contributor', 'po_box', 'country', 'city'] as $f) {
+        unset($fatura[$f]);
     }
 
-
-
-    // Prepara os campos da fatura para o banco de dados
+    // =========================
+    // 📌 FATURA
+    // =========================
     $invoiceDbFields = [
         'contact_id' => $contactId,
-        'company_id' => intval($fatura['company_id']),
-        'user_id' => intval($fatura['user_id']),
+        'company_id' => $companyIdSession,
+        'user_id' => (int)$fatura['user_id'],
         'issue_date' => $fatura['issue_date'],
-        'due_date' => $fatura['due_date'], // Assumindo que este é o número de dias
-        'reference' => $fatura['reference'],
-        'observation' => $fatura['observation'],
-        'series' => $fatura['series'],
-        'retention' => floatval($fatura['retention']),
+        'due_date' => (int)$fatura['due_date'],
+        'reference' => $fatura['reference'] ?? null,
+        'observation' => $fatura['observation'] ?? null,
+        'series' => $fatura['series'] ?? null,
+        'retention' => (float)($fatura['retention'] ?? 0),
         'currency' => $fatura['currency'],
-        'manual_exchange_rate' => isset($fatura['manual_exchange_rate']) && !empty($fatura['manual_exchange_rate']) ? floatval($fatura['manual_exchange_rate']) : 1.0,
-        'total_sum' => floatval($fatura['total_sum']), 
-        'total_discount' => floatval($fatura['total_discount'] ?? 0.0),
-        'subtotal_without_tax' => floatval($fatura['subtotal_without_tax'] ?? 0.0),
-        'total_tax' => floatval($fatura['total_tax'] ?? 0.0),
-        'retention_value' => floatval($fatura['retention_value'] ?? 0.0),
-        'final_total' => floatval($fatura['final_total'] ?? 0.0),
-        'converted_total' => isset($fatura['converted_total']) && !empty($fatura['converted_total']) ? floatval($fatura['converted_total']) : 0.0,
-        'status' => 1 // Status padrão para novas faturas (ex: 'Rascunho' ou 'Pendente')
+        'manual_exchange_rate' => (float)($fatura['manual_exchange_rate'] ?? 1),
+        'total_sum' => (float)$fatura['total_sum'],
+        'total_discount' => (float)($fatura['total_discount'] ?? 0),
+        'subtotal_without_tax' => (float)($fatura['subtotal_without_tax'] ?? 0),
+        'total_tax' => (float)($fatura['total_tax'] ?? 0),
+        'retention_value' => (float)($fatura['retention_value'] ?? 0),
+        'final_total' => (float)$fatura['final_total'],
+        'converted_total' => (float)($fatura['converted_total'] ?? 0),
+        'status' => 1
     ];
 
-    $invoiceId = $editInvoiceId; // Este será o ID para a inserção de itens
-
+    // =========================
+    // 🧾 INSERT / UPDATE
+    // =========================
     if ($editInvoiceId > 0) {
-        // ATUALIZA fatura existente
-        unset($invoiceDbFields['status']); // Assume que o status não é alterado por este formulário na edição
-        $updateFields = [];
-        $updateValues = [];
-        foreach ($invoiceDbFields as $key => $value) {
-            $updateFields[] = "$key = ?";
-            $updateValues[] = $value;
+
+        $set = [];
+        $values = [];
+
+        foreach ($invoiceDbFields as $k => $v) {
+            if ($k === 'status') continue;
+            $set[] = "$k = ?";
+            $values[] = $v;
         }
-        $updateValues[] = $editInvoiceId; // Valor da cláusula WHERE
 
-        $updateSql = "UPDATE invoices SET " . implode(", ", $updateFields) . " WHERE id = ?";
-        $stmt = $pdo->prepare($updateSql);
-        $stmt->execute($updateValues);
+        $values[] = $editInvoiceId;
 
-        // Exclui os itens existentes para esta fatura
-        $stmt = $pdo->prepare("DELETE FROM invoice_items WHERE invoice_id = ?");
-        $stmt->execute([$editInvoiceId]);
+        $stmt = $pdo->prepare("UPDATE invoices SET " . implode(",", $set) . " WHERE id = ?");
+        $stmt->execute($values);
 
+        $invoiceId = $editInvoiceId;
+
+        $pdo->prepare("DELETE FROM invoice_items WHERE invoice_id = ?")
+            ->execute([$invoiceId]);
     } else {
-        // INSERE nova fatura
-        $insertColumns = implode(", ", array_keys($invoiceDbFields));
-        $insertPlaceholders = implode(", ", array_fill(0, count($invoiceDbFields), "?"));
-        $insertValues = array_values($invoiceDbFields);
 
-        $insertSql = "INSERT INTO invoices ($insertColumns) VALUES ($insertPlaceholders)";
-        $stmt = $pdo->prepare($insertSql);
-        $stmt->execute($insertValues);
+        $stmt = $pdo->prepare("
+            INSERT INTO invoices (" . implode(",", array_keys($invoiceDbFields)) . ")
+            VALUES (" . implode(",", array_fill(0, count($invoiceDbFields), "?")) . ")
+        ");
+
+        $stmt->execute(array_values($invoiceDbFields));
+
         $invoiceId = $pdo->lastInsertId();
     }
 
-    // Insere os itens (tanto para faturas novas quanto atualizadas)
-    if (!empty($itemData) && $invoiceId) {
-        $itemPlaceholders = [];
-        $itemValues = [];
+    // =========================
+    // 📦 ITENS
+    // =========================
+    if (empty($itemData)) {
+        throw new Exception("Nenhum item enviado.");
+    }
 
-        foreach ($itemData as $item) {
-            $itemPlaceholders[] = "(?, ?, ?, ?, ?, ?)";
-            $itemValues = array_merge($itemValues, [
-                $invoiceId,
-                intval($item['id']),
-                floatval($item['quantity']),
-                floatval($item['unit_price']),
-                floatval($item['tax']),
-                floatval($item['discount'])
-            ]);
+    $stmt = $pdo->prepare("
+        INSERT INTO invoice_items (invoice_id,item_id,quantity,unit_price,tax,discount)
+        VALUES (?,?,?,?,?,?)
+    ");
+
+    foreach ($itemData as $item) {
+
+        if (empty($item['id'])) {
+            throw new Exception("Item inválido.");
         }
 
-        $insertItemsSql = "INSERT INTO invoice_items (invoice_id, item_id, quantity, unit_price, tax, discount) VALUES " . implode(", ", $itemPlaceholders);
-        $stmt = $pdo->prepare($insertItemsSql);
-        $stmt->execute($itemValues);
+        $stmt->execute([
+            $invoiceId,
+            (int)$item['id'],
+            (float)$item['quantity'],
+            (float)$item['unit_price'],
+            (float)$item['tax'],
+            (float)$item['discount']
+        ]);
     }
 
     $pdo->commit();
-    echo json_encode(['success' => true]);
 
-} catch (Exception $e) {
+    // 🔥 IMPORTANTE: retornar ID
+    echo json_encode([
+        'success' => true,
+        'invoice_id' => $invoiceId
+    ]);
+} catch (Throwable $e) {
+
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    error_log("Error saving invoice: " . $e->getMessage()); // Registra o erro para depuração
-    echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+
+    error_log($e->getMessage());
+
+    http_response_code(500);
+
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
 }
-?>

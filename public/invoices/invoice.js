@@ -1,14 +1,12 @@
-
-  const get = new URLSearchParams(window.location.search).get("id");
-  const invoiceId = get.substring(get.lastIndexOf("/") + 1);
-  if (!invoiceId) {
-    alert("Fatura não encontrada!");
-     
-  }
+const get = new URLSearchParams(window.location.search).get("id");
+const invoiceId = get.substring(get.lastIndexOf("/") + 1);
+if (!invoiceId) {
+  alert("Fatura não encontrada!");
+}
 function loadFaturaWithRetry(invoiceId, maxRetries = 5) {
   let attempts = 0;
-  const $preloader = $('#preloader');
-  const $container = $('#fatura-container');
+  const $preloader = $("#preloader");
+  const $container = $("#fatura-container");
 
   function tryLoad() {
     attempts++;
@@ -25,11 +23,13 @@ function loadFaturaWithRetry(invoiceId, maxRetries = 5) {
           setTimeout(tryLoad, 1200); // espera 1.2s antes de tentar dnv
         } else {
           $preloader.hide();
-          $container.show().html(
-            '<div style="color:#b12; font-weight:bold; padding: 15px;">Erro ao carregar a fatura. Tente novamente mais tarde.</div>'
-          );
+          $container
+            .show()
+            .html(
+              '<div style="color:#b12; font-weight:bold; padding: 15px;">Erro ao carregar a fatura. Tente novamente mais tarde.</div>',
+            );
         }
-      }
+      },
     );
   }
 
@@ -38,312 +38,369 @@ function loadFaturaWithRetry(invoiceId, maxRetries = 5) {
 
 loadFaturaWithRetry(invoiceId, 5);
 // ───────── invoice.js ─────────
-$(function(){
-
+$(function () {
   // id vindo da query‑string
-  const invoiceId = new URLSearchParams(location.search).get('id')?.split('/').pop();
-  if(!invoiceId) return alert('Fatura não encontrada');
+  const invoiceId = new URLSearchParams(location.search)
+    .get("id")
+    ?.split("/")
+    .pop();
+  if (!invoiceId) return alert("Fatura não encontrada");
 
   // ---------------- VAR GLOBAL ----------------
-  let currentInvoice = null;          // visível a todos abaixo
+  let currentInvoice = null; // visível a todos abaixo
 
   // ---------- 1) carrega HTML da fatura ----------
-  $('#fatura-container').load(`invoices/ajax/invoice_public.php?id=${invoiceId}`);
+  $("#fatura-container").load(
+    `invoices/ajax/invoice_public.php?id=${invoiceId}`,
+  );
 
   // ---------- 2) carrega JSON da fatura ----------
-  $.getJSON('invoices/ajax/get_invoice.php', {id: invoiceId})
-    .done(inv =>{
-
-      currentInvoice = inv;                           // guarda p/ modal
+  $.getJSON("invoices/ajax/get_invoice.php", { id: invoiceId })
+    .done((inv) => {
+      currentInvoice = inv; // guarda p/ modal
       $('#formPagamento [name="invoice_id"]').val(inv.id);
-      $('#fatura-id').text(inv.series + '/' +inv.id);
-      $('#status-invoice').text(inv.status_invoice); 
-      $('#subtitle-client').text(inv.client_name);
+      $("#fatura-id").text(inv.series + "/" + inv.id);
+      $("#status-invoice").text(inv.status_invoice);
+      $("#subtitle-client").text(inv.client_name);
 
-      if (inv.status_invoice === 'Rascunho') {
-        $('#btnFinalizar').removeClass('d-none');
-        $('#btnEditar').removeClass('d-none');
+      if (inv.status_invoice === "Rascunho") {
+        $("#btnFinalizar").removeClass("d-none");
+        $("#btnEditar").removeClass("d-none");
       }
 
       // se quiser pode atualizar algo da UI aqui
     })
-    .fail(xhr => alert('Erro: '+xhr.responseText));
+    .fail((xhr) => alert("Erro: " + xhr.responseText));
 
   // ---------- 3) abrir recibo ou modal Pagamento ----------
-  $('#btnRecibo').on('click', function(){
-    if(!currentInvoice) return;
-    $.getJSON('invoices/ajax/get_last_receipt.php', { invoice_id: currentInvoice.id })
-      .done(r => {
-        if(r.success && r.data && r.data.id){
-          window.open('invoices/recibo_pdf.php?id=' + r.data.id, '_blank');
-        }else{
+  $("#btnRecibo").on("click", function () {
+    if (!currentInvoice) return;
+    $.getJSON("invoices/ajax/get_last_receipt.php", {
+      invoice_id: currentInvoice.id,
+    })
+      .done((r) => {
+        if (r.success && r.data && r.data.id) {
+          window.open("invoices/recibo_pdf.php?id=" + r.data.id, "_blank");
+        } else {
           // se não tiver recibo ainda, abre modal de pagamento
-          new bootstrap.Modal(document.getElementById('modalPagamento')).show();
+          new bootstrap.Modal(document.getElementById("modalPagamento")).show();
         }
       })
       .fail(() => {
-        new bootstrap.Modal(document.getElementById('modalPagamento')).show();
+        new bootstrap.Modal(document.getElementById("modalPagamento")).show();
       });
   });
 
   // ---------- 4) abre modal Pagamento ----------
-  $('#modalPagamento').on('show.bs.modal', function(){
+  $("#modalPagamento").on("show.bs.modal", function () {
+    if (!currentInvoice) return alert("Fatura ainda não carregada!");
 
+    const total = Number(currentInvoice.final_total) || 0;
+    const jaPago = Number(currentInvoice.paid_total) || 0;
+    const saldo = total - jaPago;
 
-    if(!currentInvoice) return alert('Fatura ainda não carregada!');
+    $("#pg_valor")
+      .val(saldo.toFixed(2))
+      .attr("max", saldo) // HTML5 — impede submit se > max
+      .data("saldo", saldo); // guarda para o listener abaixo
 
-    const total  = Number(currentInvoice.final_total) || 0;
-    const jaPago = Number(currentInvoice.paid_total)  || 0;
-    const saldo  = total - jaPago;
-
-    $('#pg_valor')
-        .val(saldo.toFixed(2))
-        .attr('max', saldo)                // HTML5 — impede submit se > max
-        .data('saldo', saldo);             // guarda para o listener abaixo
-
-    $('#pg_saldo').text(
-      `Kz de ${saldo.toLocaleString('pt-PT',{minimumFractionDigits:2})} Kz`
+    $("#pg_saldo").text(
+      `Kz de ${saldo.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} Kz`,
     );
 
     // data = hoje
-    $('#pg_data').val( new Date().toISOString().slice(0,10) );
+    $("#pg_data").val(new Date().toISOString().slice(0, 10));
   });
 
   // ---------- 4) submit do pagamento ----------
-$('#formPagamento').on('submit', function(e) {
-  e.preventDefault();
+  $("#formPagamento").on("submit", function (e) {
+    e.preventDefault();
 
-  const $form = $(this);
-  const $btn = $form.find('[type=submit]');
-  $btn.prop('disabled', true);
+    const $form = $(this);
+    const $btn = $form.find("[type=submit]");
+    $btn.prop("disabled", true);
 
-  Swal.fire({
-    title: 'Processando...',
-    text: 'Registrando o pagamento, aguarde.',
-    allowOutsideClick: false,
-    didOpen: () => Swal.showLoading()
-  });
-
-  $.post('invoices/ajax/registrar_pagamento.php', $form.serialize())
-    .done(resp => {
-      Swal.close();
-      bootstrap.Modal.getInstance(
-        document.getElementById('modalPagamento')
-      ).hide();
-
-      // abre o PDF do recibo gerado
-      if(resp && resp.receipt_id){
-        window.open('invoices/recibo_pdf.php?id=' + resp.receipt_id, '_blank');
-      }
-
-      Swal.fire({
-        icon: 'success',
-        title: 'Sucesso',
-        text: 'Pagamento registrado com sucesso!'
-      }).then(() => {
-        location.reload();
-      });
-    })
-    .fail(xhr => {
-      Swal.close();
-      Swal.fire({
-        icon: 'error',
-        title: 'Erro',
-        text: 'Erro ao registrar: ' + (xhr.responseText || 'Tente novamente.'),
-      });
-    })
-    .always(() => {
-      $btn.prop('disabled', false);
+    Swal.fire({
+      title: "Processando...",
+      text: "Registrando o pagamento, aguarde.",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading(),
     });
-});
+
+    $.post("invoices/ajax/registrar_pagamento.php", $form.serialize())
+      .done((resp) => {
+        Swal.close();
+        bootstrap.Modal.getInstance(
+          document.getElementById("modalPagamento"),
+        ).hide();
+
+        // abre o PDF do recibo gerado
+        if (resp && resp.receipt_id) {
+          window.open(
+            "invoices/recibo_pdf.php?id=" + resp.receipt_id,
+            "_blank",
+          );
+        }
+
+        Swal.fire({
+          icon: "success",
+          title: "Sucesso",
+          text: "Pagamento registrado com sucesso!",
+        }).then(() => {
+          location.reload();
+        });
+      })
+      .fail((xhr) => {
+        Swal.close();
+        Swal.fire({
+          icon: "error",
+          title: "Erro",
+          text:
+            "Erro ao registrar: " + (xhr.responseText || "Tente novamente."),
+        });
+      })
+      .always(() => {
+        $btn.prop("disabled", false);
+      });
+  });
 
   // ---------- 5) botão PDF ----------
-/**
- * Gera um PDF (A4 – retrato) a partir de um elemento HTML.
- * @param {String|HTMLElement} el        seletor ou nó DOM com a fatura
- * @param {String}             filename  nome do arquivo .pdf
- * @param {Number}             copies    nº de vias (default = 2)
- * @returns {Promise<void>}
- */
-function gerarPdfFatura(el, filename = 'fatura.pdf', copies = 2){
-  return new Promise((resolve, reject)=>{
+  /**
+   * Gera um PDF (A4 – retrato) a partir de um elemento HTML.
+   * @param {String|HTMLElement} el        seletor ou nó DOM com a fatura
+   * @param {String}             filename  nome do arquivo .pdf
+   * @param {Number}             copies    nº de vias (default = 2)
+   * @returns {Promise<void>}
+   */
+  function gerarPdfFatura(el, filename = "fatura.pdf", copies = 2) {
+    return new Promise((resolve, reject) => {
+      const original = typeof el === "string" ? document.querySelector(el) : el;
 
-    // 1. obtém o elemento
-    const original = (typeof el === 'string') ? document.querySelector(el) : el;
-    if(!original){ return reject('Elemento não encontrado'); }
+      if (!original) return reject("Elemento não encontrado");
 
-    // 2. clona X vezes e injeta num DIV temporário
-    const tmpDiv = document.createElement('div');
-    tmpDiv.style.width = '190mm';
-    let html = '';
-    for(let i=0;i<copies;i++){
-      html += `<div>${original.innerHTML}</div>`;
-      if(i < copies-1) html += '<div style="page-break-after:always"></div>';
-    }
-    tmpDiv.innerHTML = html;
-    document.body.appendChild(tmpDiv);
+      // =========================
+      // 🔹 Helpers
+      // =========================
+      const createTempContainer = (html) => {
+        const div = document.createElement("div");
+        div.style.width = "190mm";
+        div.innerHTML = html;
+        document.body.appendChild(div);
+        return div;
+      };
 
-    // 3. opções do html2pdf
-    const opt = {
-      margin:      10,
-      filename:    filename,
-      image:       { type:'jpeg', quality:1 },
-      html2canvas: { scale:3, useCORS:true },
-      jsPDF:       { unit:'mm', format:'a4', orientation:'portrait' }
-    };
+      const buildHtmlCopies = () => {
+        let html = "";
 
-    // 4. esconde painéis laterais que não devem sair no PDF
-    const $panels = $('.action-panel').addClass('d-none');
+        for (let i = 0; i < copies; i++) {
+          html += `<div class="pdf-page">${original.innerHTML}</div>`;
 
-    // esconde o footer HTML (vamos desenhar no PDF em todas as páginas)
-    $(tmpDiv).find('.inv-footer').addClass('d-none');
+          if (i < copies - 1) {
+            html += `<div class="page-break"></div>`;
+          }
+        }
 
+        return html;
+      };
 
-    html2pdf()
-      .set(opt)
-      .from(tmpDiv)
-      .toPdf()
-      .get('pdf')
-      .then((pdf) => {
-        const pageCount = pdf.internal.getNumberOfPages();
-
+      const buildFooterLines = () => {
         const ci = currentInvoice || {};
-        const footerLine1 = [
+
+        const line1 = [
           ci.company_name,
           ci.company_address,
-          (ci.company_city && ci.company_country) ? `${ci.company_city} - ${ci.company_country}` : null,
-          ci.company_phone ? `Tel: ${ci.company_phone}` : null
-        ].filter(Boolean).join(' | ');
+          ci.company_city && ci.company_country
+            ? `${ci.company_city} - ${ci.company_country}`
+            : null,
+          ci.company_phone ? `Tel: ${ci.company_phone}` : null,
+        ]
+          .filter(Boolean)
+          .join(" | ");
 
-        // Linha extra do rodapé (BXpert) — mesma do HTML
-        const footerLine2 = 'Processado por programa validado n.º XXXXXXXXXX | BXpert';
+        const line2 =
+          "Processado por programa validado n.º XXXXXXXXXX | BXpert";
 
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(8);
+        return { line1, line2 };
+      };
 
-        for (let i = 1; i <= pageCount; i++) {
-          pdf.setPage(i);
-          // duas linhas centralizadas
-          pdf.text(footerLine1, 105, 285, { align: 'center' });
-          pdf.text(footerLine2, 105, 289, { align: 'center' });
-          // paginação no canto direito (linha de baixo)
-          pdf.text(`${i}/${pageCount}`, 200, 289, { align: 'right' });
-        }
-      })
-      .save()
-      .then(() => {
-        $panels.removeClass('d-none');
-        tmpDiv.remove();
-        resolve();
-      })
-      .catch(err => {
-        $panels.removeClass('d-none');
-        tmpDiv.remove();
-        reject(err);
-      });
-  });
-}
+      const cleanup = () => {
+        $(".action-panel").removeClass("d-none");
+        if (tempDiv && tempDiv.parentNode) tempDiv.remove();
+      };
 
-$('#btnPdf, #generatePdf').on('click', function(){
-  gerarPdfFatura(
-    '#fatura-container',
-    `Fatura_${currentInvoice.codigo}.pdf`,   // nome dinâmico
-    2                                        // nº de vias
-  ).catch(console.error);
-});
+      // =========================
+      // 🔹 Preparação do HTML
+      // =========================
+      const html = buildHtmlCopies();
+      const tempDiv = createTempContainer(html);
 
-// ---------- Nota de Crédito ----------
-$('#btnNotaCredito').on('click', function(){
-  if(!currentInvoice || !currentInvoice.id){
-    return Swal.fire('Erro', 'Fatura ainda não carregada.', 'error');
+      $(".action-panel").addClass("d-none");
+      $(tempDiv).find(".inv-footer").addClass("d-none");
+
+      // =========================
+      // 🔹 Config PDF
+      // =========================
+      const opt = {
+        margin: 10,
+        filename,
+        image: { type: "jpeg", quality: 1 },
+        html2canvas: { scale: 3, useCORS: true },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      };
+
+      // =========================
+      // 🔹 Geração PDF
+      // =========================
+      html2pdf()
+        .set(opt)
+        .from(tempDiv)
+        .toPdf()
+        .get("pdf")
+        .then((pdf) => {
+          const pageCount = pdf.internal.getNumberOfPages();
+          const { line1, line2 } = buildFooterLines();
+
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(8);
+
+          for (let i = 1; i <= pageCount; i++) {
+            pdf.setPage(i);
+
+            pdf.text(line1, 105, 285, { align: "center" });
+            pdf.text(line2, 105, 289, { align: "center" });
+            pdf.text(`${i}/${pageCount}`, 200, 289, { align: "right" });
+          }
+        })
+        .save()
+        .then(() => {
+          cleanup();
+          resolve();
+        })
+        .catch((err) => {
+          cleanup();
+          reject(err);
+        });
+    });
   }
 
-  Swal.fire({
-    title: 'Emitir Nota de Crédito?',
-    text: 'A Nota de Crédito será associada a esta fatura.',
-    input: 'textarea',
-    inputLabel: 'Motivo (opcional)',
-    inputPlaceholder: 'Descreva o motivo da correção/anulação…',
-    showCancelButton: true,
-    confirmButtonText: 'Emitir',
-    cancelButtonText: 'Cancelar'
-  }).then((result) => {
-    if(!result.isConfirmed) return;
+  $("#btnPdf, #generatePdf").on("click", function () {
+    gerarPdfFatura(
+      "#fatura-container",
+      `Fatura_${currentInvoice.codigo}.pdf`, // nome dinâmico
+      2, // nº de vias
+    ).catch(console.error);
+  });
 
-    $.post('invoices/ajax/create_credit_note.php', {
-      invoice_id: currentInvoice.id,
-      reason: result.value || ''
-    }, function(res){
-      if(res && res.success){
-        // Gera o PDF e faz download direto (sem abrir aba)
-        window.location.href = `credit_notes/ajax/generate_pdf.php?id=${res.credit_note_id}`;
-      } else {
-        Swal.fire('Erro', res.error || 'Não foi possível emitir a Nota de Crédito.', 'error');
-      }
-    }, 'json').fail(function(xhr){
-      Swal.fire('Erro', xhr.responseText || 'Falha ao emitir a Nota de Crédito.', 'error');
+  // ---------- Nota de Crédito ----------
+  $("#btnNotaCredito").on("click", function () {
+    if (!currentInvoice || !currentInvoice.id) {
+      return Swal.fire("Erro", "Fatura ainda não carregada.", "error");
+    }
+
+    Swal.fire({
+      title: "Emitir Nota de Crédito?",
+      text: "A Nota de Crédito será associada a esta fatura.",
+      input: "textarea",
+      inputLabel: "Motivo (opcional)",
+      inputPlaceholder: "Descreva o motivo da correção/anulação…",
+      showCancelButton: true,
+      confirmButtonText: "Emitir",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+
+      $.post(
+        "invoices/ajax/create_credit_note.php",
+        {
+          invoice_id: currentInvoice.id,
+          reason: result.value || "",
+        },
+        function (res) {
+          if (res && res.success) {
+            // Gera o PDF e faz download direto (sem abrir aba)
+            window.location.href = `credit_notes/ajax/generate_pdf.php?id=${res.credit_note_id}`;
+          } else {
+            Swal.fire(
+              "Erro",
+              res.error || "Não foi possível emitir a Nota de Crédito.",
+              "error",
+            );
+          }
+        },
+        "json",
+      ).fail(function (xhr) {
+        Swal.fire(
+          "Erro",
+          xhr.responseText || "Falha ao emitir a Nota de Crédito.",
+          "error",
+        );
+      });
     });
   });
-});
 
-$('#pg_valor').on('input', function () {
+  $("#pg_valor").on("input", function () {
+    const saldo = $(this).data("saldo"); // quanto ainda falta pagar
+    const valor = parseFloat(this.value) || 0;
+    const $submit = $("#formPagamento button[type=submit]");
 
-  const saldo   = $(this).data('saldo');           // quanto ainda falta pagar
-  const valor   = parseFloat(this.value) || 0;
-  const $submit = $('#formPagamento button[type=submit]');
+    if (valor > saldo) {
+      // marca o campo como inválido visualmente
+      $(this).addClass("is-invalid");
 
-  if (valor > saldo) {
-    // marca o campo como inválido visualmente
-    $(this).addClass('is-invalid');
+      // mostra aviso (Bootstrap 5)
+      if (!$("#pg_valor_feedback").length) {
+        $('<div id="pg_valor_feedback" class="invalid-feedback">')
+          .text(
+            `O valor não pode exceder o saldo de ${saldo.toLocaleString("pt-PT", { minimumFractionDigits: 2 })} Kz.`,
+          )
+          .insertAfter(this);
+      }
 
-    // mostra aviso (Bootstrap 5)
-    if (!$('#pg_valor_feedback').length) {
-      $('<div id="pg_valor_feedback" class="invalid-feedback">')
-        .text(`O valor não pode exceder o saldo de ${saldo.toLocaleString('pt-PT',{minimumFractionDigits:2})} Kz.`)
-        .insertAfter(this);
+      $submit.prop("disabled", true); // impede o submit
+    } else {
+      $(this).removeClass("is-invalid");
+      $("#pg_valor_feedback").remove();
+      $submit.prop("disabled", false);
     }
+  });
 
-    $submit.prop('disabled', true);      // impede o submit
-  } else {
-    $(this).removeClass('is-invalid');
-    $('#pg_valor_feedback').remove();
-    $submit.prop('disabled', false);
-  }
-});
-
-
-
- /* ---------- 1. inicializa Quill ---------- */
-  const quill = new Quill('#editor-container', {
-    theme : 'snow',
-    modules:{
-      toolbar:'#editor-toolbar'
-    }
+  /* ---------- 1. inicializa Quill ---------- */
+  const quill = new Quill("#editor-container", {
+    theme: "snow",
+    modules: {
+      toolbar: "#editor-toolbar",
+    },
   });
 
   /* ---------- 2. abre a modal ---------- */
-  $('#modalEnviarEmail').on('show.bs.modal', function(){
-
-    if(!currentInvoice){
-      return alert('Fatura ainda não carregada!');
+  $("#modalEnviarEmail").on("show.bs.modal", function () {
+    if (!currentInvoice) {
+      return alert("Fatura ainda não carregada!");
     }
 
     // Id oculto
-    $('#email_invoice_id').val(currentInvoice.id);
+    $("#email_invoice_id").val(currentInvoice.id);
 
     // Assunto default
     const codigo = `${currentInvoice.series}/${currentInvoice.id}`;
-    $('input[name="subject"]').val(`Fatura #${codigo} – ${currentInvoice.company_name}`);
+    $('input[name="subject"]').val(
+      `Fatura #${codigo} – ${currentInvoice.company_name}`,
+    );
 
     /* --- Corpo default (HTML) --- */
-    const issue   = new Intl.DateTimeFormat('pt-BR').format(
-                      new Date(currentInvoice.issue_date));
-    const dueDate = new Intl.DateTimeFormat('pt-BR').format(
-                      new Date(new Date(currentInvoice.issue_date)
-                             .setDate(+currentInvoice.issue_date.split('-')[2] +
-                                      +currentInvoice.due_date)));
-    const total   = Number(currentInvoice.final_total)
-                      .toLocaleString('pt-PT',{minimumFractionDigits:2});
+    const issue = new Intl.DateTimeFormat("pt-BR").format(
+      new Date(currentInvoice.issue_date),
+    );
+    const dueDate = new Intl.DateTimeFormat("pt-BR").format(
+      new Date(
+        new Date(currentInvoice.issue_date).setDate(
+          +currentInvoice.issue_date.split("-")[2] + +currentInvoice.due_date,
+        ),
+      ),
+    );
+    const total = Number(currentInvoice.final_total).toLocaleString("pt-PT", {
+      minimumFractionDigits: 2,
+    });
 
     const template = `
 <p>Prezado(a) <strong>${currentInvoice.client_name}</strong>,</p>
@@ -361,57 +418,70 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
   });
 
   /* ---------- 3. submit ---------- */
-  $('#formEnviarEmail').on('submit', function(e){
+  $("#formEnviarEmail").on("submit", function (e) {
     e.preventDefault();
 
     // valida Bootstrap
-    if(this.checkValidity() === false){
-      this.classList.add('was-validated'); return;
+    if (this.checkValidity() === false) {
+      this.classList.add("was-validated");
+      return;
     }
 
     // passa o HTML do Quill para <textarea hidden>
-    $('#body-hidden').val(quill.root.innerHTML);
+    $("#body-hidden").val(quill.root.innerHTML);
 
-    $.post('invoices/ajax/send_invoice.php', $(this).serialize())
-      .done(()=>{
-      bootstrap.Modal.getInstance(
-        document.getElementById('modalEnviarEmail')).hide();
-      alert('E‑mail enviado com sucesso!');
-    })
-    .fail(xhr=>{
-      alert('Erro: '+xhr.responseText);
-    });
+    $.post("invoices/ajax/send_invoice.php", $(this).serialize())
+      .done(() => {
+        bootstrap.Modal.getInstance(
+          document.getElementById("modalEnviarEmail"),
+        ).hide();
+        alert("E‑mail enviado com sucesso!");
+      })
+      .fail((xhr) => {
+        alert("Erro: " + xhr.responseText);
+      });
   });
 
-
   // ---------- 6) Finalizar Fatura (Rascunho -> Pendente) ----------
-  $('#btnFinalizar').on('click', function() {
+  $("#btnFinalizar").on("click", function () {
     Swal.fire({
-      title: 'Finalizar Fatura?',
+      title: "Finalizar Fatura?",
       text: "A fatura deixará de ser rascunho e passará para Pendente.",
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: '#3085d6',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Sim, finalizar'
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Sim, finalizar",
     }).then((result) => {
       if (result.isConfirmed) {
-        $.post('invoices/ajax/update_status.php', { invoice_id: currentInvoice.id, new_status: 'Pendente' }, function(res) {
-          if (res.success) {
-            Swal.fire('Sucesso', 'Fatura finalizada com sucesso!', 'success').then(() => location.reload());
-          } else {
-            Swal.fire('Erro', res.error || 'Erro ao atualizar status', 'error');
-          }
-        }, 'json');
+        $.post(
+          "invoices/ajax/update_status.php",
+          { invoice_id: currentInvoice.id, new_status: "Pendente" },
+          function (res) {
+            if (res.success) {
+              Swal.fire(
+                "Sucesso",
+                "Fatura finalizada com sucesso!",
+                "success",
+              ).then(() => location.reload());
+            } else {
+              Swal.fire(
+                "Erro",
+                res.error || "Erro ao atualizar status",
+                "error",
+              );
+            }
+          },
+          "json",
+        );
       }
     });
   });
 
   // ---------- 7) Editar Fatura (Redirecionar) ----------
-  $('#btnEditar').on('click', function() {
+  $("#btnEditar").on("click", function () {
     window.location.href = `create_invoices.php?edit_id=${currentInvoice.id}`;
   });
-
 });
 
 // $(document).ready(function () {
@@ -459,7 +529,7 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
 //                 doc.text(`E-mail: ${response.company_email}`, 70, currentY);
 //                 currentY += 5;
 //                 doc.text(`Contribuinte: ${response.registration_number}`, 70, currentY);
-                
+
 //                 // Função para gerar uma hash aleatória
 //                 function generateRandomHash(length = 70) {
 //                   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -530,8 +600,8 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
 //                 // Tabela de Itens
 //                 doc.autoTable({
 //                     startY: currentY + 10,
-//                     margin: { left: 10 },  
-//                     pageBreak: 'auto', 
+//                     margin: { left: 10 },
+//                     pageBreak: 'auto',
 //                     head: [
 //                         [
 //                             "Código",
@@ -572,8 +642,6 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
 
 //                 // Resumo
 
-                
-
 // // Tabela de Taxas com Retenção
 // const taxDetails = response.tax_details.map((tax) => [
 //   `${tax.tax_rate}%`,
@@ -593,7 +661,7 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
 // doc.autoTable({
 //   startY: doc.lastAutoTable.finalY + 10,
 //   margin: { left: 10 },
-//   pageBreak: 'auto', 
+//   pageBreak: 'auto',
 //   head: [["Taxa/Imposto", "Base", "Valor"]],
 //   body: taxDetails,
 //   theme: "grid",
@@ -610,11 +678,11 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
 // ];
 
 // // Adiciona retenção ao resumo, se existir
-  
+
 //   resumoBody.push([
 //       "Retenção",
 //       formatCurrency(response.retention_value, response.company_symbol, response.company_position),
-//   ]); 
+//   ]);
 
 // // Adiciona o Total Geral ao final do resumo
 // resumoBody.push([
@@ -625,20 +693,19 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
 //   resumoBody.push([
 //     "Total Convertido:", `${formatCurrency(response.converted_total, response.symbol, response.position)} (${response.currency_items})`,
 //   ]);
-   
+
 // }
 
 // doc.autoTable({
 //   startY: doc.lastAutoTable.finalY + 10,
 //   margin: { left: 10 },
-//   pageBreak: 'auto', 
+//   pageBreak: 'auto',
 //   head: [["Descrição", "Valor"]],
 //   body: resumoBody,
 //   theme: "grid",
 //   styles: { fontSize: 10, halign: "center" },
 //   headStyles: { fillColor: [100, 100, 255], textColor: 255 },
 // });
-
 
 // // Verifica o espaço após a tabela para adicionar Observações
 // if (currentY + 30 > doc.internal.pageSize.height) {
@@ -670,9 +737,6 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
 //     10,
 //     currentY
 // );
-
- 
-
 
 //                 // Salvar PDF
 //                 doc.save(`Fatura_${response.company_name}_${response.codigo}.pdf`);

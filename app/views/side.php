@@ -1,11 +1,11 @@
 <style>
     :root {
-        --sidebar-bg: #ffffff;
-        --text: #1f2937;
-        --muted: #6b7280;
-        --hover: #f3f4f6;
-        --active: #007abd;
-        --border: #e5e7eb;
+        --sidebar-bg: #007abd;
+        --hover-bg: rgba(255, 255, 255, 0.12);
+        --active-bg: rgba(255, 255, 255, 0.18);
+        --text: #ffffff;
+        --muted: rgba(255, 255, 255, 0.75);
+        --border: rgba(255, 255, 255, 0.15);
     }
 
     body {
@@ -13,9 +13,10 @@
         font-family: sans-serif;
     }
 
+    /* SIDEBAR */
     .sidebar {
         width: 260px;
-        background: var(--active);
+        background: var(--sidebar-bg);
         height: 100vh;
         display: flex;
         flex-direction: column;
@@ -37,12 +38,13 @@
         flex: 1;
     }
 
+    /* SCROLL */
     .nav-section::-webkit-scrollbar {
         width: 6px;
     }
 
     .nav-section::-webkit-scrollbar-thumb {
-        background: #d1d5db;
+        background: rgba(255, 255, 255, 0.25);
         border-radius: 10px;
     }
 
@@ -60,27 +62,52 @@
         cursor: pointer;
         width: 100%;
         border: none;
+        background: transparent;
         background: none;
     }
 
+    /* TEXT + ICON */
     .nav-item span {
-        color: #e5e7ebe0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: inherit;
     }
 
+    /* ICON */
+    .nav-item i {
+        color: inherit;
+    }
+
+    /* HOVER */
     .nav-item:hover {
-        background: #d1d5db;
-        color: var(--active);
+        background: var(--hover-bg);
+        color: var(--text);
         transform: translateX(2px);
     }
 
-    .nav-item:hover span {
-        color: var(--active);
-        transform: translateX(2px);
-    }
-
+    /* ACTIVE */
     .nav-item.active {
-        background: var(--hover) !important;
-        color: var(--active) !important;
+        background: var(--active-bg);
+        color: var(--text);
+        font-weight: 600;
+    }
+
+    /* ACTIVE BAR */
+    .nav-item.active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 15%;
+        height: 70%;
+        width: 3px;
+        background: #ffffff;
+        border-radius: 3px;
+    }
+
+    /* ICON ACTIVE */
+    .nav-item.active i {
+        color: #ffffff;
     }
 
     .nav-icon {
@@ -91,7 +118,7 @@
     .section-title {
         font-size: 11px;
         text-transform: uppercase;
-        color: var(--border);
+        color: var(--muted);
         padding: 12px 12px 6px;
         font-weight: bold;
         margin-top: 10px;
@@ -101,10 +128,9 @@
         overflow: hidden;
         max-height: 0;
         display: block;
-        /* controla o “deslizar” */
         opacity: 0;
         transform: translateY(15px);
-        filter: blur(6px);
+        filter: blur(4px);
         pointer-events: none;
         transition:
             max-height 0.4s ease,
@@ -116,7 +142,6 @@
 
     .submenu.open {
         max-height: 500px;
-        /* ou outro valor alto suficiente */
         opacity: 1;
         transform: translateY(0);
         filter: blur(0);
@@ -124,35 +149,30 @@
     }
 
 
+    /* SUBMENU ITEMS */
     .submenu a {
         display: flex;
         align-items: center;
         gap: 8px;
         padding: 8px 10px;
         border-radius: 8px;
-        color: var(--hover);
+        color: var(--muted);
         text-decoration: none;
         font-size: 14px;
+        transition: .2s;
     }
 
+    /* HOVER SUBMENU */
     .submenu a:hover {
-        background: var(--hover) !important;
-        color: var(--active);
+        background: var(--hover-bg);
+        color: var(--text);
     }
 
+    /* ICON SIZE */
     .nav-section .submenu i[data-lucide] {
         width: 18px;
-        /* largura */
         height: 18px;
-        /* altura */
     }
-
-    .nav-section .submenu svg {
-        width: 16px;
-        /* reduz para 16px */
-        height: 16px;
-    }
-
 
     .nav-item i:last-child {
         transition: transform .3s;
@@ -171,7 +191,7 @@
     }
 
     .bg-plan {
-        background: #007abd !important;
+        background: rgba(255, 255, 255, 0.15) !important;
     }
 </style>
 
@@ -265,7 +285,7 @@
             <span><i data-lucide="settings"></i> Configurações</span>
         </a>
 
-        <a href="subscription.php" class="nav-item" >
+        <a href="subscription.php" class="nav-item">
             <span><i data-lucide="credit-card"></i> Meu Plano</span>
         </a>
         <div class="col-12 above">

@@ -24,21 +24,28 @@ try {
         ];
     }
 
-    $current  = getDateRange(-2, 0);
-    $previous = getDateRange(-5, -3);
+    $current = [
+        'start' => date('Y-m-01', strtotime('-2 months')),
+        'end'   => date('Y-m-t')
+    ];
+
+    $previous = [
+        'start' => date('Y-m-01', strtotime('-5 months')),
+        'end'   => date('Y-m-t', strtotime('-3 months'))
+    ];
 
     // Soma total com filtro de empresa
     function getTotal($pdo, $start, $end, $company_id)
     {
-        $sql = "SELECT COALESCE(SUM(final_total),0) as total
-                FROM invoices
-                WHERE issue_date BETWEEN :start AND :end
-                AND company_id = :company_id";
+        $sql = "SELECT COALESCE(SUM(final_total),0)
+            FROM invoices
+            WHERE issue_date BETWEEN :start AND :end
+            AND company_id = :company_id";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            'start' => $start,
-            'end' => $end,
+            'start' => $start . ' 00:00:00',
+            'end'   => $end . ' 23:59:59',
             'company_id' => $company_id
         ]);
 
@@ -69,9 +76,17 @@ try {
     // Média mensal (evitar divisão por zero)
     $mediaMensal = $volumeAtual > 0 ? $volumeAtual / 3 : 0;
 
+    # Crescimento da media mensal (%)
+    $mediaAtual = $volumeAtual / 3;
+    $mediaAnterior = $volumeAnterior / 3;
+
+    $mediaMensal_dif = (($mediaAtual - $mediaAnterior) / $mediaAnterior) * 100;
+
+
     // Crescimento (%)
     if ($volumeAnterior > 0) {
         $crescimento = (($volumeAtual - $volumeAnterior) / $volumeAnterior) * 100;
+        $crescimento = max(0, min($crescimento, 100));
     } else {
         $crescimento = $volumeAtual > 0 ? 100 : 0;
     }
@@ -93,6 +108,37 @@ try {
     ");
     $documentosStmt->execute(['company_id' => $company_id]);
     $documentos = (int) $documentosStmt->fetchColumn();
+
+
+    // Novos clientes no período atual
+    $novosClientesStmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT c.id) AS total
+        FROM contact c
+        WHERE c.company_id = :company_id
+        AND c.created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH);
+    ");
+
+    $novosClientesStmt->execute([
+        'company_id' => $company_id
+    ]);
+
+    $novosClientes = (int) $novosClientesStmt->fetchColumn();
+
+
+    // Novos documentos emitidos no período atual
+    $novosDocumentosStmt = $pdo->prepare("
+        SELECT COUNT(DISTINCT i.contact_id) AS total
+        FROM invoices i
+        WHERE i.company_id = :company_id
+        AND i.created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH);
+    ");
+
+    $novosDocumentosStmt->execute([
+        'company_id' => $company_id
+    ]);
+
+    $novosDocumentos = (int) $novosDocumentosStmt->fetchColumn();
+
 
     // Evolução mensal
     $evolucaoSql = "SELECT 
@@ -120,8 +166,11 @@ try {
             'kpis' => [
                 'volume_trimestral' => round($volumeAtual, 2),
                 'media_mensal'      => round($mediaMensal, 2),
+                'media_mensal_dif'  => round($mediaMensal_dif, 1),
                 'clientes'          => $clientes,
+                'crescimento_clientes'    => $novosClientes,
                 'documentos'        => $documentos,
+                'crescimento_documentos'  => $novosDocumentos,
                 'crescimento'       => round($crescimento, 1)
             ],
             'comparacao' => [

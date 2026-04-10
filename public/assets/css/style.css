@@ -489,7 +489,7 @@ th {
 }
 
 .text-danger {
-  color: var(--primary-color) !important;
+  color: red !important;
 }
 
 .text-info {
