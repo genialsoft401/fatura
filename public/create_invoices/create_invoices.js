@@ -194,7 +194,7 @@ function addItemRow(item) {
     let is0  = (taxVal == 0 || taxVal == "0" || taxVal == "exempt" || taxVal == "isento");
 
     let itemHtml = `
-        <div class="row item-box align-items-center" id="item-${itemId}">
+        <div class="row item-list align-items-center" id="item-${itemId}">
             <div class="col-1 text-center">
                 <input type="text" class="form-control" value="${item.code || ''}" readonly>
             </div>
@@ -217,9 +217,9 @@ function addItemRow(item) {
                 <input type="number" class="form-control" value="${item.discount || 0}" step="0.01">
             </div>
             <div class="col-1 text-center">
-                <span data-id="${itemId}" class="material-icons-round remove-item cursor">
-                delete_forever
-                </span>
+                <i data-id="${itemId}" class="bi bi-trash remove-item cursor">
+                
+                </i>
             </div>
         </div>
     `;
@@ -277,7 +277,7 @@ function updateInvoiceSummary() {
   let totalTax = 0;
 
   // Calcula os valores base dos itens
-  $(".item-box").each(function () {
+  $(".item-list").each(function () {
     let price =
       parseFloat($(this).find("input:eq(2)").val().replace(",", ".")) || 0;
     let quantity = parseInt($(this).find("input:eq(3)").val()) || 1;
@@ -419,7 +419,7 @@ observer.observe(document.getElementById("items_list"), {
 // Atualizar sempre que um input ou select for alterado
 $(document).on(
   "input change",
-  ".item-box input, .item-box select",
+  ".item-list input, .item-list select",
   function () {
     updateInvoiceSummary();
   }
@@ -697,7 +697,7 @@ $("#saveInvoiceBtn").on("click", function (event) {
   }
 
   // Verifica se tem ao menos um item na lista
-  if ($("#items_list .item-box").length === 0) {
+  if ($("#items_list .item-list").length === 0) {
     Swal.fire({
       icon: "error",
       title: "Erro",
@@ -710,7 +710,7 @@ $("#saveInvoiceBtn").on("click", function (event) {
   let invoiceData = $("#formFatura").serializeArray();
   let items = [];
 
-  $("#items_list .item-box").each(function () {
+  $("#items_list .item-list").each(function () {
     let item = {
       id: $(this).attr("id").replace("item-", ""),
       quantity: $(this).find("input:eq(3)").val(),
@@ -803,7 +803,7 @@ function loadInvoiceForEdit(id) {
         }
 
         // Limpar itens existentes
-        $("#items_list .item-box").remove();
+        $("#items_list .item-list").remove();
 
         // Preencher itens
         if (data.items && data.items.length > 0) {

@@ -1,188 +1,353 @@
-<div class="sidebar" id="sidebar">
-    <div class="d-flex justify-content-center align-items-center">
-        <div class="logo">
-            <a href="index.php">
-                <img id="sidebarLogo" src="assets/img/logo/BXpert2.png" alt="Logo">
-            </a>
+<style>
+    :root {
+        --sidebar-bg: #ffffff;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --hover: #f3f4f6;
+        --active: #007abd;
+        --border: #e5e7eb;
+    }
+
+    body {
+        margin: 0;
+        font-family: sans-serif;
+    }
+
+    .sidebar {
+        width: 260px;
+        background: var(--active);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--border);
+    }
+
+    .brand {
+        padding: 14px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .brand img {
+        width: 120px;
+    }
+
+    .nav-section {
+        padding: 10px;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .nav-section::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .nav-section::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 10px;
+    }
+
+    .nav-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        color: var(--muted);
+        text-decoration: none;
+        font-weight: 500;
+        transition: .2s;
+        cursor: pointer;
+        width: 100%;
+        border: none;
+        background: none;
+    }
+
+    .nav-item span {
+        color: #e5e7ebe0;
+    }
+
+    .nav-item:hover {
+        background: #d1d5db;
+        color: var(--active);
+        transform: translateX(2px);
+    }
+
+    .nav-item:hover span {
+        color: var(--active);
+        transform: translateX(2px);
+    }
+
+    .nav-item.active {
+        background: var(--hover) !important;
+        color: var(--active) !important;
+    }
+
+    .nav-icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .section-title {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--border);
+        padding: 12px 12px 6px;
+        font-weight: bold;
+        margin-top: 10px;
+    }
+
+    .submenu {
+        overflow: hidden;
+        max-height: 0;
+        display: block;
+        /* controla o “deslizar” */
+        opacity: 0;
+        transform: translateY(15px);
+        filter: blur(6px);
+        pointer-events: none;
+        transition:
+            max-height 0.4s ease,
+            opacity 0.4s ease,
+            transform 0.4s ease,
+            filter 0.4s ease;
+        padding-left: 12px;
+    }
+
+    .submenu.open {
+        max-height: 500px;
+        /* ou outro valor alto suficiente */
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+        pointer-events: auto;
+    }
+
+
+    .submenu a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        color: var(--hover);
+        text-decoration: none;
+        font-size: 14px;
+    }
+
+    .submenu a:hover {
+        background: var(--hover) !important;
+        color: var(--active);
+    }
+
+    .nav-section .submenu i[data-lucide] {
+        width: 18px;
+        /* largura */
+        height: 18px;
+        /* altura */
+    }
+
+    .nav-section .submenu svg {
+        width: 16px;
+        /* reduz para 16px */
+        height: 16px;
+    }
+
+
+    .nav-item i:last-child {
+        transition: transform .3s;
+    }
+
+    .nav-item.active i:last-child {
+        transform: rotate(180deg);
+    }
+
+    .footer {
+        padding: 12px;
+    }
+
+    .footer .above {
+        border-top: 1px solid var(--border);
+    }
+
+    .bg-plan {
+        background: #007abd !important;
+    }
+</style>
+
+<div class="sidebar">
+    <div class="brand"><img src="assets/img/logo/BXpert2-Branca.png" alt="logo"></div>
+    <div class="nav-section">
+        <br>
+
+        <a href="index.php" class="nav-item" data-link><span><i data-lucide="layout-dashboard" class="nav-icon"></i> Painel de contole</span></a>
+
+        <div class="section-title">Gestão</div>
+
+        <button class="nav-item" data-submenu="#clientes">
+            <span><i data-lucide="building-2"></i> Empresa/Cliente</span>
+            <i class="text-white" data-lucide="chevron-down"></i>
+        </button>
+        <div class="submenu" id="clientes">
+            <a href="register_contact.php" data-link><i data-lucide="plus"></i> Adicionar Cliente/Empresa</a>
+            <a href="contacts.php" data-link><i data-lucide="list"></i> Lista de Clientes/Empresas</a>
         </div>
+
+        <button class="nav-item" data-submenu="#produtos">
+            <span><i data-lucide="package"></i> Produtos/Serviços</span>
+            <i class="text-white" data-lucide="chevron-down"></i>
+        </button>
+        <div class="submenu" id="produtos">
+            <a href="#" data-bs-toggle="modal" data-bs-target="#itemModal">
+                <i class="text-white" data-lucide="plus"></i> Adicionar
+            </a>
+            <a href="items.php" data-link> <i data-lucide="list"></i> Meus Itens </a>
+        </div>
+
+        <div class="section-title">Operações</div>
+
+        <button class="nav-item" data-submenu="#vendas">
+            <span><i data-lucide="receipt"></i> Vendas</span>
+            <i class="text-white" data-lucide="chevron-down"></i>
+        </button>
+
+        <div class="submenu" id="vendas">
+
+            <button class="nav-item" data-submenu="#proformas">
+                <span><i data-lucide="file-text"></i> Proformas</span>
+                <i class="text-white" data-lucide="chevron-down"></i>
+            </button>
+            <div class="submenu" id="proformas">
+                <a href="/proformas/create" data-link><i data-lucide="plus"></i> Emitir</a>
+                <a href="/proformas/list" data-link><i data-lucide="list"></i> Listar</a>
+            </div>
+
+            <button class="nav-item" data-submenu="#facturas">
+                <span><i data-lucide="file-check"></i> Facturas</span>
+                <i class="text-white" data-lucide="chevron-down"></i>
+            </button>
+            <div class="submenu" id="facturas">
+                <a href="create_invoices.php" data-link><i data-lucide="plus"></i> Emitir</a>
+                <a href="list_invoices.php" data-link><i data-lucide="list"></i> Listar</a>
+            </div>
+
+        </div>
+
+        <button class="nav-item" data-submenu="#stock">
+            <span><i data-lucide="boxes"></i> Stock</span>
+            <i class="text-white" data-lucide="chevron-down"></i>
+        </button>
+        <div class="submenu" id="stock">
+            <a href="stock.php" data-link><i data-lucide="database"></i> Inventário</a>
+            <a href="purchases.php" data-link><i data-lucide="shopping-cart"></i> Compras</a>
+        </div>
+
+        <button class="nav-item" data-submenu="#rh">
+            <span><i data-lucide="users"></i> Recursos Humanos</span>
+            <i class="text-white" data-lucide="chevron-down"></i>
+        </button>
+        <div class="submenu" id="rh">
+            <a href="employees.php" data-link><i data-lucide="users"></i> Funcionários</a>
+            <a href="ponto.php" data-link><i data-lucide="clock"></i> Registro de Pontos</a>
+            <a href="vacations.php" data-link><i data-lucide="calendar"></i> Férias / Licenças</a>
+            <a href="positions.php" data-link><i data-lucide="briefcase"></i> Cargos / Salários</a>
+            <a href="payroll.php" data-link><i data-lucide="file-text"></i> Folha de Pagamento</a>
+        </div>
+
     </div>
 
-    <ul class="menu ">
-        <h3><?= t('Home') ?></h3>
-        <li>
-            <a href="index.php" class="menu-link">
-                <span class="material-icons-round">dashboard</span>
-                <span class="text"><?= t('Painel') ?></span>
-            </a>
-        </li>
+    <div class="footer">
+        <a href="help.php" class="nav-item">
+            <span><i data-lucide="help-circle"></i> Ajuda</span>
+        </a>
 
-        <!-- Fatura -->
-        <li class="dropdown">
-            <a href="#" class="dropdown-toggle">
-                <div class="menu-item">
-                    <span class="material-icons-round">receipt_long</span>
-                    <span class="text ms-2"><?= t('Fatura') ?></span>
+        <a href="list_companies.php" class="nav-item">
+            <span><i data-lucide="settings"></i> Configurações</span>
+        </a>
+
+        <a href="subscription.php" class="nav-item" >
+            <span><i data-lucide="credit-card"></i> Meu Plano</span>
+        </a>
+        <div class="col-12 above">
+            <div class="card border-0 rounded-xl bg-plan p-3">
+                <!-- Informações do Plano -->
+                <div class="d-flex justify-content-between align-items-center align-content-center flex-wrap gap-3 mb-2">
+                    <div>
+                        <h5 class="mb-1 fw-bolder text-white" style="font-size: 12pt;">Plano &nbsp;</h5>
+                        <div id="subInfo" class="text-white" style="font-size:0.85rem;">Carregando...</div>
+                    </div>
+                    <a href="subscription.php" class="btn bg-light text-dark w-100 d-flex align-items-center justify-content-center gap-2 py-2">
+                        Renovar
+                        <i class="bi bi-arrow-up-right"></i>
+                    </a>
                 </div>
-                <span class="material-icons-round dropdown-icon">expand_more</span>
-            </a>
-            <ul class="submenu">
-                <li>
-                    <a href="create_invoices.php" class="submenu-link">
-                        <span class="material-icons-round">add_circle</span>
-                        <span class="text ms-2"><?= t('Abertura de Fatura') ?></span>
-                    </a>
-                </li>
-                <li>
-                    <a href="list_invoices.php" class="submenu-link">
-                        <span class="material-icons-round">list</span>
-                        <span class="text ms-2"><?= t('Minhas Faturas') ?></span>
-                    </a>
-                </li>
-            </ul>
-        </li>
 
-        <li class="dropdown">
-            <a href="#" class="dropdown-toggle">
-                <div class="menu-item">
-                    <span class="material-icons-round">receipt_long</span>
-                    <span class="text ms-2"><?= t('Guias') ?></span>
-                </div>
-                <span class="material-icons-round dropdown-icon">expand_more</span>
-            </a>
-            <ul class="submenu">
-                <li>
-                    <a href="guides.php" class="submenu-link">
-                        <span class="material-icons-round">add_circle</span>
-                        <span class="text ms-2"><?= t('Nova Guida de Transporte') ?></span>
-                    </a>
-                </li>
-                <li>
-                    <a href="list_guides.php" class="submenu-link">
-                        <span class="material-icons-round">list</span>
-                        <span class="text ms-2"><?= t('Minhas Guias') ?></span>
-                    </a>
-                </li>
-            </ul>
-        </li>
+            </div>
+        </div>
 
-        <!-- Itens -->
-        <li class="dropdown">
-            <a href="#" class="dropdown-toggle">
-                <div class="menu-item">
-                    <span class="material-icons-round">inventory_2</span>
-                    <span class="text ms-2"><?= t('Itens') ?></span>
-                </div>
-                <span class="material-icons-round dropdown-icon">expand_more</span>
-            </a>
-            <ul class="submenu">
-                <li>
-                    <a href="#" data-bs-toggle="modal" data-bs-target="#itemModal" class="submenu-link">
-                        <span class="material-icons-round">add_circle</span>
-                        <span class="text"><?= t('Novo Item') ?></span>
-                    </a>
-                </li>
-                <li>
-                    <a href="items.php" class="submenu-link">
-                        <span class="material-icons-round">list</span>
-                        <span class="text"><?= t('Meus Itens') ?></span>
-                    </a>
-                </li>
-            </ul>
-        </li>
-
-        <!-- Empresa/Cliente (antes: Contatos) -->
-        <li class="dropdown">
-            <a href="#" class="dropdown-toggle">
-                <div class="menu-item">
-                    <span class="material-icons-round">contacts</span>
-                    <span class="text ms-2"><?= t('Empresa/Cliente') ?></span>
-                </div>
-                <span class="material-icons-round dropdown-icon">expand_more</span>
-            </a>
-            <ul class="submenu">
-                <li>
-                    <a href="register_contact.php">
-                        <span class="material-icons-round">add_circle</span>
-                        <span class="text"><?= t('Adicionar Empresa/Cliente') ?></span>
-                    </a>
-                </li>
-                <li>
-                    <a href="contacts.php" class="submenu-link">
-                        <span class="material-icons-round">list</span>
-                        <span class="text"><?= t('Empresas/Clientes') ?></span>
-                    </a>
-                </li>
-            </ul>
-        </li>
-        <hr>
-        <h3><?= t('Stock') ?></h3>
-        <li>
-            <a href="stock.php" class="menu-link">
-                <span class="material-icons-round">dashboard</span>
-                <span class="text"><?= t('Controle de Stock') ?></span>
-            </a>
-        </li>
-        <hr>
-
-        <!-- RH -->
-        <li class="dropdown">
-            <a href="#" class="dropdown-toggle">
-                <div class="menu-item">
-                    <span class="material-icons-round">badge</span>
-                    <span class="text ms-2"><?= t('Recursos Humanos') ?></span>
-                </div>
-                <span class="material-icons-round dropdown-icon">expand_more</span>
-            </a>
-            <ul class="submenu">
-
-                <li>
-                    <a href="employees.php" class="submenu-link">
-                        <span class="material-icons-round">group</span>
-                        <span class="text"><?= t('Meus Funcionários') ?></span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="vacations.php" class="submenu-link">
-                        <span class="material-icons-round">event</span>
-                        <span class="text"><?= t('Férias / Licenças') ?></span>
-                    </a>
-                </li>
-                <li>
-                    <a href="ponto.php" class="submenu-link">
-                        <span class="material-icons-round">event</span>
-                        <span class="text"><?= t('Registro de Ponto e Faltas') ?></span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="payroll.php" class="submenu-link">
-                        <span class="material-icons-round">receipt_long</span>
-                        <span class="text"><?= t('Folha de Pagamento') ?></span>
-                    </a>
-                </li>
-
-                <li>
-                    <a href="positions.php" class="submenu-link">
-                        <span class="material-icons-round">receipt_long</span>
-                        <span class="text"><?= t('Cargos / Salários') ?></span>
-                    </a>
-                </li>
-            </ul>
-        </li>
-
-        <h3><?= t('Perfil') ?></h3>
-        <li>
-            <a href="perfil.php" class="menu-link">
-                <span class="material-icons-round">account_circle</span>
-                <span class="text ms-2"><?= t('Perfil') ?></span>
-            </a>
-        </li>
-        <li>
-            <a href="list_companies.php" class="menu-link">
-                <span class="material-icons-round">business</span>
-                <span class="text ms-2"><?= t('Gestão de Empresas') ?></span>
-            </a>
-        </li>
-    </ul>
+    </div>
 </div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    $(document).ready(function() {
+        // Assinatura / limites
+        $.getJSON('assets/ajax/get_company_limits.php', {
+            company_id: <?php echo (int)$_SESSION['user']['company_id']; ?>
+        }, function(resp) {
+            if (!resp.success) {
+                $('#subInfo').text('Não foi possível carregar os limites.');
+                return;
+            }
+            const expIso = resp.plan_expires_at || '';
+            const exp = expIso ? new Date(expIso + 'T00:00:00').toLocaleDateString('pt-PT') : '-';
+            const days = (resp.days_left === null) ? '-' : resp.days_left;
+            $('#subInfo').text(`${resp.plan_name} • vence em ${exp} • ${days} dias restantes`);
+
+            const limInv = resp.limits.invoice_limit_month === null ? '∞' : resp.limits.invoice_limit_month;
+            const limUsers = resp.limits.user_limit === null ? '∞' : resp.limits.user_limit;
+
+            $('#btnRenewFromIndex').attr('href', `subscription.php?company_id=${resp.company_id}`);
+        });
+
+    });
+
+    lucide.createIcons();
+
+    document.querySelectorAll('.nav-item[data-submenu]').forEach(button => {
+        button.addEventListener('click', e => {
+            e.stopPropagation();
+
+            const submenu = document.querySelector(button.dataset.submenu);
+            if (!submenu) return;
+
+            const isOpen = submenu.classList.contains('open');
+
+            // Fecha todos os submenus irmãos
+            const parent = button.parentElement;
+            Array.from(parent.children).forEach(el => {
+                if (el.classList.contains('submenu') && el !== submenu) {
+                    el.classList.remove('open');
+                }
+                if (el.classList.contains('nav-item') && el !== button) {
+                    el.classList.remove('active');
+                }
+            });
+
+            // Toggle submenu atual
+            if (isOpen) {
+                submenu.classList.remove('open');
+                button.classList.remove('active');
+            } else {
+                submenu.classList.add('open');
+                button.classList.add('active');
+            }
+        });
+    });
+
+    // Fecha tudo ao clicar fora
+    document.addEventListener('click', e => {
+        document.querySelectorAll('.submenu').forEach(sm => sm.classList.remove('open'));
+        document.querySelectorAll('.nav-item.active').forEach(btn => btn.classList.remove('active'));
+    });
+</script>

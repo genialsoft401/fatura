@@ -2,128 +2,166 @@ $(document).ready(function () {
   let contactTable;
 
   function initializeDataTable() {
-    // Destrói a tabela existente se já foi inicializada
-    if ($.fn.DataTable.isDataTable('#contactTable')) {
-        $('#contactTable').DataTable().destroy();
+    const TABLE_ID = "#contactTable";
+
+    // Destroy se já existir
+    if ($.fn.DataTable.isDataTable(TABLE_ID)) {
+      $(TABLE_ID).DataTable().destroy();
     }
 
-    contactTable = $("#contactTable").DataTable({
-      // Usa a funcionalidade AJAX nativa do DataTables para mais performance
+    // ===== HELPERS =====
+    const renderEmpty = (val) => val || "Não informado";
+
+    const renderIconText = (icon, text, extraClass = "") => `
+    <div class="d-flex align-items-center gap-2 ${extraClass}">
+      <i class="bi ${icon}"></i>
+      <span>${text}</span>
+    </div>
+  `;
+
+    const renderLink = (href, title, content) => `
+    <a href="${href}" class="text-decoration-none text-body"
+       data-bs-toggle="tooltip" title="${title}">
+      ${content}
+    </a>
+  `;
+
+    const renderLocation = (city, country) => {
+      const location = [city, country].filter(Boolean).join(", ");
+      if (!location) return "";
+
+      return renderIconText("bi-geo-alt", location, "text-muted");
+    };
+
+    const renderActions = (id) => `
+    <div class="d-flex justify-content-start gap-3">
+      <button class="btn p-0 edit-contact" data-id="${id}" 
+        data-bs-toggle="tooltip" title="Editar">
+        <i class="bi bi-pencil text-muted"></i>
+      </button>
+
+      <button class="btn p-0 delete-contact" data-id="${id}" 
+        data-bs-toggle="tooltip" title="Excluir">
+        <i class="bi bi-trash text-danger"></i>
+      </button>
+
+      <i class="bi bi-card-list view-contact table-icon"
+         data-id="${id}" data-bs-toggle="tooltip" 
+         title="Ver detalhes" style="cursor:pointer;"></i>
+    </div>
+  `;
+
+    // ===== DATATABLE =====
+    contactTable = $(TABLE_ID).DataTable({
       ajax: {
         url: "contacts/ajax/fetch_contacts.php",
-        dataSrc: "", // Indica que os dados são um array direto
+        dataSrc: "",
       },
-      // Define como cada coluna será renderizada
+
       columns: [
         {
-          data: "name",
-          render: function (data, type, row) {
+          data: null,
+          render: (_, __, row) => {
+            const name = renderEmpty(row.name);
+            const email = row.email
+              ? `<small class="text-muted d-block">${row.email}</small>`
+              : `<small class="text-muted d-block">Sem email</small>`;
+
             return `
-              <div class="d-flex align-items-center justify-content-between">
-                ${data} 
-                <span data-id="${row.id}" data-bs-toggle="tooltip" title="Ver detalhes" class="material-icons-round view-contact table-icon ms-1" style="cursor: pointer;">list_alt</span>
-              </div>`;
-          },
-        },
-        {
-          data: "email",
-          render: function (data, type, row) {
-            if (!data) return 'Não informado';
-            return `
-              <a href="mailto:${data}" class="text-decoration-none text-body" data-bs-toggle="tooltip" data-bs-placement="top" title="Enviar e-mail para ${data}">
-                <div class="d-flex align-items-center gap-2">
-                  <i class="material-icons-round align-middle" style="font-size: 1.1rem;">email</i>
-                  <span>${data}</span>
-                </div>
-              </a>`;
+            <div class="d-flex align-items-center gap-3">              
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="blue" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-75 lucide lucide-building2 h-4 w-4 text-primary"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path><path d="M10 6h4"></path><path d="M10 10h4"></path><path d="M10 14h4"></path><path d="M10 18h4"></path></svg>
+            <div>
+                <div class="fw-semibold">${name}</div>
+                ${email}
+              </div>
+
+            </div>
+          `;
           },
         },
         {
           data: "telephone",
-          render: function (data, type, row) {
-            if (!data) return 'Não informado';
-            return `
-              <a href="tel:${data}" class="text-decoration-none text-body" data-bs-toggle="tooltip" data-bs-placement="top" title="Ligar para ${data}">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="material-icons-round align-middle">call</i>
-                    <span>${data}</span>
-                </div>
-              </a>`;
+          render: (data) => {
+            if (!data) return renderEmpty();
+
+            return renderLink(
+              `tel:${data}`,
+              `Ligar para ${data}`,
+              renderIconText("bi-telephone", data),
+            );
           },
         },
         {
-          data: null, // Combina cidade e país
-          render: function (data, type, row) {
-            const city = row.city || '';
-            const country = row.country || '';
-            let location = '';
-            if (city && country) {
-              location = `${city}, ${country}`;
-            } else {
-              location = city || country;
-            }
-            if (!location) return '';
-
-            return `
-              <div class="d-flex align-items-center gap-2 text-muted">
-                <i class="material-icons-round align-middle" style="font-size: 1.1rem;">place</i>
-                <span>${location}</span>
-              </div>`;
-          },
+          data: null,
+          render: (_, __, row) => renderLocation(row.city, row.country),
         },
         {
           data: "id",
           orderable: false,
           searchable: false,
-          render: function (data, type, row) {
-            return `
-              <div class="d-flex flex-wrap justify-content-end gap-3">
-                <button class="btn btn-link p-0 edit-contact" data-id="${data}" data-bs-toggle="tooltip" data-bs-placement="top" title="Editar Contato"> <i class="material-icons-round text-success">edit</i></button>
-                <button class="btn btn-link p-0 delete-contact" data-id="${data}" data-bs-toggle="tooltip" data-bs-placement="top" title="Excluir Contato"> <i class="material-icons-round text-danger">delete</i></button>
-              </div>`;
-          },
+          render: (id) => renderActions(id),
         },
       ],
-      // Adiciona o atributo 'data-label' em cada célula, usado pelo CSS responsivo
-      createdRow: function (row, data, dataIndex) {
-        $('td', row).eq(0).attr('data-label', 'Nome');
-        $('td', row).eq(1).attr('data-label', 'Email');
-        $('td', row).eq(2).attr('data-label', 'Telefone');
-        $('td', row).eq(3).attr('data-label', 'País/Cidade');
-        $('td', row).eq(4).attr('data-label', 'Ações');
+
+      columnDefs: [
+        {
+          targets: "_all",
+          className: "text-start",
+        },
+      ],
+
+      createdRow: function (row) {
+        const labels = ["Nome", "Telefone", "País/Cidade", "Ações"];
+        $("td", row).each((i, td) => $(td).attr("data-label", labels[i]));
       },
-      destroy: true,
+
       pageLength: 25,
       lengthMenu: [10, 25, 50, 100],
+
       language: {
-        search: "Pesquisar:",
-        lengthMenu: "Mostrar _MENU_ registros por página",
+        search: "",
+        searchPlaceholder: "Pesquisar contatos...",
+        lengthMenu: "Mostrar _MENU_",
         zeroRecords: "Nenhum contato encontrado",
-        info: "Mostrando _START_ a _END_ de _TOTAL_ contatos",
-        infoEmpty: "Nenhum contato disponível",
-        infoFiltered: "(filtrado de _MAX_ contatos no total)",
+        info: "_START_–_END_ de _TOTAL_",
+        infoEmpty: "Sem dados",
+        infoFiltered: "(filtrado de _MAX_)",
         paginate: {
-          first: "Primeiro",
-          last: "Último",
-          next: "Próximo",
-          previous: "Anterior",
+          first: "«",
+          last: "»",
+          next: "›",
+          previous: "‹",
         },
       },
-      // Reinicializa os tooltips do Bootstrap após cada redesenho da tabela
-      drawCallback: function (settings) {
-        var tooltipTriggerList = [].slice.call(
-          document.querySelectorAll('[data-bs-toggle="tooltip"]')
-        );
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-          var tooltip = bootstrap.Tooltip.getInstance(tooltipTriggerEl);
-          if (tooltip) {
-            tooltip.dispose();
-          }
-          return new bootstrap.Tooltip(tooltipTriggerEl);
-        });
+
+      initComplete: function () {
+        const wrapper = $(TABLE_ID).closest(".dataTables_wrapper");
+        const searchInput = wrapper.find(".dataTables_filter input");
+
+        // adiciona classe moderna
+        searchInput.addClass("form-control rounded-3 shadow-sm ps-5");
+
+        // cria ícone
+        if (!wrapper.find(".search-icon").length) {
+          wrapper.find(".dataTables_filter").css("position", "relative");
+
+          wrapper.find(".dataTables_filter").append(`
+          <i class="bi bi-search search-icon"></i>
+        `);
+        }
       },
-      responsive: false, 
+
+      drawCallback: function () {
+        document
+          .querySelectorAll('[data-bs-toggle="tooltip"]')
+          .forEach((el) => {
+            bootstrap.Tooltip.getOrCreateInstance(el);
+          });
+      },
+
+      responsive: false,
       autoWidth: false,
+      deferRender: true,
     });
   }
 
@@ -149,52 +187,79 @@ $(document).ready(function () {
       success: function (contact) {
         // Helpers para popular o modal de forma segura e limpa
         const populateText = (id, value, fallback = "Não informado") => {
-            $(id).text(value || fallback);
+          $(id).text(value || fallback);
         };
 
         const populateLink = (id, value, type) => {
-            const element = $(id);
-            if (!value) {
-                element.text("Não informado");
-                return;
-            }
-            let href = (type === 'mailto') ? `mailto:${value}` : (value.startsWith('http') ? value : `https://${value}`);
-            element.html(`${value} <a href="${href}" target="_blank" class="ms-1 text-decoration-none"><span class="material-icons-round table-icon">open_in_new</span></a>`);
+          const element = $(id);
+          if (!value) {
+            element.text("Não informado");
+            return;
+          }
+          let href =
+            type === "mailto"
+              ? `mailto:${value}`
+              : value.startsWith("http")
+                ? value
+                : `https://${value}`;
+          element.html(
+            `${value} <a href="${href}" target="_blank" class="ms-1 text-decoration-none"><span class="material-icons-round table-icon">open_in_new</span></a>`,
+          );
         };
 
         const populatePhoneCard = (linkId, spanId, data) => {
-            const linkElement = $(linkId);
-            if (data) {
-                $(spanId).text(data);
-                linkElement.attr('href', `tel:${data}`).css('display', 'inline-flex');
-            } else {
-                linkElement.hide();
-            }
+          const linkElement = $(linkId);
+          if (data) {
+            $(spanId).text(data);
+            linkElement
+              .attr("href", `tel:${data}`)
+              .css("display", "inline-flex");
+          } else {
+            linkElement.hide();
+          }
         };
 
         // Popular dados da empresa
         populateText("#contactName", contact.name);
         populateText("#contactType", contact.type);
         populateText("#contactContributor", contact.contributor);
-        populateLink("#contactEmail", contact.email, 'mailto');
-        populateLink("#contactWebsite", contact.website, 'url');
+        populateLink("#contactEmail", contact.email, "mailto");
+        populateLink("#contactWebsite", contact.website, "url");
 
         // Popular contatos telefônicos
-        populatePhoneCard('#contactTelephoneLink', '#contactTelephone', contact.telephone);
-        populatePhoneCard('#contactCellphoneLink', '#contactCellphone', contact.cellphone);
+        populatePhoneCard(
+          "#contactTelephoneLink",
+          "#contactTelephone",
+          contact.telephone,
+        );
+        populatePhoneCard(
+          "#contactCellphoneLink",
+          "#contactCellphone",
+          contact.cellphone,
+        );
 
         // Popular localização
         populateText("#contactAddress", contact.address);
-        const location = [contact.country, contact.city].filter(Boolean).join(' / ');
+        const location = [contact.country, contact.city]
+          .filter(Boolean)
+          .join(" / ");
         populateText("#contactLocation", location);
         populateText("#contactPoBox", contact.po_box);
         populateText("#contactFax", contact.fax);
 
         // Popular contato preferencial
         populateText("#contactPrefName", contact.pref_name);
-        populateLink("#contactPrefEmail", contact.pref_email, 'mailto');
-        populatePhoneCard('#contactPrefTelephoneLink', '#contactPrefTelephone', contact.pref_telephone);
-        populatePhoneCard('#contactPrefCellphoneLink', '#contactPrefCellphone', contact.pref_cellphone);
+        populateLink("#contactPrefEmail", contact.pref_email, "mailto");
+        populatePhoneCard(
+          "#contactPrefTelephoneLink",
+          "#contactPrefTelephone",
+          contact.pref_telephone,
+        );
+        populatePhoneCard(
+          "#contactPrefCellphoneLink",
+          "#contactPrefCellphone",
+          contact.pref_cellphone,
+        );
 
         // Popular configurações
         populateText("#contactNumberCopys", contact.numberCopys);
@@ -202,9 +267,15 @@ $(document).ready(function () {
         populateText("#contactLanguage", contact.language);
         populateText("#contactPaymentMethod", contact.payment_method);
         populateText("#contactCurrency", contact.currency);
-        populateText("#contactObservations", contact.observations, "Nenhuma observação");
-        
-        const updatedAt = contact.updated_at ? formatDateTimeToBrazilian(contact.updated_at) : null;
+        populateText(
+          "#contactObservations",
+          contact.observations,
+          "Nenhuma observação",
+        );
+
+        const updatedAt = contact.updated_at
+          ? formatDateTimeToBrazilian(contact.updated_at)
+          : null;
         populateText("#contactUpdatedAt", updatedAt);
 
         $("#contactModal").modal("show");
@@ -222,20 +293,23 @@ $(document).ready(function () {
   });
 
   // Torna o card inteiro clicável no mobile para ver detalhes
-  $('#contactTable tbody').on('click', 'tr', function (e) {
+  $("#contactTable tbody").on("click", "tr", function (e) {
     // Evita abrir o modal se o clique foi em um botão, link ou ícone de ação
-    if ($(e.target).closest('button, a, .edit-contact, .delete-contact').length > 0) {
-        return;
+    if (
+      $(e.target).closest("button, a, .edit-contact, .delete-contact").length >
+      0
+    ) {
+      return;
     }
 
     // Só ativa em telas mobile (quando o card é exibido)
     if (window.innerWidth > 768) {
-        return;
+      return;
     }
 
     const rowData = contactTable.row(this).data();
     if (rowData && rowData.id) {
-        getContactDetails(rowData.id);
+      getContactDetails(rowData.id);
     }
   });
 
@@ -262,7 +336,9 @@ $(document).ready(function () {
             if (response.success) {
               const msg = response.message
                 ? response.message
-                : (response.archived ? "Registo arquivado." : "O contacto foi removido com sucesso.");
+                : response.archived
+                  ? "Registo arquivado."
+                  : "O contacto foi removido com sucesso.";
 
               Swal.fire({
                 title: response.archived ? "Arquivado!" : "Excluído!",
@@ -294,14 +370,14 @@ $(document).ready(function () {
 
   // Botões de Exportação
   $("#downloadCSV").click(function () {
-      window.location.href = "contacts/ajax/export_contacts.php?type=csv";
+    window.location.href = "contacts/ajax/export_contacts.php?type=csv";
   });
 
   $("#downloadExcel").click(function () {
-      window.location.href = "contacts/ajax/export_contacts.php?type=excel";
+    window.location.href = "contacts/ajax/export_contacts.php?type=excel";
   });
 
   $("#downloadPDF").click(function () {
-      window.location.href = "contacts/ajax/export_contacts.php?type=pdf";
+    window.location.href = "contacts/ajax/export_contacts.php?type=pdf";
   });
 });

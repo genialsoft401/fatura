@@ -8,7 +8,6 @@ require_once '../app/views/layout_creation.php';
         border-top-left-radius: 3px;
         border-top-right-radius: 3px;
         padding: 18px 20px 10px 20px;
-
     }
 
     .pagea4 {

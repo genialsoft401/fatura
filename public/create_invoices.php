@@ -2,29 +2,96 @@
 require_once '../app/views/layout_creation.php';
 ?>
 <link rel="stylesheet" href="create_invoices/create_invoices.css">
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+    /* ===== STEPPER ===== */
+    .stepper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+    }
+
+    .step {
+        flex: 1;
+        text-align: center;
+    }
+
+    .step .circle {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .step.active .circle {
+        background: #0d6efd;
+        color: #fff;
+    }
+
+    .step.completed .circle {
+        background: #198754;
+        color: #fff;
+    }
+
+    /* ===== STEPS ===== */
+    .form-step {
+        display: none;
+        opacity: 0;
+        transform: translateX(30px);
+        transition: all .3s;
+    }
+
+    .form-step.active {
+        display: block;
+        opacity: 1;
+        transform: translateX(0);
+    }
+</style>
 
 <body>
     <main>
         <div class="container mt-5">
-            <h2 class="mb-2 pt-3 font-logo d-flex justify-content-center"><?= t('Emissão de Fatura') ?></h2>
-            <p class="text-muted text-center mb-4"><?= t('Preencha os detalhes para criar uma nova fatura.') ?></p>
 
-            <div class="w-100">
-                <form id="formFatura">
-                    <input type="hidden" id="edit_invoice_id" name="edit_invoice_id" value="<?= isset($_GET['edit_id']) ? htmlspecialchars($_GET['edit_id']) : '' ?>">
-                    <?php
-                    $companies = getUserCompanies($_SESSION['user']['id']);
-                    ?>
-                    <div class="d-flex align-items-center">
+            <h2 class="text-center"><?= t('Emissão de Fatura') ?></h2>
+
+            <form id="formFatura">
+
+                <!-- STEPPER -->
+                <div class="stepper">
+                    <div class="step active" data-step="1">
+                        <div class="circle">1</div><span>Cliente</span>
+                    </div>
+                    <div class="step" data-step="2">
+                        <div class="circle">2</div><span>Documento</span>
+                    </div>
+                    <div class="step" data-step="3">
+                        <div class="circle">3</div><span>Produtos & Serviços</span>
+                    </div>
+                    <div class="step" data-step="4">
+                        <div class="circle">4</div><span>Resumo</span>
+                    </div>
+                </div>
+
+                <div class="progress mb-4" style="height:6px;">
+                    <div id="progressBar" class="progress-bar" style="width:25%"></div>
+                </div>
+
+                <!-- ================= STEP 1 ================= -->
+                <div class="form-step active" data-step="1">
+
+                    <div class="d-flex gap-8 mb-3">
                         <h4><?= t('Dados do Cliente') ?></h4>
-                        <span style="cursor: pointer" id="toggle-contact-form" data-bs-title="Inserir novo Contato" data-bs-toggle="tooltip" data-bs-placement="top">
-                            <span class="material-icons-round border rounded" id="spanIconCreateInvoices">person_add</span>
-                        </span>
-
+                        <button type="btn btn-primary" style="cursor: pointer; width: 140px !important; padding: 5px 10px !important; border-radius: 20px; background: #007abd !important; font-size: 10pt !important; border: 0px solid #000;" class="bg-plan" id="toggle-contact-form" data-bs-title="Inserir novo Contato" data-bs-toggle="tooltip" data-bs-placement="top">
+                            <span class="ml-4">Novo cliente</span>
+                        </button>
                     </div>
                     <hr>
 
-                    <!-- Select2 para escolher contato existente -->
                     <div id="select-contact-container">
                         <label for="contact-select" class="form-label"><?= t('Escolha um Contato') ?>:</label>
                         <select id="contact-select" class="form-select">
@@ -44,7 +111,7 @@ require_once '../app/views/layout_creation.php';
                                     <input type="text" class="form-control" id="name" name="name" required>
                                 </div>
                                 <div class="mt-2">
-                                    <label for="contributor" class="form-label"><?= t('Registro') ?>:</label>
+                                    <label for="contributor" class="form-label"><?= t('NIF') ?>:</label>
                                     <input type="text" class="form-control" id="contributor" name="contributor" required>
                                 </div>
                             </div>
@@ -60,8 +127,8 @@ require_once '../app/views/layout_creation.php';
                                 <input type="email" class="form-control" id="email" name="email" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="po_box" class="form-label"><?= t('Caixa Postal') ?>:</label>
-                                <input type="text" class="form-control" id="po_box" name="po_box" required>
+                                <label for="po_box" class="form-label"><?= t('Telefone') ?>:</label>
+                                <input type="tel" class="form-control" id="po_box" name="po_box" required>
                             </div>
                         </div>
 
@@ -80,12 +147,13 @@ require_once '../app/views/layout_creation.php';
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <hr class="mt-3">
-                    <div class="d-flex align-items-center mt-4">
-                        <h4>Detalhes do documento</h4>
+                <!-- ================= STEP 2 ================= -->
+                <div class="form-step" data-step="2">
 
-                    </div>
+                    <h4><?= t('Detalhes do Documento') ?></h4>
+
                     <hr>
                     <div class="row">
                         <input hidden readonly value="<?= $_SESSION['user']['company_id'] ?>" id="company_id" name="company_id" required>
@@ -99,13 +167,16 @@ require_once '../app/views/layout_creation.php';
                             </div>
                             <div class="mt-2">
                                 <label for="due_date" class="form-label"><?= t('Vencimento') ?>:</label>
-                                <?= due_dateSelect(); ?>
+                                <select class="form-select" name="due_date" id="due_date" required="" onchange="handleOtherOption()">
+                                    <option value="0" selected>Pronto Pagamento</option>
+                                    <option value="15">15 Dias</option>
+                                    <option value="30">30 Dias</option>
+                                    <option value="45">45 Dias</option>
+                                    <option value="60">60 Dias</option>
+                                    <option value="90">90 Dias</option>
+                                    <option value="other">Outro</option>
+                                </select>
                             </div>
-                            <div class="mt-2">
-                                <label for="reference" class="form-label"><?= t('V/Ref.') ?>:</label>
-                                <input type="text" class="form-control" id="reference" name="reference">
-                            </div>
-
 
                         </div>
                         <div class="col-md-6 mb-3">
@@ -113,7 +184,7 @@ require_once '../app/views/layout_creation.php';
                             <textarea style="height: 11rem;" type="text" class="form-control" id="observation" name="observation" required></textarea>
                         </div>
                     </div>
-                    <div class="row">
+                    <div class="row" style="margin-top: -45px !important;">
                         <div class="col-md-6 mb-3">
                             <label for="series" class="form-label"><?= t('Série') ?>:</label>
                             <select class="form-control" id="series" name="series" required>
@@ -121,7 +192,7 @@ require_once '../app/views/layout_creation.php';
                             </select>
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6 mb-6" style="margin-top: 40px;">
                             <label for="retention" class="form-label"><?= t('Retenção') ?>: (%)</label>
                             <input type="number" value="0.00" step="0.01" class="form-control" id="retention" name="retention">
                         </div>
@@ -142,10 +213,22 @@ require_once '../app/views/layout_creation.php';
                         </div>
 
                     </div>
+                    
 
+                </div>
 
+                <!-- ================= STEP 3 ================= -->
+                <div class="form-step" data-step="3">
+
+                <div class="d-flex gap-2 mb-2 justify-content-between">
+                    <h4><?= t('Itens') ?></h4>
+                    <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#itemModal">
+                        <i data-lucide="plus"></i> Novo Produto/Serviço
+                    </a>
+                </div>
+
+                    <hr>
                     <div class="row mt-3">
-                        <h4 class="mb-3"><?= t('Itens') ?> <span class="text-danger">*</span></h4>
                         <div class="row mb-2">
                             <div class="col-md-12">
                                 <div class="items-container d-none" id="items_list">
@@ -159,15 +242,18 @@ require_once '../app/views/layout_creation.php';
                                         <div class="col-1 text-center"></div>
                                     </div>
                                 </div>
-                                <label for="item_select" class="form-label"><?= t('Selecionar Item') ?></label>
-                                <select class="form-select select2 w-100" id="item_select">
+                                <label for="item_select" class="form-label mt-4 mb-2"><?= t('Selecionar Item') ?></label><br>
+                                <select class="form-select col-12 select2" style="width: 100% !important;" id="item_select">
                                     <option value=""><?= t('Carregando itens...') ?></option>
                                 </select>
                             </div>
                         </div>
                     </div>
 
+                </div>
 
+                <!-- ================= STEP 4 ================= -->
+                <div class="form-step" data-step="4">
                     <div class="row mt-3">
                         <h5 class="mb-3"><?= t('Resumo da Fatura') ?></h5>
                         <div class="row">
@@ -253,14 +339,152 @@ require_once '../app/views/layout_creation.php';
                             </div>
                         </div>
                     </div>
-                    <button id="saveInvoiceBtn" type="button" class="btn btn-primary"><?= t('Salvar Fatura') ?></button>
+                </div>
 
-            </div>
+                <!-- BOTÕES -->
+                <div class="mt-4 d-flex justify-content-between">
+                    <button type="button" id="prevBtn" class="btn btn-light d-none">← Anterior</button>
+                    <button type="button" id="nextBtn" class="btn btn-primary">Próximo →</button>
+                </div>
+
+            </form>
         </div>
-        </form>
     </main>
 
     <script>
+        let currentStep = 1;
+
+        const steps = document.querySelectorAll(".form-step");
+        const nextBtn = document.getElementById("nextBtn");
+        const prevBtn = document.getElementById("prevBtn");
+        const form = document.getElementById("formFatura");
+
+        /* ===== SHOW STEP ===== */
+        function showStep(step) {
+            steps.forEach(s => s.classList.remove("active"));
+
+            const current = document.querySelector(`.form-step[data-step="${step}"]`);
+            if (current) current.classList.add("active");
+
+            prevBtn.classList.toggle("d-none", step === 1);
+            nextBtn.innerText = step === steps.length ? "Finalizar" : "Próximo →";
+
+            updateStepper();
+            updateProgress();
+        }
+
+        /* ===== STEPPER ===== */
+        function updateStepper() {
+            document.querySelectorAll(".step").forEach(el => {
+                const s = parseInt(el.dataset.step);
+                el.classList.remove("active", "completed");
+
+                if (s === currentStep) el.classList.add("active");
+                else if (s < currentStep) el.classList.add("completed");
+            });
+        }
+
+        /* ===== PROGRESS ===== */
+        function updateProgress() {
+            document.getElementById("progressBar").style.width =
+                (currentStep / steps.length) * 100 + "%";
+        }
+
+        /* ===== VALIDATION ===== */
+        function validateStep() {
+            const current = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+            const inputs = current.querySelectorAll("[required]");
+
+            let valid = true;
+
+            inputs.forEach(input => {
+                if (!input.value.trim()) {
+                    input.classList.add("is-invalid");
+                    valid = false;
+                } else {
+                    input.classList.remove("is-invalid");
+                }
+            });
+
+            return valid;
+        }
+
+        /* ===== LOCAL STORAGE ===== */
+        function saveDraft() {
+            const data = new FormData(form);
+            const obj = {};
+
+            data.forEach((v, k) => obj[k] = v);
+
+            localStorage.setItem("invoiceDraft", JSON.stringify(obj));
+        }
+
+        function loadDraft() {
+            const draft = JSON.parse(localStorage.getItem("invoiceDraft"));
+            if (!draft) return;
+
+            Object.keys(draft).forEach(key => {
+                const field = form.querySelector(`[name="${key}"]`);
+                if (field) field.value = draft[key];
+            });
+        }
+
+        /* ===== CALC ===== */
+        function calc() {
+            let total = 0;
+
+            document.querySelectorAll(".item-row").forEach(row => {
+                const p = parseFloat(row.querySelector(".price").value) || 0;
+                const q = parseFloat(row.querySelector(".qty").value) || 0;
+
+                total += p * q;
+            });
+
+            document.getElementById("final_total").innerText = total.toFixed(2);
+        }
+
+        /* ===== EVENTS ===== */
+        nextBtn.addEventListener("click", () => {
+            if (!validateStep()) return;
+
+            if (currentStep < steps.length) {
+                currentStep++;
+                showStep(currentStep);
+            } else {
+                form.submit();
+                localStorage.removeItem("invoiceDraft");
+            }
+        });
+
+        prevBtn.addEventListener("click", () => {
+            if (currentStep > 1) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        });
+
+    //     document.getElementById("addItem").addEventListener("click", () => {
+    //         const div = document.createElement("div");
+    //         div.className = "item-row d-flex gap-2 mb-2";
+    //         div.innerHTML = `
+    //     <input class="form-control price" placeholder="Preço">
+    //     <input class="form-control qty" placeholder="Qtd">
+    // `;
+    //         document.getElementById("items").appendChild(div);
+    //     });
+
+        /* AUTO SAVE + CALC */
+        form.addEventListener("input", () => {
+            saveDraft();
+            calc();
+        });
+
+        /* INIT */
+        document.addEventListener("DOMContentLoaded", () => {
+            loadDraft();
+            showStep(1);
+        });
+
         let userCurrency = "<?= $_SESSION['user']['iso_code'] ?>";
         let currencySymbol = "<?= $_SESSION['user']['symbol'] ?>";
         let currencyPosition = "<?= $_SESSION['user']['position'] ?>";
@@ -273,3 +497,5 @@ require_once '../app/views/layout_creation.php';
 </body>
 
 </html>
+
+

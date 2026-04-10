@@ -51,107 +51,111 @@ $(document).ready(function () {
     ];
 
     Swal.fire({
-      title: "Criar Novo Stock",
+      title: "Novo Stock",
       width: "800px",
-      html: `<div class="row g-3">
-  <!-- Nome e Cor -->
-  <div class="col-md-8">
-    <label for="stockName" class="form-label fw-semibold">Nome do Stock</label>
-    <input type="text" id="stockName" class="form-control" placeholder="Ex: Almoxarifado Central">
-  </div>
-  <div class="col-md-4">
-    <label for="stockColor" class="form-label fw-semibold">Cor do Stock</label>
-    <input type="color" id="stockColor" class="form-control form-control-color w-100" value="#4e73df">
-  </div>
+      html: `
+      <div class="stripe-form">
+          <hr>
+          <!-- GRID -->
+          <div class="row g-4">
 
-  <!-- Descrição -->
-  <div class="col-12">
-    <label for="stockDesc" class="form-label fw-semibold">Descrição</label>
-    <textarea id="stockDesc" class="form-control" rows="2" placeholder="Ex: Galpão Norte, Setor 2..."></textarea>
-  </div>
+            <!-- LEFT -->
+            <div class="col-md-6">
 
-  <hr class="m-2">
+              <!-- INFO -->
+              <div class="stripe-card text-align-left">
+                <label class="form-label mb-3">Nome do Stock</label>
+                <input type="text" id="stockName" class="stripe-input" placeholder="Ex: Almoxarifado Central">
 
-  <!-- Ícones -->
-  <div class="col-12">
-    <label class="form-label fw-bold">Ícone do Stock:</label>
-    <div class="d-flex flex-wrap gap-2" id="iconOptions">
-      ${icones.map(i => `<div class="icon-box" data-icon="${i}"><i class="bi bi-${i}"></i></div>`).join("")}
-    </div>
-  </div>
+                <label class="form-label mb-3">Descrição</label>
+                <textarea id="stockDesc" class="stripe-input" rows="4"></textarea>
 
-  <hr class="m-2">
+                <label class="form-label d-none">Cor</label>
+                <input type="color" id="stockColor" class="stripe-color d-none" value="#635bff">
+              </div>
 
-  <!-- Localização Detalhada -->
-  <div class="col-12 fw-bold mb-1">Localização</div>
+              <!-- ICON -->
+              <div class="stripe-card mt-3">
 
-  <div class="col-md-8">
-    <input type="text" id="address" class="form-control" placeholder="Rua">
-  </div>
-  <div class="col-md-4">
-    <input type="text" id="address_number" class="form-control" placeholder="Número">
-  </div>
+                <label>Ícone</label>
 
-  <div class="col-md-6">
-    <input type="text" id="neighborhood" class="form-control" placeholder="Bairro/Subdistrito">
-  </div>
-  <div class="col-md-6">
-    <input type="text" id="city" class="form-control" placeholder="Cidade / Vila / Aldeia">
-  </div>
+                <div class="icon-dropdown" id="iconDropdown">
+                  <div class="icon-selected" id="selectedIcon">
+                    <i class="bi bi-box"></i>
+                    <span>Selecionar</span>
+                    <i class="bi bi-chevron-down ms-auto"></i>
+                  </div>
 
-  <div class="col-md-6">
-    <input type="text" id="state" class="form-control" placeholder="Estado / Província">
-  </div>
-  <div class="col-md-6">
-    <input type="text" id="county" class="form-control" placeholder="Município (county)">
-  </div>
+                  <div class="icon-dropdown-menu" id="iconOptions">
+                    ${icones
+                      .map(
+                        (i) => `
+                      <div class="icon-item" data-icon="${i}">
+                        <i class="bi bi-${i}"></i>
+                        <span>${i}</span>
+                      </div>
+                    `,
+                      )
+                      .join("")}
+                  </div>
+                </div>
 
-  <div class="col-md-6">
-    <input type="hidden" id="state_district" class="form-control" placeholder="Distrito (state_district)">
-  </div>
-  <div class="col-md-6">
-    <input type="hidden" id="region" class="form-control" placeholder="Região (region)">
-  </div>
- 
+              </div>
 
-  <!-- Coords -->
-  <div class="col-md-6">
-    <input type="text" id="latitude" class="form-control" placeholder="Latitude" readonly>
-  </div>
-  <div class="col-md-6">
-    <input type="text" id="longitude" class="form-control" placeholder="Longitude" readonly>
-  </div>
+            </div>
 
-  <!-- Descrição e busca -->
-  <div class="col-12">
-    <input type="text" id="location_detail" class="form-control" placeholder="Digite o endereço aqui para pesquisar">
-  </div>
-  
-    <input type="hidden" id="zip_code">
-    <input type="hidden" id="country">
-    <input type="hidden" id="continent">
-    <input type="hidden" id="iso_region_code">
-    <input type="hidden" id="osm_type">
-    <input type="hidden" id="osm_id">
-    <input type="hidden" id="boundingbox">
-    <input type="hidden" id="display_name">
-    <input type="hidden" id="place_type">
-    <input type="hidden" id="place_class">
+            <!-- RIGHT -->
+            <div class="col-md-6">
 
+              <div class="stripe-card">
 
-  <div class="col-12">
-    <button type="button" id="searchAddress" class="btn btn-sm btn-outline-primary w-100">
-      <i class="bi bi-search me-1"></i> Buscar pelo Endereço
-    </button>
-  </div>
+                <label>Endereço</label>
+                <input type="text" id="address" class="stripe-input" placeholder="Rua">
 
-  <!-- Mapa -->
-  <div class="col-12 mt-2">
-    <div id="mapPreview" class="rounded border" style="height: 200px;"></div>
-  </div>
-</div>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <input type="text" id="address_number" class="stripe-input" placeholder="Número">
+                  </div>
+                  <div class="col-6">
+                    <input type="text" id="city" class="stripe-input" placeholder="Cidade">
+                  </div>
+                </div>
 
-`,
+                <input type="text" id="neighborhood" class="stripe-input" placeholder="Bairro">
+                <input type="text" id="state" class="stripe-input" placeholder="Província">
+
+                <input type="text" id="location_detail" class="stripe-input" placeholder="Pesquisar endereço">
+
+                <button type="button" id="searchAddress" class="stripe-btn">
+                  Buscar endereço
+                </button>
+
+              </div> 
+              </div>
+
+              <!-- MAP -->
+              <div class="stripe-card mt-3 p-2">
+                <div id="mapPreview" class="stripe-map"></div>
+              </div>
+
+          </div>
+
+          <!-- hidden -->
+          <input type="hidden" id="zip_code">
+          <input type="hidden" id="country">
+          <input type="hidden" id="continent">
+          <input type="hidden" id="iso_region_code">
+          <input type="hidden" id="osm_type">
+          <input type="hidden" id="osm_id">
+          <input type="hidden" id="boundingbox">
+          <input type="hidden" id="display_name">
+          <input type="hidden" id="place_type">
+          <input type="hidden" id="place_class">
+          <input type="hidden" id="latitude">
+          <input type="hidden" id="longitude">
+
+        </div>
+    `,
 
       showCancelButton: true,
       confirmButtonText: "Salvar",
@@ -190,74 +194,75 @@ $(document).ready(function () {
                 marker = L.marker(e.latlng).addTo(map);
               }
 
-             // Faz busca reversa do endereço (geocoding reverso)
-            preencherCamposEndereco(lat,lng);
-
-
+              // Faz busca reversa do endereço (geocoding reverso)
+              preencherCamposEndereco(lat, lng);
             });
           }
         }, 250);
 
         function preencherCamposEndereco(lat, lng) {
-          fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`)
-  .then(res => res.json())
-  .then(data => {
-    const addr = data.address || {};
+          fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+          )
+            .then((res) => res.json())
+            .then((data) => {
+              const addr = data.address || {};
 
-    // Dados básicos
-    const rua = addr.road || "";
-    const numero = addr.house_number || "";
-    const bairro = addr.neighbourhood || addr.suburb || "";
-    const cidade = addr.city || addr.town || addr.village || "";
-    const estado = addr.state || "";
-    const municipio = addr.county || "";
-    const cep = addr.postcode || "";
-    const pais = addr.country || "";
-    const codigo_pais = addr.country_code || "";
+              // Dados básicos
+              const rua = addr.road || "";
+              const numero = addr.house_number || "";
+              const bairro = addr.neighbourhood || addr.suburb || "";
+              const cidade = addr.city || addr.town || addr.village || "";
+              const estado = addr.state || "";
+              const municipio = addr.county || "";
+              const cep = addr.postcode || "";
+              const pais = addr.country || "";
+              const codigo_pais = addr.country_code || "";
 
-    // Dados adicionais
-    const distrito = addr.state_district || "";
-    const regiao = addr.region || "";
-    const subdistrito = addr.suburb || "";
-    const iso_region_code = addr["ISO3166-2-lvl4"] || "";
-    const continente = addr.continent || "";
+              // Dados adicionais
+              const distrito = addr.state_district || "";
+              const regiao = addr.region || "";
+              const subdistrito = addr.suburb || "";
+              const iso_region_code = addr["ISO3166-2-lvl4"] || "";
+              const continente = addr.continent || "";
 
-    // Extras do objeto principal
-    const nome_exibicao = data.display_name || "";
-    const tipo_lugar = data.type || "";
-    const classificacao = data.class || "";
-    const limite = Array.isArray(data.boundingbox) ? data.boundingbox.join(',') : "";
-    const osm_type = data.osm_type || "";
-    const osm_id = data.osm_id || "";
+              // Extras do objeto principal
+              const nome_exibicao = data.display_name || "";
+              const tipo_lugar = data.type || "";
+              const classificacao = data.class || "";
+              const limite = Array.isArray(data.boundingbox)
+                ? data.boundingbox.join(",")
+                : "";
+              const osm_type = data.osm_type || "";
+              const osm_id = data.osm_id || "";
 
-    // Preenche os campos visuais
-    $("#address").val(rua);
-    $("#address_number").val(numero);
-    $("#neighborhood").val(bairro);
-    $("#city").val(cidade);
-    $("#state").val(estado);
-    $("#county").val(municipio);
-    $("#country").val(pais);
-    $("#zip_code").val(cep);
-    $("#latitude").val(lat);
-    $("#longitude").val(lng);
-    $("#location_detail").val(nome_exibicao);
+              // Preenche os campos visuais
+              $("#address").val(rua);
+              $("#address_number").val(numero);
+              $("#neighborhood").val(bairro);
+              $("#city").val(cidade);
+              $("#state").val(estado);
+              $("#county").val(municipio);
+              $("#country").val(pais);
+              $("#zip_code").val(cep);
+              $("#latitude").val(lat);
+              $("#longitude").val(lng);
+              $("#location_detail").val(nome_exibicao);
 
-    $("#state_district").val(distrito);
-    $("#region").val(regiao);
-    $("#continent").val(continente);
-    $("#iso_region_code").val(iso_region_code);
+              $("#state_district").val(distrito);
+              $("#region").val(regiao);
+              $("#continent").val(continente);
+              $("#iso_region_code").val(iso_region_code);
 
-    // Preenche os hidden
-    $("#osm_type").val(osm_type);
-    $("#osm_id").val(osm_id);
-    $("#boundingbox").val(limite);
-    $("#display_name").val(nome_exibicao);
-    $("#place_type").val(tipo_lugar);
-    $("#place_class").val(classificacao);
-  });
-}
-
+              // Preenche os hidden
+              $("#osm_type").val(osm_type);
+              $("#osm_id").val(osm_id);
+              $("#boundingbox").val(limite);
+              $("#display_name").val(nome_exibicao);
+              $("#place_type").val(tipo_lugar);
+              $("#place_class").val(classificacao);
+            });
+        }
 
         // busca endereço via Nominatim
         $("#searchAddress").on("click", function () {
@@ -266,13 +271,13 @@ $(document).ready(function () {
 
           fetch(
             `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-              address
-            )}`
+              address,
+            )}`,
           )
             .then((res) => res.json())
             .then((data) => {
               if (!data.length) {
-                toastr.warning("Endereço não encontrado!"); 
+                toastr.warning("Endereço não encontrado!");
                 return;
               }
 
@@ -289,7 +294,7 @@ $(document).ready(function () {
               } else {
                 marker = L.marker(latLng).addTo(map);
               }
-              preencherCamposEndereco(lat,lon);
+              preencherCamposEndereco(lat, lon);
             });
         });
       },
@@ -313,54 +318,62 @@ $(document).ready(function () {
       if (result.isConfirmed) {
         const data = result.value;
         $.post(
-  "stock/ajax/stock_controller.php",
-  {
-    action: "create",
-    name: $("#stockName").val().trim(),
-    description: $("#stockDesc").val().trim(),
-    color: $("#stockColor").val(),
-    icon: $(".icon-box.selected").data("icon") || "box",
-    location_type: "interna", // ou pega de um select se tiver
-    location_detail: $("#location_detail").val(),
+          "stock/ajax/stock_controller.php",
+          {
+            action: "create",
+            name: $("#stockName").val().trim(),
+            description: $("#stockDesc").val().trim(),
+            color: $("#stockColor").val(),
+            icon: $(".icon-box.selected").data("icon") || "box",
+            location_type: "interna", // ou pega de um select se tiver
+            location_detail: $("#location_detail").val(),
 
-    display_name: $("#display_name").val(),
-    address: $("#address").val(),
-    address_number: $("#address_number").val(),
-    neighborhood: $("#neighborhood").val(),
-    city: $("#city").val(),
-    county: $("#county").val(),
-    state: $("#state").val(),
-    state_district: $("#state_district").val(),
-    region: $("#region").val(),
-    country: $("#country").val(),
-    continent: $("#continent").val(),
-    iso_region_code: $("#iso_region_code").val(),
-    zip_code: $("#zip_code").val(),
+            display_name: $("#display_name").val(),
+            address: $("#address").val(),
+            address_number: $("#address_number").val(),
+            neighborhood: $("#neighborhood").val(),
+            city: $("#city").val(),
+            county: $("#county").val(),
+            state: $("#state").val(),
+            state_district: $("#state_district").val(),
+            region: $("#region").val(),
+            country: $("#country").val(),
+            continent: $("#continent").val(),
+            iso_region_code: $("#iso_region_code").val(),
+            zip_code: $("#zip_code").val(),
 
-    latitude: $("#latitude").val(),
-    longitude: $("#longitude").val(),
+            latitude: $("#latitude").val(),
+            longitude: $("#longitude").val(),
 
-    osm_type: $("#osm_type").val(),
-    osm_id: $("#osm_id").val(),
-    boundingbox: $("#boundingbox").val(),
-    place_class: $("#place_class").val(),
-    place_type: $("#place_type").val()
-  },
-  function (res) {
-    if (res.success) {
-      Swal.fire("Stock criado com sucesso!", "", "success");
-      carregarEstoques();
-    } else {
-      Swal.fire("Erro ao criar o stock.", "", "error");
-    }
-  },
-  "json"
-);
-
+            osm_type: $("#osm_type").val(),
+            osm_id: $("#osm_id").val(),
+            boundingbox: $("#boundingbox").val(),
+            place_class: $("#place_class").val(),
+            place_type: $("#place_type").val(),
+          },
+          function (res) {
+            if (res.success) {
+              Swal.fire("Stock criado com sucesso!", "", "success");
+              carregarEstoques();
+            } else {
+              Swal.fire("Erro ao criar o stock.", "", "error");
+            }
+          },
+          "json",
+        );
       }
     });
   });
 });
+
+// =============================================== //
+//        Carregar Estoques           //
+// =============================================== //
+
+// 🔥 GLOBAL (fora da função)
+let selectedStock = null;
+let pieChartInstance = null;
+let barChartInstance = null;
 
 function carregarEstoques() {
   $.get(
@@ -368,7 +381,7 @@ function carregarEstoques() {
     { action: "list" },
     function (data) {
       const container = $("#estoquesContainer");
-      window.stocksData = data; // Armazena dados para exportação
+      window.stocksData = data;
       container.empty();
 
       if (!data.length) {
@@ -376,114 +389,133 @@ function carregarEstoques() {
         return;
       }
 
-      data.forEach((estoque) => {
-        const cor = estoque.cor || "#4e73df";
-        const chartId = `chart_${estoque.id}`;
-        const lowCount = parseInt(estoque.low_stock_count || 0)
-        const lowItems = (estoque.low_stock_items || []).slice(0, 3)
-        const lowHtml = lowCount > 0
-          ? `<div class="alert alert-warning py-2 px-3 mb-2" style="font-size:0.85rem;">
-              <div><strong>Atenção:</strong> ${lowCount} produto(s)/serviço(s) em stock mínimo</div>
-              <ul class="mb-0 ps-3">
-                ${lowItems.map(i => `<li>${i.label} (qtde: ${i.quantity} / mín: ${i.min_quantity})</li>`).join('')}
-              </ul>
-            </div>`
-          : ''
+      data.forEach((d, i) => {
+        const lowCount = parseInt(d.low_stock_count || 0);
+        const lowItems = (d.low_stock_items || []).slice(0, 3);
 
         const card = `
-       <div class="col-md-4">
-    <div class="stock-card">
-        <div class="stock-info-top" onclick="abrirEstoque(${estoque.id})">
-            <div class="stock-icon" style="background:${cor}"><i class="bi bi-${
-          estoque.icon || " box" }"></i></div>
-            <div>
-                <strong>${estoque.name}</strong><br>
-                <small>${estoque.description || ""}</small>
-                <span class="text-muted" style="font-size: 0.8rem;">
-                    ${estoque.endereco_resumido || ""}
-                </span>
-            </div>
+          <div class="col-md-6">
+              <div class="card card-custom p-3">
+                  <div class="d-flex justify-content-between mb-3">
+                      <div class="d-flex gap-3">
+                          <div class="icon-box">
+                              <i class="bi bi-${d.icon} text-info"></i>
+                          </div>
+                          <div>
+                              <h6 class="fw-bold mb-0">${d.name}</h6>
+                              <small class="text-muted">${d.description}</small>
+                          </div>
+                      </div>
+                      <div class="d-flex gap-1">
+                          <a class="btn btn-sm btn-light text-info" href="stock_view.php?id=${d.id}">
+                              <i class="bi bi-eye"></i>
+                          </a>
 
-        </div>
+                          <!-- ✅ BOTÃO CORRIGIDO -->
+                          <button 
+                            class="btn btn-sm btn-light text-warning btn-insights" 
+                            onclick="showChartModal(${d.id})">
+                            <i class="bi bi-bar-chart"></i>
+                          </button>
 
-        ${lowHtml}
+                          <button class="btn btn-sm btn-light text-success" onclick="editar(${i})" data-bs-toggle="modal" data-bs-target="#modalEditar">
+                              <i class="bi bi-pencil"></i>
+                          </button>
 
-    <div class="mb-3">
-        <div class="stock-kpis mt-3 mb-2">
-            <div><strong>${
-                    estoque.total_itens
-                    }</strong><br><small>Produtos/Serviços</small></div>
-            <div><strong>${formatCurrency(
-                    estoque.valor_total,
-                    "Kz",
-                    "left"
-                    )}</strong><br><small>Valor Total</small></div>
-        </div>
+                          <button class="btn btn-sm btn-light text-danger" data-bs-toggle="modal" data-bs-target="#modalDelete">
+                              <i class="bi bi-trash"></i>
+                          </button>
+                      </div>
+                  </div>
 
-        <div class="stock-chart">
-            <canvas id="${chartId}" height="140"></canvas>
-        </div>
-        
-      </div>
-        <div class="d-flex justify-content-between">
-            <button class="btn btn-sm btn-danger d-flex align-items-center" onclick="event.stopPropagation(); deletarEstoque(${
-            estoque.id
-          })">
-                <span class="material-icons-round me-1"> delete_forever </span>
-                <span>Deletar</span>
-            </button>
-            <button class="btn btn-sm btn-primary d-flex align-items-center" onclick="event.stopPropagation(); editarEstoque(${estoque.id})">
-              <span class="material-icons-round me-1"> edit_note </span>
-              <span>Editar</span>
-            </button>
+                  <small class="text-muted">
+                      <i class="bi bi-geo-alt"></i> ${d.city ?? ""}
+                  </small>
 
+                  <hr>
 
-            <button class="btn btn-sm btn-success d-flex align-items-center" onclick="abrirEstoque(${estoque.id})">
-                <span class="material-icons-round me-1"> warehouse </span>
-                <span>Acessar</span>
-            </button>
-        </div>
-      
+                  <div class="d-flex justify-content-between">
+                      <div>
+                          <small class="text-muted">Itens</small>
+                          <div class="fw-bold">${d.total_itens}</div>
+                      </div>
 
-    </div>
-</div>
-      `;
+                      <div class="text-end">
+                          <small class="text-muted">Valor</small>
+                          <div class="fw-bold text-success">
+                            ${formatCurrency(d.valor_total, "AOA", "pt-AO")}
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+        `;
 
         container.append(card);
-
-        setTimeout(() => {
-          const ctx = document.getElementById(chartId).getContext("2d");
-          new Chart(ctx, {
-            type: "doughnut",
-            data: {
-              labels: estoque.grafico.labels,
-              datasets: [
-                {
-                  data: estoque.grafico.values,
-                  backgroundColor: gerarCoresDiferentes(
-                    estoque.grafico.values.length
-                  ),
-                  borderWidth: 1,
-                },
-              ],
-            },
-            options: {
-              responsive: true,
-              plugins: {
-                legend: { display: false },
-              },
-            },
-          });
-        }, 100);
       });
     },
-    "json"
+    "json",
   );
 }
 
+const showChartModal = (id) => {
+  selectedStock = id;
+  const modalInsights = document.getElementById("modalInsights");
+
+  modalInsights.addEventListener("shown.bs.modal", function () {
+    if (!selectedStock) {
+      console.warn("Nenhum stock selecionado");
+      return;
+    }
+
+    const labels = selectedStock.grafico?.labels || [];
+    const values = selectedStock.grafico?.values || [];
+
+    if (!labels.length || !values.length) {
+      console.warn("Sem dados para gráfico");
+      return;
+    }
+
+    // destruir gráficos antigos
+    if (pieChartInstance) pieChartInstance.destroy();
+    if (barChartInstance) barChartInstance.destroy();
+
+    // PIE
+    const ctxPie = document.getElementById("pieChart").getContext("2d");
+    pieChartInstance = new Chart(ctxPie, {
+      type: "doughnut",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            data: values,
+            backgroundColor: gerarCoresDiferentes(values.length),
+          },
+        ],
+      },
+    });
+
+    // BAR
+    const ctxBar = document.getElementById("barChart").getContext("2d");
+    barChartInstance = new Chart(ctxBar, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: "Quantidade",
+            data: values,
+            backgroundColor: "#4e73df",
+          },
+        ],
+      },
+    });
+  });
+};
+
 function abrirEstoque(id) {
   // Mostra o overlay e o loader antes de redirecionar
-  document.getElementById('overlay-preloader').style.display = 'flex';
+  document.getElementById("overlay-preloader").style.display = "flex";
 
   // Dá um pequeno tempo pra mostrar o loader antes do redirect
   setTimeout(() => {
@@ -492,88 +524,90 @@ function abrirEstoque(id) {
 }
 
 function editarEstoque(id) {
-  $.get("stock/ajax/stock_controller.php", { action: "get", id }, function (res) {
-    if (!res.success) {
-      Swal.fire("Erro ao carregar dados do stock", "", "error");
-      return;
-    }
-
-    // Preenche os campos e reabre a modal
-    const estoque = res.estoque;
-
-    // Chama a mesma função de criação, mas muda o título e preenche os campos
-    $("#createStock").trigger("click");
-
-    // Espera a modal abrir
-    setTimeout(() => {
-      $("#stockName").val(estoque.name);
-      $("#stockDesc").val(estoque.description);
-      $("#stockColor").val(estoque.color);
-      $("#address").val(estoque.address);
-      $("#latitude").val(estoque.latitude);
-      $("#longitude").val(estoque.longitude);
-
-      $("#address").val(estoque.address || "");
-      $("#address_number").val(estoque.address_number || "");
-      $("#neighborhood").val(estoque.neighborhood || "");
-      $("#city").val(estoque.city || "");
-      $("#state").val(estoque.state || "");
-      $("#zip_code").val(estoque.zip_code || "");
-      $("#country").val(estoque.country || "");
-      $("#county").val(estoque.county || "");
-      $("#state_district").val(estoque.state_district || "");
-      $("#region").val(estoque.region || "");
-      $("#continent").val(estoque.continent || "");
-      $("#iso_region_code").val(estoque.iso_region_code || "");
-      $("#location_detail").val(estoque.location_detail || "");
-
-
-      $(`.icon-box[data-icon="${estoque.icon}"]`).addClass("selected");
-    }, 500);
-
-    // Altera o evento de confirmação da modal para UPDATE
-    Swal.getConfirmButton().onclick = () => {
-      const name = $("#stockName").val().trim();
-      const desc = $("#stockDesc").val().trim();
-      const color = $("#stockColor").val();
-      const icon = $(".icon-box.selected").data("icon") || "box";
-      const address = $("#address").val().trim();
-      const latitude = $("#latitude").val().trim();
-      const longitude = $("#longitude").val().trim();
-
-      if (!name) {
-        Swal.showValidationMessage("O nome do estoque é obrigatório.");
+  $.get(
+    "stock/ajax/stock_controller.php",
+    { action: "get", id },
+    function (res) {
+      if (!res.success) {
+        Swal.fire("Erro ao carregar dados do stock", "", "error");
         return;
       }
 
-      $.post(
-        "stock/ajax/stock_controller.php",
-        {
-          action: "update",
-          id,
-          name,
-          description: desc,
-          color,
-          icon,
-          address,
-          latitude,
-          longitude,
-        },
-        function (resp) {
-          if (resp.success) {
-            Swal.fire("Stock atualizado!", "", "success");
-            carregarEstoques();
-          } else {
-            Swal.fire("Erro ao atualizar stock", "", "error");
-          }
-        },
-        "json"
-      );
-    };
-  }, "json");
+      // Preenche os campos e reabre a modal
+      const estoque = res.estoque;
+
+      // Chama a mesma função de criação, mas muda o título e preenche os campos
+      $("#createStock").trigger("click");
+
+      // Espera a modal abrir
+      setTimeout(() => {
+        $("#stockName").val(estoque.name);
+        $("#stockDesc").val(estoque.description);
+        $("#stockColor").val(estoque.color);
+        $("#address").val(estoque.address);
+        $("#latitude").val(estoque.latitude);
+        $("#longitude").val(estoque.longitude);
+
+        $("#address").val(estoque.address || "");
+        $("#address_number").val(estoque.address_number || "");
+        $("#neighborhood").val(estoque.neighborhood || "");
+        $("#city").val(estoque.city || "");
+        $("#state").val(estoque.state || "");
+        $("#zip_code").val(estoque.zip_code || "");
+        $("#country").val(estoque.country || "");
+        $("#county").val(estoque.county || "");
+        $("#state_district").val(estoque.state_district || "");
+        $("#region").val(estoque.region || "");
+        $("#continent").val(estoque.continent || "");
+        $("#iso_region_code").val(estoque.iso_region_code || "");
+        $("#location_detail").val(estoque.location_detail || "");
+
+        $(`.icon-box[data-icon="${estoque.icon}"]`).addClass("selected");
+      }, 500);
+
+      // Altera o evento de confirmação da modal para UPDATE
+      Swal.getConfirmButton().onclick = () => {
+        const name = $("#stockName").val().trim();
+        const desc = $("#stockDesc").val().trim();
+        const color = $("#stockColor").val();
+        const icon = $(".icon-box.selected").data("icon") || "box";
+        const address = $("#address").val().trim();
+        const latitude = $("#latitude").val().trim();
+        const longitude = $("#longitude").val().trim();
+
+        if (!name) {
+          Swal.showValidationMessage("O nome do estoque é obrigatório.");
+          return;
+        }
+
+        $.post(
+          "stock/ajax/stock_controller.php",
+          {
+            action: "update",
+            id,
+            name,
+            description: desc,
+            color,
+            icon,
+            address,
+            latitude,
+            longitude,
+          },
+          function (resp) {
+            if (resp.success) {
+              Swal.fire("Stock atualizado!", "", "success");
+              carregarEstoques();
+            } else {
+              Swal.fire("Erro ao atualizar stock", "", "error");
+            }
+          },
+          "json",
+        );
+      };
+    },
+    "json",
+  );
 }
-
-
 
 function verMapa(lat, lng, nome) {
   Swal.fire({
@@ -584,7 +618,7 @@ function verMapa(lat, lng, nome) {
     didOpen: () => {
       const map = L.map("mapModal").setView([lat, lng], 16);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(
-        map
+        map,
       );
       L.marker([lat, lng]).addTo(map);
     },
@@ -621,7 +655,7 @@ function deletarEstoque(stockId) {
                     Swal.fire("Erro ao deletar o stock.", "", "error");
                   }
                 },
-                "json"
+                "json",
               );
             }
           });
@@ -629,14 +663,14 @@ function deletarEstoque(stockId) {
           Swal.fire(
             "Não é possível deletar!",
             "Esse stock contém produtos/serviços cadastrados.",
-            "info"
+            "info",
           );
         }
       } else {
         Swal.fire("Erro ao verificar stock.", "", "error");
       }
     },
-    "json"
+    "json",
   );
 }
 
@@ -663,78 +697,112 @@ function gerarCoresDiferentes(qtd) {
 }
 
 async function exportGeneralStocks(type) {
-    const data = window.stocksData || [];
-    if (!data.length) {
-        Swal.fire("Sem dados", "Não há stocks para exportar.", "info");
-        return;
+  const data = window.stocksData || [];
+  if (!data.length) {
+    Swal.fire("Sem dados", "Não há stocks para exportar.", "info");
+    return;
+  }
+
+  // Prepara os dados para exportação
+  const exportData = data.map((s) => ({
+    ID: s.id,
+    Nome: s.name,
+    Descrição: s.description || "",
+    Endereço: s.address || "",
+    "Total Produtos/Serviços": s.total_itens,
+    "Valor Total": parseFloat(s.valor_total).toLocaleString("pt-AO", {
+      style: "currency",
+      currency: "AOA",
+    }),
+    "Atualizado Em": s.updated_at
+      ? new Date(s.updated_at).toLocaleDateString("pt-BR")
+      : "-",
+    "Atualizado Por": s.updated_by_name || s.updated_by || "-",
+  }));
+
+  if (type === "excel") {
+    const ws = XLSX.utils.json_to_sheet(exportData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Stocks");
+    XLSX.writeFile(wb, "Lista_Stocks.xlsx");
+  } else if (type === "pdf") {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+
+    // Busca logo da empresa (server-side -> dataURL)
+    let logoDataUrl = null;
+    try {
+      const resp = await fetch("stock/ajax/company_logo.php");
+      const j = await resp.json();
+      logoDataUrl = j?.dataUrl || null;
+    } catch (e) {}
+
+    // Cabeçalho (logo no início)
+    let headerY = 15;
+    if (logoDataUrl) {
+      try {
+        const fmt =
+          logoDataUrl.startsWith("data:image/jpeg") ||
+          logoDataUrl.startsWith("data:image/jpg")
+            ? "JPEG"
+            : "PNG";
+        doc.addImage(logoDataUrl, fmt, 14, 10, 28, 12);
+        headerY = 28;
+      } catch (e) {}
     }
 
-    // Prepara os dados para exportação
-    const exportData = data.map(s => ({
-        ID: s.id,
-        Nome: s.name,
-        Descrição: s.description || '',
-        Endereço: s.address || '',
-        'Total Produtos/Serviços': s.total_itens,
-        'Valor Total': parseFloat(s.valor_total).toLocaleString('pt-AO', {style: 'currency', currency: 'AOA'}),
-        'Atualizado Em': s.updated_at ? new Date(s.updated_at).toLocaleDateString('pt-BR') : '-',
-        'Atualizado Por': s.updated_by_name || s.updated_by || '-'
-    }));
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text("Relatório Geral de Stocks", 14, headerY);
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(
+      `Gerado em: ${new Date().toLocaleString("pt-BR")}`,
+      14,
+      headerY + 7,
+    );
 
-    if (type === 'excel') {
-        const ws = XLSX.utils.json_to_sheet(exportData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Stocks");
-        XLSX.writeFile(wb, "Lista_Stocks.xlsx");
-    } else if (type === 'pdf') {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+    const headers = [
+      [
+        "ID",
+        "Nome",
+        "Descrição",
+        "Endereço",
+        "Produtos/Serviços",
+        "Valor Total",
+      ],
+    ];
+    const rows = exportData.map((s) => [
+      s.ID,
+      s.Nome,
+      s.Descrição,
+      s.Endereço,
+      s["Total Produtos/Serviços"],
+      s["Valor Total"],
+    ]);
 
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const pageHeight = doc.internal.pageSize.getHeight();
+    // Reserva espaço no rodapé para paginação e no topo pro cabeçalho
+    doc.autoTable({
+      head: headers,
+      body: rows,
+      startY: headerY + 12,
+      margin: { top: 10, bottom: 18 },
+    });
 
-        // Busca logo da empresa (server-side -> dataURL)
-        let logoDataUrl = null;
-        try {
-            const resp = await fetch('stock/ajax/company_logo.php');
-            const j = await resp.json();
-            logoDataUrl = j?.dataUrl || null;
-        } catch (e) {}
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
 
-        // Cabeçalho (logo no início)
-        let headerY = 15;
-        if (logoDataUrl) {
-            try {
-                const fmt = (logoDataUrl.startsWith('data:image/jpeg') || logoDataUrl.startsWith('data:image/jpg')) ? 'JPEG' : 'PNG';
-                doc.addImage(logoDataUrl, fmt, 14, 10, 28, 12);
-                headerY = 28;
-            } catch (e) {}
-        }
-
-        doc.setFontSize(12);
-        doc.setTextColor(0);
-        doc.text("Relatório Geral de Stocks", 14, headerY);
-        doc.setFontSize(10);
-        doc.setTextColor(100);
-        doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 14, headerY + 7);
-
-        const headers = [["ID", "Nome", "Descrição", "Endereço", "Produtos/Serviços", "Valor Total"]];
-        const rows = exportData.map(s => [s.ID, s.Nome, s.Descrição, s.Endereço, s['Total Produtos/Serviços'], s['Valor Total']]);
-
-        // Reserva espaço no rodapé para paginação e no topo pro cabeçalho
-        doc.autoTable({ head: headers, body: rows, startY: headerY + 12, margin: { top: 10, bottom: 18 } });
-
-        const pageCount = doc.getNumberOfPages();
-        for (let i = 1; i <= pageCount; i++) {
-            doc.setPage(i);
-
-            // Paginação centralizada
-            doc.setFontSize(9);
-            doc.setTextColor(120);
-            const text = `Página ${i} de ${pageCount}`;
-            doc.text(text, pageWidth / 2, pageHeight - 10, { align: 'center' });
-        }
-
-        doc.save("Lista_Stocks.pdf");
+      // Paginação centralizada
+      doc.setFontSize(9);
+      doc.setTextColor(120);
+      const text = `Página ${i} de ${pageCount}`;
+      doc.text(text, pageWidth / 2, pageHeight - 10, { align: "center" });
     }
+
+    doc.save("Lista_Stocks.pdf");
+  }
 }

@@ -50,16 +50,16 @@
 }
 
 .item-box {
-    background-color: #ffffff;
-    border: 1px solid #e9ecef;
+    background: none !important;
+    border: 1px solid none !important;
     border-radius: 0.5rem;
-    padding: 1rem;
+    padding: 0rem;
     margin-bottom: 0.75rem;
     box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.03);
 }
 
 .item-box .form-control, .item-box .form-select {
-    padding: 0.5rem 0.75rem;
+    padding: 0.2rem 0.5rem;
     font-size: 0.9rem;
 }
 
