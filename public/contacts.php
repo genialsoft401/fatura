@@ -4,17 +4,6 @@ require_once '../app/views/layout_creation.php';
 ?>
 
 <style>
-    /* ===== BASE ===== */
-    body {
-        background: #f9fafb;
-    }
-
-    /* LINKS */
-    a {
-        color: #111;
-        text-decoration: none;
-    }
-
     /* ===== HEADER ===== */
 
     .container {
@@ -58,7 +47,7 @@ require_once '../app/views/layout_creation.php';
         font-weight: 500;
     }
 
-    /* ===== TABELA ESTILO SAAS ===== */
+    /* ===== TABELA ESTILO ===== */
     #contactTable {
         border-collapse: separate;
         border-spacing: 0 12px;
@@ -78,7 +67,7 @@ require_once '../app/views/layout_creation.php';
 
     /* ROW */
     #contactTable tbody tr {
-        background: #fff;
+        background: #fff !important;
         border-radius: 14px;
         transition: all 0.25s ease;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
@@ -96,12 +85,14 @@ require_once '../app/views/layout_creation.php';
         padding: 18px 16px;
         vertical-align: middle;
         font-size: 0.95rem;
+        background: #fff !important;
     }
 
     /* BORDAS ARREDONDADAS */
     #contactTable tbody td:first-child {
         border-top-left-radius: 14px;
         border-bottom-left-radius: 14px;
+        background: #fff !important;
     }
 
     #contactTable tbody th {
@@ -263,7 +254,7 @@ require_once '../app/views/layout_creation.php';
     }
 
     /* modal */
-     .modal-content {
+    .modal-content {
         border-radius: 20px;
         border: none;
     }
@@ -318,143 +309,143 @@ require_once '../app/views/layout_creation.php';
 
 <body>
 
-<div class="modal fade" id="contactModal" tabindex="-1">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
+    <div class="modal fade" id="contactModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
 
-            <div class="modal-header">
-                <h5 class="modal-title">Detalhes do Contato</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalhes do Contato</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
-            <div class="modal-body">
-                <div class="container-fluid">
-                    <div class="row g-4">
+                <div class="modal-body">
+                    <div class="container-fluid">
+                        <div class="row g-4">
 
-                        <!-- ESQUERDA -->
-                        <div class="col-lg-6">
+                            <!-- ESQUERDA -->
+                            <div class="col-lg-6">
 
-                            <!-- Empresa -->
-                            <div class="card-clean mb-3">
-                                <div class="section-title">
-                                    <i class="material-icons-round">business</i>
-                                    Empresa
+                                <!-- Empresa -->
+                                <div class="card-clean mb-3">
+                                    <div class="section-title">
+                                        <i class="material-icons-round">business</i>
+                                        Empresa
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">Nome</div>
+                                        <div class="value" id="contactName"></div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">Tipo</div>
+                                        <div class="value" id="contactType"></div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">NIF</div>
+                                        <div class="value" id="contactContributor"></div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">Email</div>
+                                        <div class="value" id="contactEmail"></div>
+                                    </div>
                                 </div>
 
-                                <div class="mb-2">
-                                    <div class="label">Nome</div>
-                                    <div class="value" id="contactName"></div>
-                                </div>
-
-                                <div class="mb-2">
-                                    <div class="label">Tipo</div>
-                                    <div class="value" id="contactType"></div>
-                                </div>
-
-                                <div class="mb-2">
-                                    <div class="label">NIF</div>
-                                    <div class="value" id="contactContributor"></div>
-                                </div>
-
-                                <div class="mb-2">
-                                    <div class="label">Email</div>
-                                    <div class="value" id="contactEmail"></div>
-                                </div>
-                            </div>
-
-                            <!-- Contatos -->
-                            <div class="card-clean mb-3">
-                                <div class="section-title">
-                                    <i class="material-icons-round">call</i>
-                                    Contatos
-                                </div>
-
-                                <div class="d-flex gap-2 flex-wrap">
-                                    <div class="phone-badge">
+                                <!-- Contatos -->
+                                <div class="card-clean mb-3">
+                                    <div class="section-title">
                                         <i class="material-icons-round">call</i>
-                                        <span id="contactTelephone"></span>
+                                        Contatos
                                     </div>
 
-                                    <div class="phone-badge">
-                                        <i class="material-icons-round">smartphone</i>
-                                        <span id="contactCellphone"></span>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <div class="phone-badge">
+                                            <i class="material-icons-round">call</i>
+                                            <span id="contactTelephone"></span>
+                                        </div>
+
+                                        <div class="phone-badge">
+                                            <i class="material-icons-round">smartphone</i>
+                                            <span id="contactCellphone"></span>
+                                        </div>
                                     </div>
                                 </div>
+
+                                <!-- Localização -->
+                                <div class="card-clean">
+                                    <div class="section-title">
+                                        <i class="material-icons-round">location_on</i>
+                                        Localização
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">Endereço</div>
+                                        <div class="value" id="contactAddress"></div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">Cidade</div>
+                                        <div class="value" id="contactLocation"></div>
+                                    </div>
+                                </div>
+
                             </div>
 
-                            <!-- Localização -->
-                            <div class="card-clean">
-                                <div class="section-title">
-                                    <i class="material-icons-round">location_on</i>
-                                    Localização
+                            <!-- DIREITA -->
+                            <div class="col-lg-6">
+
+                                <!-- Contato principal -->
+                                <div class="card-clean mb-3">
+                                    <div class="section-title">
+                                        <i class="material-icons-round">person</i>
+                                        Contato Principal
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">Nome</div>
+                                        <div class="value" id="contactPrefName"></div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">Email</div>
+                                        <div class="value" id="contactPrefEmail"></div>
+                                    </div>
                                 </div>
 
-                                <div class="mb-2">
-                                    <div class="label">Endereço</div>
-                                    <div class="value" id="contactAddress"></div>
+                                <!-- Configurações -->
+                                <div class="card-clean">
+                                    <div class="section-title">
+                                        <i class="material-icons-round">settings</i>
+                                        Configurações
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">Pagamento</div>
+                                        <div class="value" id="contactPaymentMethod"></div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">Moeda</div>
+                                        <div class="value" id="contactCurrency"></div>
+                                    </div>
+
+                                    <div class="mb-2">
+                                        <div class="label">Atualizado</div>
+                                        <div class="value" id="contactUpdatedAt"></div>
+                                    </div>
                                 </div>
 
-                                <div class="mb-2">
-                                    <div class="label">Cidade</div>
-                                    <div class="value" id="contactLocation"></div>
-                                </div>
                             </div>
 
                         </div>
-
-                        <!-- DIREITA -->
-                        <div class="col-lg-6">
-
-                            <!-- Contato principal -->
-                            <div class="card-clean mb-3">
-                                <div class="section-title">
-                                    <i class="material-icons-round">person</i>
-                                    Contato Principal
-                                </div>
-
-                                <div class="mb-2">
-                                    <div class="label">Nome</div>
-                                    <div class="value" id="contactPrefName"></div>
-                                </div>
-
-                                <div class="mb-2">
-                                    <div class="label">Email</div>
-                                    <div class="value" id="contactPrefEmail"></div>
-                                </div>
-                            </div>
-
-                            <!-- Configurações -->
-                            <div class="card-clean">
-                                <div class="section-title">
-                                    <i class="material-icons-round">settings</i>
-                                    Configurações
-                                </div>
-
-                                <div class="mb-2">
-                                    <div class="label">Pagamento</div>
-                                    <div class="value" id="contactPaymentMethod"></div>
-                                </div>
-
-                                <div class="mb-2">
-                                    <div class="label">Moeda</div>
-                                    <div class="value" id="contactCurrency"></div>
-                                </div>
-
-                                <div class="mb-2">
-                                    <div class="label">Atualizado</div>
-                                    <div class="value" id="contactUpdatedAt"></div>
-                                </div>
-                            </div>
-
-                        </div>
-
                     </div>
                 </div>
-            </div>
 
+            </div>
         </div>
     </div>
-</div>
 
 
     <main>
@@ -471,7 +462,7 @@ require_once '../app/views/layout_creation.php';
 
             <div class="col-12">
                 <div class="card-body">
-                    <table id="contactTable" class="dataTables-BXpert table display nowrap w-100">
+                    <table id="contactTable" class="table-bx-standard table nowrap w-100">
                         <thead>
                             <tr>
                                 <th><?= t('Nome') ?></th>
@@ -487,6 +478,8 @@ require_once '../app/views/layout_creation.php';
             </div>
         </div>
     </main>
+
+
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         lucide.createIcons();

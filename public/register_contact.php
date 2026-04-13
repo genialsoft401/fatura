@@ -48,7 +48,7 @@ require_once '../app/views/layout_creation.php';
         position: absolute;
         top: 50%;
         height: 3px;
-        background: #4f46e5;
+        background: #007abd;
         width: 0%;
         transform: translateY(-50%);
         transition: .4s;
@@ -67,9 +67,9 @@ require_once '../app/views/layout_creation.php';
     }
 
     .step.active {
-        background: #4f46e5;
+        background: #007abd;
         color: white;
-        border-color: #4f46e5;
+        border-color: #007abd;
     }
 
     /* Aside fixo */
@@ -92,7 +92,7 @@ require_once '../app/views/layout_creation.php';
     }
 
     .btn-next {
-        background: #4f46e5;
+        background: #007abd;
         color: white;
     }
 
@@ -149,6 +149,14 @@ require_once '../app/views/layout_creation.php';
                                 </div>
                                 <div class="card-body pt-3">
                                     <div class="row g-3">
+
+                                        <div class="col-12">
+                                            <label for="name"
+                                                class="form-label text-muted small fw-bold required"><?= t('Nome da Empresa') ?></label>
+                                            <input type="text" class="form-control form-control-lg" id="name" name="name"
+                                                placeholder="Nome comercial completo" required>
+                                        </div>
+
                                         <div class="col-md-6">
                                             <label for="type"
                                                 class="form-label text-muted small fw-bold"><?= t('Tipo de Cliente') ?></label>
@@ -163,40 +171,6 @@ require_once '../app/views/layout_creation.php';
                                             <input type="text" class="form-control" id="contributor" name="contributor"
                                                 placeholder="Ex: 000000000" required>
                                         </div>
-                                        <div class="col-12">
-                                            <label for="name"
-                                                class="form-label text-muted small fw-bold required"><?= t('Nome da Empresa') ?></label>
-                                            <input type="text" class="form-control form-control-lg" id="name" name="name"
-                                                placeholder="Nome comercial completo" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="email"
-                                                class="form-label text-muted small fw-bold"><?= t('Email Corporativo') ?></label>
-                                            <input type="email" class="form-control" id="email" name="email"
-                                                placeholder="contato@empresa.com">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="website"
-                                                class="form-label text-muted small fw-bold"><?= t('Website') ?></label>
-                                            <input type="text" class="form-control" id="website" name="website"
-                                                placeholder="www.empresa.com">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- STEP 2 -->
-                        <div class="step-content">
-                            <div class="card border-0 shadow-sm mb-4">
-                                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                                    <h5 class="card-title fw-bold text-primary d-flex align-items-center">
-                                        <span class="material-icons-round me-2">place</span>
-                                        <?= t('Localização e Contatos') ?>
-                                    </h5>
-                                </div>
-                                <div class="card-body pt-3">
-                                    <div class="row g-3">
                                         <div class="col-md-6">
                                             <label for="country"
                                                 class="form-label text-muted small fw-bold"><?= t('País') ?></label>
@@ -217,12 +191,44 @@ require_once '../app/views/layout_creation.php';
                                             <textarea class="form-control" id="address" name="address" rows="2"
                                                 placeholder="Rua, Número, Bairro..." required></textarea>
                                         </div>
-                                        <div class="col-md-4">
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- STEP 2 -->
+                        <div class="step-content">
+                            <div class="card border-0 shadow-sm mb-4">
+                                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                                    <h5 class="card-title fw-bold text-primary d-flex align-items-center">
+                                        <span class="material-icons-round me-2">place</span>
+                                        <?= t('Contatos') ?>
+                                    </h5>
+                                </div>
+                                <div class="card-body pt-3">
+                                    <div class="row g-3">
+
+                                        <div class="col-md-4 d-none">
                                             <label for="po_box"
                                                 class="form-label text-muted small fw-bold"><?= t('Caixa Postal') ?></label>
                                             <input type="text" class="form-control" id="po_box" name="po_box">
                                         </div>
-                                        <div class="col-md-4">
+
+                                        <div class="col-md-6">
+                                            <label for="email"
+                                                class="form-label text-muted small fw-bold"><?= t('Email Corporativo') ?></label>
+                                            <input type="email" class="form-control" id="email" name="email"
+                                                placeholder="contato@empresa.com">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="website"
+                                                class="form-label text-muted small fw-bold"><?= t('Website') ?></label>
+                                            <input type="text" class="form-control" id="website" name="website"
+                                                placeholder="www.empresa.com">
+                                        </div>
+
+                                        <div class="col-md-6">
                                             <label for="telephone"
                                                 class="form-label text-muted small fw-bold required"><?= t('Telefone Fixo') ?></label>
                                             <div class="input-group flex-nowrap">
@@ -234,7 +240,7 @@ require_once '../app/views/layout_creation.php';
                                                     id="telephone" placeholder="000 000 000" required>
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-6">
                                             <label for="cellphone"
                                                 class="form-label text-muted small fw-bold"><?= t('Telemóvel') ?></label>
                                             <div class="input-group flex-nowrap">
@@ -246,7 +252,7 @@ require_once '../app/views/layout_creation.php';
                                                     class="form-control telnumber" placeholder="900 000 000">
                                             </div>
                                         </div>
-                                        <div class="col-md-4">
+                                        <div class="col-md-6 d-none">
                                             <label for="fax"
                                                 class="form-label text-muted small fw-bold"><?= t('Fax') ?></label>
                                             <input type="text" class="form-control" id="fax" name="fax">
@@ -270,12 +276,12 @@ require_once '../app/views/layout_creation.php';
                                     <div class="mb-3">
                                         <label for="pref_name"
                                             class="form-label text-muted small fw-bold"><?= t('Nome do Responsável') ?></label>
-                                        <input type="text" class="form-control" id="pref_name" name="pref_name" >
+                                        <input type="text" class="form-control" id="pref_name" name="pref_name">
                                     </div>
                                     <div class="mb-3">
                                         <label for="pref_email"
                                             class="form-label text-muted small fw-bold"><?= t('Email Pessoal') ?></label>
-                                        <input type="email" class="form-control" id="pref_email" name="pref_email" >
+                                        <input type="email" class="form-control" id="pref_email" name="pref_email">
                                     </div>
                                     <div class="mb-3">
                                         <label
@@ -289,7 +295,7 @@ require_once '../app/views/layout_creation.php';
                                                 id="pref_telephone">
                                         </div>
                                     </div>
-                                    <div class="mb-3">
+                                    <div class="mb-3 d-none">
                                         <label
                                             class="form-label text-muted small fw-bold"><?= t('Telemóvel Direto') ?></label>
                                         <div class="input-group flex-nowrap">
@@ -389,6 +395,9 @@ require_once '../app/views/layout_creation.php';
         const steps = document.querySelectorAll(".step-content");
         const indicators = document.querySelectorAll(".step");
         const bar = document.getElementById("stepBar");
+        const saveBtn = document.getElementById("saveChangesContact");
+
+
 
         function update() {
             steps.forEach((s, i) => s.classList.toggle("active", i === current));
@@ -397,6 +406,8 @@ require_once '../app/views/layout_creation.php';
 
             prevBtn.style.display = current === 0 ? "none" : "block";
             nextBtn.innerText = current === steps.length - 1 ? "Finalizar" : "Próximo";
+            // step < steps.length ? saveBtn.classList.add("d-none") : nextBtn.classList.add("d-none");
+
         }
 
         nextBtn.onclick = () => {

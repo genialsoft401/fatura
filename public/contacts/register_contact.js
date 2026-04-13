@@ -217,12 +217,8 @@ $(document).ready(function () {
         if (contactId && !isNaN(contactId)) {
             $("#infoEdit").text("Editar Usuário");
             $("#sideContact").text("Editar Usuário");
-            $("#divsaveContact").html(`<button class='btn btn-primary fw-semibold d-flex align-items-center px-4' id='saveChangesContact'>
-                <span class='material-icons-round me-2'>save</span> Salvar Alterações
-            </button>`);
             loadContactData(contactId);
         } else {
-            $("#saveContactButton").text("Salvar Contato");
             selectCountry().then(() => {
                 $("#contactForm").find("input, select, textarea").each(function () {
                     $(this).data("original", $(this).val());
@@ -231,9 +227,7 @@ $(document).ready(function () {
             loadDDI(); // Apenas uma consulta ao banco
         }
     }
-    $("#divsaveContact").html(`<button class='btn btn-primary fw-semibold d-flex align-items-center px-4' id='saveChangesContact'>
-        <span class='material-icons-round me-2'>save</span> Salvar Dados
-    </button>`);
+
     $(document).on("click", "#saveChangesContact", function (event) {
         
         event.preventDefault();  

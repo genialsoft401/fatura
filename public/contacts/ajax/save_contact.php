@@ -35,9 +35,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     try {
         $stmt = $pdo->prepare($query);
         $stmt->execute($values);
-        echo json_encode(["status" => "success", "message" => "Usuário cadastrado com sucesso"]);
+        echo json_encode(["status" => "success", "message" => "Contato cadastrado com sucesso"]);
     } catch (PDOException $e) {
-        echo json_encode(["status" => "error", "message" => "Erro ao salvar usuário: " . $e->getMessage()]);
+        echo json_encode(["status" => "error", "message" => "Erro ao salvar contato: " . $e->getMessage()]);
     }
 }
 ?>

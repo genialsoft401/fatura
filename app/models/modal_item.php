@@ -1,11 +1,11 @@
 <!-- Modal item -->
- <style>
- .trumbowyg-box, .trumbowyg-editor { 
-    overflow: auto !important;  /* Adiciona barra de rolagem quando necessário */
-}
-
-
- </style>
+<style>
+    .trumbowyg-box,
+    .trumbowyg-editor {
+        overflow: auto !important;
+        /* Adiciona barra de rolagem quando necessário */
+    }
+</style>
 <div class="modal fade" id="itemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -18,18 +18,18 @@
                     <?php
                     $companies = getUserCompanies($_SESSION['user']['id']);
                     ?>
-                            <input type="text" hidden readonly value="<?=$_SESSION['user']['company_id']?>" class="form-control" id="id_company" name="id_company" required>
+                    <input type="text" hidden readonly value="<?= $_SESSION['user']['company_id'] ?>" class="form-control" id="id_company" name="id_company" required>
 
                     <div class="row">
                         <div class="col-md-10 mb-3">
                             <label for="codigo" class="form-label"><?= t('Código') ?>:</label>
                             <input type="text" class="form-control" id="codigo" name="codigo" required>
                         </div>
-                        <div class="col-md-2 mb-3">  
+                        <div class="col-md-2 mb-3">
                             <button type="button" id="gerarCodigo" class="btn btn-primary mt-4">Gerar</button>
                         </div>
 
-                    </div> 
+                    </div>
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
@@ -48,7 +48,7 @@
                         </div>
 
 
-                       
+
                     </div>
 
                     <div class="row">
@@ -56,13 +56,16 @@
                             <label for="preco" class="form-label"><?= t('Preço Unitário') ?>:</label>
                             <input type="number" class="form-control" id="preco" name="preco" step="0.01" required>
                         </div>
-                        
-                       
+
+
                         <div class="col-md-6 mb-3">
                             <label for="taxa" class="form-label"><?= t('Taxa/IVA') ?>:</label>
                             <select class="form-select" id="taxa" name="taxa">
-                                <option value="14"><?= t('14% - Taxa14') ?></option>
-                                <option value="isento"><?= t('Isento') ?></option>
+                                <option value="">- Selecione -</option>
+                                <option value="IVA - 14%">IVA - 14%</option>
+                                <option value="IVA - 7%">IVA - 7%</option>
+                                <option value="IVA - 5%">IVA - 5%</option>
+                                <option value="Isento">Isento</option>
                             </select>
                         </div>
                     </div>
@@ -76,7 +79,7 @@
                             <label for="retencao" class="form-label"><?= t('Retenção') ?>:</label>
                             <select class="form-select" id="retencao" name="retencao">
                                 <option value="nao_aplicar"><?= t('Não Aplicar') ?></option>
-                                <option value="aplicar"><?= t('Aplicar') ?></option>
+                                <option value="6,5">6,5% - Art. 67.º do CII</option>
                             </select>
                         </div>
                     </div>
@@ -144,8 +147,6 @@
     });
 
     $('#descricao').trumbowyg({
-        autogrow: false  
+        autogrow: false
     });
-
-
 </script>

@@ -85,6 +85,10 @@
             transform: translateY(0);
         }
     }
+
+    #perfil-menu {
+        width: 80px !important;
+    }
 </style>
 
 <header class="app-navbar px-3 py-2">
@@ -117,7 +121,9 @@
                     </span>
                 </button>
 
-                <ul class="dropdown-menu shadow border-0 mt-2" id="empresaDropdownMenu"></ul>
+                <ul class="dropdown-menu aling-items-center text-center" id="empresaDropdownMenu" aria-labelledby="empresaDropdown" style="font-size: 14px!important;">
+                    <!-- Empresas serão carregadas aqui via AJAX -->
+                </ul>
             </div>
 
             <!-- <div class="col-12">
@@ -178,7 +184,7 @@
 
             <!-- 👤 PERFIL -->
             <div class="perfil-container position-relative">
-                <a href="perfil.php" class="d-flex align-items-center gap-2 text-decoration-none">
+                <a href="#" class="d-flex align-items-center gap-2 text-decoration-none" onclick="togglePopup('perfil-menu')">
 
                     <div class="rounded-circle profile-img overflow-hidden">
                         <img class="w-100" src="assets/img/profiles/<?= $_SESSION['user']['image'] ?>">
@@ -189,6 +195,11 @@
                         <small class="text-muted opacity-50" style="margin-top: -5px;"><?= t($_SESSION['user']['role']) ?></small>
                     </div>
                 </a>
+                <div class="popup-menu text-left mt-2" style="width: 80px !important;" id="perfil-menu">
+                    <a class="popup-item p-2" href="perfil.php"><?= t('Perfil do utilizador') ?></a>
+                    <hr class="opacity-25">
+                    <a class="popup-item p-2" href="logout.php"><?= t('Sair') ?></a>
+                </div>
             </div>
 
         </div>

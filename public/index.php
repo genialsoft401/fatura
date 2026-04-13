@@ -166,6 +166,8 @@ require_once '../app/views/layout_creation.php';
         max-height: 300px;
         overflow-y: auto;
     }
+
+    
 </style>
 
 <body>

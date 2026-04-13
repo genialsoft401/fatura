@@ -16,7 +16,7 @@
   /* Azul para realces */
   --blue: #04349a;
 
-  --font-default: 'Quarion', sans-serif;
+  --font-default: "Quarion", sans-serif;
   --font-light: 300;
   --font-regular: 400;
   --font-bold: 700;
@@ -28,91 +28,89 @@
 
 /* Fonte: Quarion - importando todas as variações */
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-Bold.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-Bold.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-BoldItalic.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-BoldItalic.ttf") format("truetype");
   font-weight: 700;
   font-style: italic;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-Book.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-Book.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-BookItalic.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-BookItalic.ttf") format("truetype");
   font-weight: 400;
   font-style: italic;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-ExtraBold.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-ExtraBold.ttf") format("truetype");
   font-weight: 800;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-ExtraBoldItalic.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-ExtraBoldItalic.ttf") format("truetype");
   font-weight: 800;
   font-style: italic;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-ExtraLight.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-ExtraLight.ttf") format("truetype");
   font-weight: 200;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-ExtraLightItalic.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-ExtraLightItalic.ttf") format("truetype");
   font-weight: 200;
   font-style: italic;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-Hairline.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-Hairline.ttf") format("truetype");
   font-weight: 100;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-HairlineItalic.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-HairlineItalic.ttf") format("truetype");
   font-weight: 100;
   font-style: italic;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-Heavy.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-Heavy.ttf") format("truetype");
   font-weight: 900;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-HeavyItalic.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-HeavyItalic.ttf") format("truetype");
   font-weight: 900;
   font-style: italic;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-Light.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-Light.ttf") format("truetype");
   font-weight: 300;
   font-style: normal;
 }
 @font-face {
-  font-family: 'Quarion';
-  src: url('../assets/font/Quarion-LightItalic.ttf') format('truetype');
+  font-family: "Quarion";
+  src: url("../assets/font/Quarion-LightItalic.ttf") format("truetype");
   font-weight: 300;
   font-style: italic;
 }
-
- 
 
 @import url("https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Lilita+One&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
 
@@ -121,7 +119,7 @@ body {
   background: #f8f9fa;
 }
 
-main{
+main {
   background: #f8f9fa;
 }
 
@@ -136,7 +134,7 @@ html {
   overflow: visible;
 }
 
-.text-primary{
+.text-primary {
   color: #000 !important;
 }
 
@@ -154,14 +152,17 @@ html {
   color: #212529;
   background-color: #fff;
   background-clip: padding-box;
-  transition: border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+  transition:
+    border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
   min-height: 38px;
 }
 
 .form-control:focus,
 .form-select:focus,
 .select2-container--default.select2-container--open .select2-selection--single,
-.select2-container--default.select2-container--focus .select2-selection--single {
+.select2-container--default.select2-container--focus
+  .select2-selection--single {
   border-color: var(--primary-color) !important;
   outline: 0;
   box-shadow: 0 0 0 0.25rem rgba(0, 122, 189, 0.25) !important;
@@ -173,13 +174,17 @@ html {
   align-items: center !important;
 }
 
-.select2-container--default .select2-selection--single .select2-selection__rendered {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__rendered {
   padding-left: 0 !important;
   color: #212529 !important;
   line-height: normal !important;
 }
 
-.select2-container--default .select2-selection--single .select2-selection__arrow {
+.select2-container--default
+  .select2-selection--single
+  .select2-selection__arrow {
   height: 36px !important;
   top: 1px !important;
   right: 1px !important;
@@ -195,7 +200,6 @@ html {
 
 /* Fim Inputs, Selects e Textarea */
 
-
 .form-label {
   margin-bottom: 0rem !important;
 }
@@ -210,7 +214,7 @@ a {
   font-weight: 300;
 }
 
-.font-logo{
+.font-logo {
   font-family: var(--font-default) !important;
   font-weight: var(--font-bold);
 }
@@ -257,8 +261,6 @@ a {
   font-size: 14px;
 }
 
- 
-
 /* Botao do continuar com o google */
 .gsi-material-button {
   -moz-user-select: none;
@@ -283,9 +285,14 @@ a {
   padding: 0 12px;
   position: relative;
   text-align: center;
-  -webkit-transition: background-color 0.218s, border-color 0.218s,
+  -webkit-transition:
+    background-color 0.218s,
+    border-color 0.218s,
     box-shadow 0.218s;
-  transition: background-color 0.218s, border-color 0.218s, box-shadow 0.218s;
+  transition:
+    background-color 0.218s,
+    border-color 0.218s,
+    box-shadow 0.218s;
   vertical-align: middle;
   white-space: nowrap;
   width: auto;
@@ -359,9 +366,11 @@ a {
 }
 
 .gsi-material-button:not(:disabled):hover {
-  -webkit-box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
+  -webkit-box-shadow:
+    0 1px 2px 0 rgba(60, 64, 67, 0.3),
     0 1px 3px 1px rgba(60, 64, 67, 0.15);
-  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, 0.3),
+  box-shadow:
+    0 1px 2px 0 rgba(60, 64, 67, 0.3),
     0 1px 3px 1px rgba(60, 64, 67, 0.15);
 }
 
@@ -558,7 +567,6 @@ td button {
   cursor: pointer;
 }
 
-
 .modal-dialog {
   max-height: 90vh;
   display: flex;
@@ -588,7 +596,6 @@ td button {
 }
 
 @media (max-width: 576px) {
- 
   .tel,
   .telnumber {
     width: 100%;
@@ -661,23 +668,21 @@ td button {
   font-weight: bold;
   cursor: default;
 }
- 
 
 /* Garantir que o cabeçalho não quebre */
-.dataTables-BXpert  thead th,
-.dataTables-BXpert  tfoot th {
+.dataTables-BXpert thead th,
+.dataTables-BXpert tfoot th {
   white-space: nowrap; /* Evita quebra de texto no cabeçalho e rodapé */
 }
 
 /* Linhas de células sem quebra */
-.dataTables-BXpert  tbody td {
+.dataTables-BXpert tbody td {
   white-space: nowrap;
 }
 
-
-
 /* Botões de exportação estilizados */
-button#exportCsv, button#exportExcel {
+button#exportCsv,
+button#exportExcel {
   margin-bottom: 20px;
   border-radius: 4px;
   font-size: 14px;
@@ -685,21 +690,219 @@ button#exportCsv, button#exportExcel {
   box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Hover nas linhas da tabela */
-.dataTables-BXpert  tbody tr:hover {
-  background-color: #f1f3f6 !important; /* Cor de hover mais suave */
-  cursor: pointer; /* Indica que é clicável */
+/* ===== TABELA ESTILO ===== */
+.table-bx-standard {
+  border-collapse: separate;
+  border-spacing: 0 12px;
+  width: 100%;
 }
 
-/* Cabeçalho da tabela */
-.dataTables-BXpert  thead {
-  background-color: #0069d9;
-  color: #ffffff;
-  font-weight: bold;
+/* HEADER */
+.table-bx-standard thead th {
+  border: none;
+  font-size: 12px;
+  color: #9ca3af;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 12px 16px;
+}
+
+/* ROW */
+.table-bx-standard tbody tr {
+  background: #fff !important;
+  border-radius: 14px;
+  transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  text-align: left !important;
+}
+
+/* HOVER PRO */
+.table-bx-standard tbody tr:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+}
+
+/* CELLS */
+.table-bx-standard tbody td {
+  border: none;
+  padding: 18px 16px;
+  vertical-align: middle;
+  font-size: 0.95rem;
+  background: #fff !important;
+  text-align: left;
+}
+
+/* BORDAS ARREDONDADAS */
+.table-bx-standard tbody td:first-child {
+  border-top-left-radius: 14px;
+  border-bottom-left-radius: 14px;
+  background: #fff !important;
+}
+
+.table-bx-standard tbody th {
+  text-align: left !important;
+}
+
+.table-bx-standard tbody td:last-child {
+  border-top-right-radius: 14px;
+  border-bottom-right-radius: 14px;
+  text-align: right;
+  padding-right: 24px;
+}
+
+/* ===== NOME (PRINCIPAL) ===== */
+.table-bx-standard tbody td:first-child {
+  font-weight: 600;
+  color: #111;
+}
+
+/* SUBINFO */
+.table-bx-standard tbody td small {
+  display: block;
+  color: #6b7280;
+}
+
+/* ===== ÍCONES ===== */
+.table-icon {
+  font-size: 1.2rem;
+  color: #9ca3af;
+  transition: all 0.2s;
+}
+
+.table-icon:hover {
+  color: #111;
+  transform: scale(1.1);
+}
+
+/* ===== AÇÕES ===== */
+.edit-contact i,
+.delete-contact i {
+  transition: all 0.2s ease;
+}
+
+.edit-contact:hover i {
+  color: #2563eb;
+  transform: scale(1.2);
+}
+
+.delete-contact:hover i {
+  color: #dc2626;
+  transform: scale(1.2);
+}
+
+/* ===== MODAL MAIS PREMIUM ===== */
+.modal-content {
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== CARDS DO MODAL ===== */
+.card-header.bg-primary,
+.card-header.bg-info,
+.card-header.bg-secondary,
+.card-header.bg-success,
+.card-header.bg-warning {
+  border-radius: 12px 12px 0 0;
+  font-size: 0.95rem;
+}
+
+/* ===== PHONE CARDS ===== */
+.phone-card {
+  display: inline-flex;
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  transition: all 0.2s;
+}
+
+.phone-card:hover {
+  background: #e5e7eb;
+}
+
+#dt-length-0 {
+  background: #fff !important;
+  border-radius: 8px;
+  padding: 5px;
+  border: 0.5px solid #e5e7eb;
+}
+
+.dt-search {
+  position: relative;
+  margin-bottom: 15px;
+}
+
+.dt-search label {
+  display: none !important;
+}
+
+/* ÍCONE */
+.dt-search-0 .search-icon {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+/* INPUT */
+#dt-search-0 {
+  padding-left: 15px !important;
+  border-radius: 12px !important;
+  border: 2px solid #ddd !important;
+}
+
+/* FOCUS */
+#dt-search-0:focus {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15) !important;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 768px) {
+  #contactTable thead {
+    display: none;
+  }
+
+  .table-bx-standard,
+  .table-bx-standard tbody,
+  .table-bx-standard tr,
+  .table-bx-standard td {
+    display: block;
+    width: 100%;
+  }
+
+  .table-bx-standard tbody tr {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    border-radius: 14px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .table-bx-standard tbody td {
+    padding: 6px 0;
+    text-align: left;
+  }
+
+  .table-bx-standard tbody td:first-child {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .table-bx-standard tbody td[data-label="Ações"] {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 10px;
+  }
 }
 
 /* Rodapé da tabela */
-.dataTables-BXpert  tfoot {
+.dataTables-BXpert tfoot {
   background-color: #f8f9fa;
   font-weight: bold;
 }
@@ -717,35 +920,35 @@ button#exportCsv, button#exportExcel {
   background-color: #0056b3 !important;
 }
 
-.percentageRetention{
+.percentageRetention {
   font-size: 12px;
   font-weight: 700;
-  color:#212529
+  color: #212529;
 }
 
-#invoice-number,.invoice-number{
-  font-family: 'poppins', sans-serif;
+#invoice-number,
+.invoice-number {
+  font-family: "poppins", sans-serif;
   font-size: 1.2rem;
   color: #212529;
-  font-weight: 600
+  font-weight: 600;
 }
- 
 
-.labelInvoiceDate{
-  font-family: 'poppins', sans-serif;
-  font-size: .8rem;
+.labelInvoiceDate {
+  font-family: "poppins", sans-serif;
+  font-size: 0.8rem;
   color: #212529;
 }
 
-.spanInvoiceDate{
-  font-family: 'poppins', sans-serif;
-  font-size: .9rem;
+.spanInvoiceDate {
+  font-family: "poppins", sans-serif;
+  font-size: 0.9rem;
   color: #212529;
 }
 
-.invoiceContainer{
+.invoiceContainer {
   background-color: #fff !important;
-  border-radius:.4rem
+  border-radius: 0.4rem;
 }
 
 .position-relative {
@@ -764,14 +967,13 @@ button#exportCsv, button#exportExcel {
   color: #495057; /* Cor ao passar o mouse */
 }
 
- 
 div.dt-length label {
-  padding-right: .3rem;
+  padding-right: 0.3rem;
 }
 
 div.dt-length select {
-font-size: 14px; 
-border:none!important;
+  font-size: 14px;
+  border: none !important;
 }
 
 body.sidebar-open {
@@ -782,7 +984,7 @@ body.sidebar-open {
   min-width: 200px;
   max-width: 70vw;
   background: #fff;
-  box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
   border-radius: 8px;
   padding: 10px;
   z-index: 1000;
@@ -796,7 +998,6 @@ body.sidebar-open {
   display: block;
 }
 
- 
 #mobileMenuBtn {
   background: transparent;
   border: none;
@@ -804,7 +1005,7 @@ body.sidebar-open {
   outline: none;
   color: #fff;
   padding: 6px 8px;
-  margin-bottom: -.6rem;
+  margin-bottom: -0.6rem;
 }
 
 #mobileMenuBtn:focus,
@@ -826,7 +1027,6 @@ body.sidebar-open {
   }
 }
 
-
 @media (max-width: 576px) {
   .perfil-container .text-start {
     display: none !important;
@@ -843,9 +1043,8 @@ body.sidebar-open {
   .popup-menu {
     right: 0 !important;
     left: auto !important;
-  } 
+  }
 
-  
   #empresaDropdown {
     font-size: 14px;
     padding: 4px 8px;
@@ -862,12 +1061,11 @@ body.sidebar-open {
     white-space: nowrap;
   }
 }
- 
+
 .table th,
 .table td {
   white-space: nowrap;
 }
-
 
 #bgLogin {
   background-image: url("../img/fundo-login-vermelho.png");
@@ -878,7 +1076,6 @@ body.sidebar-open {
   background-image: url("../img/fundo-register-preto.png");
   background-repeat: no-repeat;
 }
-
 
 #loginForm div label {
   font-size: 14px;
@@ -915,6 +1112,6 @@ body.sidebar-open {
 
 @media (min-width: 1200px) {
   .modal-dialog {
-    left: 7rem ;
+    left: 7rem;
   }
 }

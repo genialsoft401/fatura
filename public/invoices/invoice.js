@@ -484,279 +484,350 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
   });
 });
 
-// $(document).ready(function () {
-//     const get = new URLSearchParams(window.location.search).get("id");
-//     const invoiceId = get.substring(get.lastIndexOf("/") + 1);
-//     if (!invoiceId) {
-//         alert("Fatura não encontrada!");
-//         return;
-//     }
+$(document).ready(function () {
+  const get = new URLSearchParams(window.location.search).get("id");
+  const invoiceId = get.substring(get.lastIndexOf("/") + 1);
+  if (!invoiceId) {
+    alert("Fatura não encontrada!");
+    return;
+  }
 
-//     $.ajax({
-//         url: "invoices/ajax/get_invoice.php",
-//         type: "GET",
-//         data: { id: invoiceId },
-//         dataType: "json",
-//         success: function (response) {
-//             if (response.error) {
-//                 alert(response.error);
-//                 return;
-//             }
+  $.ajax({
+    url: "invoices/ajax/get_invoice.php",
+    type: "GET",
+    data: { id: invoiceId },
+    dataType: "json",
+    success: function (response) {
+      if (response.error) {
+        alert(response.error);
+        return;
+      }
 
-//             $("#generatePdf").on("click", function () {
-//                 const { jsPDF } = window.jspdf;
-//                 const doc = new jsPDF();
+      $("#generatePdf").on("click", function () {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
 
-//                 // Adicionar logo com proporção ajustada
-//                 if (response.logo_url) {
-//                     const img = new Image();
-//                     img.src = `assets/img/companies/${response.logo_url}`;
-//                     doc.addImage(img, "PNG", 10, 10, 50, 15); // Largura e altura ajustada
-//                 }
+        // Adicionar logo com proporção ajustada
+        if (response.logo_url) {
+          const img = new Image();
+          img.src = `assets/img/companies/${response.logo_url}`;
+          doc.addImage(img, "PNG", 10, 10, 50, 15); // Largura e altura ajustada
+        }
 
-//                 // Informações da Empresa
-//                 let currentY = 10;
-//                 doc.setFontSize(12);
-//                 doc.setFont("helvetica", "bold");
-//                 doc.text(response.company_name, 70, currentY);
-//                 doc.setFont("helvetica", "normal");
-//                 doc.setFontSize(10);
-//                 currentY += 5;
-//                 doc.text(response.company_address.replace(/\n/g, " "), 70, currentY);
-//                 currentY += 5;
-//                 doc.text(`Tel: ${response.company_phone}`, 70, currentY);
-//                 currentY += 5;
-//                 doc.text(`E-mail: ${response.company_email}`, 70, currentY);
-//                 currentY += 5;
-//                 doc.text(`Contribuinte: ${response.registration_number}`, 70, currentY);
+        // Informações da Empresa
+        let currentY = 10;
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.text(response.company_name, 270, currentY);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        currentY += 5;
+        doc.text(response.company_address.replace(/\n/g, " "), 70, currentY);
+        currentY += 5;
+        doc.text(`Tel: ${response.company_phone}`, 70, currentY);
+        currentY += 5;
+        doc.text(`E-mail: ${response.company_email}`, 70, currentY);
+        currentY += 5;
+        doc.text(`Contribuinte: ${response.registration_number}`, 70, currentY);
 
-//                 // Função para gerar uma hash aleatória
-//                 function generateRandomHash(length = 70) {
-//                   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-//                   let hash = '';
-//                   for (let i = 0; i < length; i++) {
-//                       hash += characters.charAt(Math.floor(Math.random() * characters.length));
-//                   }
-//                   return hash;
-// }
-//                 // QR Code posicionado sem sobrepor texto
-//                 const qrSize = 40; // Tamanho do QR Code
-//                 const qrX = 150; // Posição no lado direito
-//                 const qrY = Math.max(currentY - 15, 35); // Alinha o QR Code abaixo do texto
-//                 const qrBase64 = generateQRCode(
-//                     "../public/invoice_public.php?id="+generateRandomHash()+'_'+response.company_id+"/"+response.id
-//                 );
-//                 doc.addImage(qrBase64, "PNG", qrX, qrY, qrSize, qrSize);
+        // Função para gerar uma hash aleatória
+        function generateRandomHash(length = 70) {
+          const characters =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+          let hash = "";
+          for (let i = 0; i < length; i++) {
+            hash += characters.charAt(
+              Math.floor(Math.random() * characters.length),
+            );
+          }
+          return hash;
+        }
+        // QR Code posicionado sem sobrepor texto
+        const qrSize = 40; // Tamanho do QR Code
+        const qrX = 150; // Posição no lado direito
+        const qrY = Math.max(currentY - 15, 35); // Alinha o QR Code abaixo do texto
+        const qrBase64 = generateQRCode(
+          "../public/invoice_public.php?id=" +
+            generateRandomHash() +
+            "_" +
+            response.company_id +
+            "/" +
+            response.id,
+        );
+        doc.addImage(qrBase64, "PNG", qrX, qrY, qrSize, qrSize);
 
-//                 // Informações do Cliente
-//                 currentY = Math.max(currentY +10, qrY - 50); // Garante que o texto fique abaixo do QR Code
-//                 doc.setFont("helvetica", "bold");
-//                 doc.setFontSize(12);
-//                 doc.text(`Exmo.(s) Sr.(s):`, 10, currentY);
-//                 doc.setFont("helvetica", "normal");
-//                 currentY += 5;
-//                 doc.text(response.client_name, 10, currentY);
-//                 currentY += 5;
-//                 doc.text(response.client_address.replace(/\n/g, " "), 10, currentY);
-//                 currentY += 5;
-//                 doc.text(`Contribuinte: ${response.client_contributor}`, 10, currentY);
-// // Função para formatar a data no formato 'DD Mês YYYY'
-// const formatDate = (date) => {
-//   return new Intl.DateTimeFormat("pt-BR", {
-//     day: "2-digit",
-//     month: "short",
-//     year: "numeric",
-//   })
-//     .format(date)
-//     .replace(/ de /g, " ") // Remove os "de"
-//     .replace(/\.$/, "") // Remove o ponto no final do mês
-//     .replace(/\b[a-z]/, (char) => char.toUpperCase()); // Deixa a primeira letra do mês maiúscula
-// };
-//                   // Converte as datas para objetos Date e calcula a data de vencimento
-//       const issueDate = new Date(response.issue_date);
-//       const dueDateObj = new Date(issueDate);
-//       dueDateObj.setDate(issueDate.getDate() + response.due_date);
+        // Informações do Cliente
+        currentY = Math.max(currentY + 10, qrY - 50); // Garante que o texto fique abaixo do QR Code
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text(`Exmo.(s) Sr.(s):`, 10, currentY);
+        doc.setFont("helvetica", "normal");
+        currentY += 5;
+        doc.text(response.client_name, 10, currentY);
+        currentY += 5;
+        doc.text(response.client_address.replace(/\n/g, " "), 10, currentY);
+        currentY += 5;
+        doc.text(`Contribuinte: ${response.client_contributor}`, 10, currentY);
+        // Função para formatar a data no formato 'DD Mês YYYY'
+        const formatDate = (date) => {
+          return new Intl.DateTimeFormat("pt-BR", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          })
+            .format(date)
+            .replace(/ de /g, " ") // Remove os "de"
+            .replace(/\.$/, "") // Remove o ponto no final do mês
+            .replace(/\b[a-z]/, (char) => char.toUpperCase()); // Deixa a primeira letra do mês maiúscula
+        };
+        // Converte as datas para objetos Date e calcula a data de vencimento
+        const issueDate = new Date(response.issue_date);
+        const dueDateObj = new Date(issueDate);
+        dueDateObj.setDate(issueDate.getDate() + response.due_date);
 
-//       // Formata as datas no formato 'DD Mês YYYY'
-//       const issueDateFormatted = formatDate(issueDate);
-//       const dueDateFormatted = formatDate(dueDateObj);
+        // Formata as datas no formato 'DD Mês YYYY'
+        const issueDateFormatted = formatDate(issueDate);
+        const dueDateFormatted = formatDate(dueDateObj);
 
-//                 // Detalhes da Fatura
-//                 currentY += 10;
-//                 doc.setFont("helvetica", "bold");
-//                 doc.text(`Fatura n.º ${response.codigo}`, 10, currentY);
-//                 doc.setFont("helvetica", "normal");
-//                 currentY += 5;
-//                 doc.text(`Data de emissão: ${issueDateFormatted}`, 10, currentY);
-//                 currentY += 5;
-//                 doc.text(`Vencimento: ${dueDateFormatted}`, 10, currentY);
-//                 currentY += 5;
-//                 doc.text(`Referência: ${response.reference || "Não especificada"}`, 10, currentY);
+        // Detalhes da Fatura
+        currentY += 10;
+        doc.setFont("helvetica", "bold");
+        doc.text(`Fatura n.º ${response.codigo}`, 10, currentY);
+        doc.setFont("helvetica", "normal");
+        currentY += 5;
+        doc.text(`Data de emissão: ${issueDateFormatted}`, 10, currentY);
+        currentY += 5;
+        doc.text(`Vencimento: ${dueDateFormatted}`, 10, currentY);
+        currentY += 5;
+        doc.text(
+          `Referência: ${response.reference || "Não especificada"}`,
+          10,
+          currentY,
+        );
 
-//                 // Linha divisória
-//                 doc.setDrawColor(200, 200, 200);
-//                 doc.line(10, currentY + 5, 200, currentY + 5);
+        // Linha divisória
+        doc.setDrawColor(400, 200, 200);
+        doc.line(10, currentY + 5, 200, currentY + 5);
 
-//                 // Tabela de Itens
-//                 doc.autoTable({
-//                     startY: currentY + 10,
-//                     margin: { left: 10 },
-//                     pageBreak: 'auto',
-//                     head: [
-//                         [
-//                             "Código",
-//                             "Descrição",
-//                             "Preço Unitário",
-//                             "Qtd",
-//                             "Taxa/IVA %",
-//                             "Desc. %",
-//                             "Total",
-//                         ],
-//                     ],
-//                     body: response.items.map((item) => [
-//                         item.code,
-//                         item.description,
-//                         formatCurrency(
-//                           item.unit_price,
-//                           response.company_symbol,
-//                           response.company_position
-//                         ),
-//                         item.quantity,
-//                         item.tax,
-//                         item.discount,
-//                         formatCurrency(
-//                           (item.unit_price * item.quantity),
-//                           response.company_symbol,
-//                           response.company_position
-//                         )
-//                         ,
-//                     ]),
-//                     theme: "striped",
-//                     styles: { fontSize: 10, halign: "center" },
-//                     headStyles: { fillColor: [100, 100, 255], textColor: 255 },
-//                     alternateRowStyles: { fillColor: [240, 240, 240] },
-//                     didDrawPage: function (data) {
-//                       currentY = data.cursor.y; // Atualiza a posição Y após o final da tabela
-//                   }
-//                 });
+        // Tabela de Itens
+        doc.autoTable({
+          startY: currentY + 10,
+          margin: { left: 10 },
+          pageBreak: "auto",
+          head: [
+            [
+              "Código",
+              "Descrição",
+              "Preço Unitário",
+              "Qtd",
+              "Taxa/IVA %",
+              "Desc. %",
+              "Total",
+            ],
+          ],
+          body: response.items.map((item) => [
+            item.code,
+            item.description,
+            formatCurrency(
+              item.unit_price,
+              response.company_symbol,
+              response.company_position,
+            ),
+            item.quantity,
+            item.tax,
+            item.discount,
+            formatCurrency(
+              item.unit_price * item.quantity,
+              response.company_symbol,
+              response.company_position,
+            ),
+          ]),
+          theme: "striped",
+          styles: { fontSize: 10, halign: "center" },
+          headStyles: { fillColor: [100, 100, 255], textColor: 255 },
+          alternateRowStyles: { fillColor: [240, 240, 240] },
+          didDrawPage: function (data) {
+            currentY = data.cursor.y; // Atualiza a posição Y após o final da tabela
+          },
+        });
 
-//                 // Resumo
+        // Resumo
 
-// // Tabela de Taxas com Retenção
-// const taxDetails = response.tax_details.map((tax) => [
-//   `${tax.tax_rate}%`,
-//   formatCurrency(tax.tax_base, response.company_symbol, response.company_position),
-//   formatCurrency(tax.tax_value, response.company_symbol, response.company_position),
-// ]);
+        // Tabela de Taxas com Retenção
+        const taxDetails = response.tax_details.map((tax) => [
+          `${tax.tax_rate}%`,
+          formatCurrency(
+            tax.tax_base,
+            response.company_symbol,
+            response.company_position,
+          ),
+          formatCurrency(
+            tax.tax_value,
+            response.company_symbol,
+            response.company_position,
+          ),
+        ]);
 
-// // Adiciona a retenção como última linha, caso exista
-// if (response.tax_details[0]?.retention_rate) {
-//   taxDetails.push([
-//       `Retenção (${response.tax_details[0].retention_rate}%)`,
-//       formatCurrency(response.tax_details[0].total_sum, response.company_symbol, response.company_position),
-//       formatCurrency(response.tax_details[0].retention_value, response.company_symbol, response.company_position),
-//   ]);
-// }
+        // Adiciona a retenção como última linha, caso exista
+        if (response.tax_details[0]?.retention_rate) {
+          taxDetails.push([
+            `Retenção (${response.tax_details[0].retention_rate}%)`,
+            formatCurrency(
+              response.tax_details[0].total_sum,
+              response.company_symbol,
+              response.company_position,
+            ),
+            formatCurrency(
+              response.tax_details[0].retention_value,
+              response.company_symbol,
+              response.company_position,
+            ),
+          ]);
+        }
 
-// doc.autoTable({
-//   startY: doc.lastAutoTable.finalY + 10,
-//   margin: { left: 10 },
-//   pageBreak: 'auto',
-//   head: [["Taxa/Imposto", "Base", "Valor"]],
-//   body: taxDetails,
-//   theme: "grid",
-//   styles: { fontSize: 10, halign: "center" },
-//   headStyles: { fillColor: [100, 100, 255], textColor: 255 },
-// });
+        doc.autoTable({
+          startY: doc.lastAutoTable.finalY + 10,
+          margin: { left: 10 },
+          pageBreak: "auto",
+          head: [["Taxa/Imposto", "Base", "Valor"]],
+          body: taxDetails,
+          theme: "grid",
+          styles: { fontSize: 10, halign: "center" },
+          headStyles: { fillColor: [100, 100, 255], textColor: 255 },
+        });
 
-//                // Ajustar Resumo para incluir Retenção, caso exista
-// const resumoBody = [
-//   ["Total líquido", formatCurrency(response.total_sum, response.company_symbol, response.company_position)],
-//   ["Desconto", formatCurrency(response.total_discount, response.company_symbol, response.company_position)],
-//   ["Sem Impostos/IVA c/ Desc.", formatCurrency((response.total_sum - response.total_discount), response.company_symbol, response.company_position)],
-//   ["Imposto/IVA:", formatCurrency(response.total_tax, response.company_symbol, response.company_position)],
-// ];
+        // Ajustar Resumo para incluir Retenção, caso exista
+        const resumoBody = [
+          [
+            "Total líquido",
+            formatCurrency(
+              response.total_sum,
+              response.company_symbol,
+              response.company_position,
+            ),
+          ],
+          [
+            "Desconto",
+            formatCurrency(
+              response.total_discount,
+              response.company_symbol,
+              response.company_position,
+            ),
+          ],
+          [
+            "Sem Impostos/IVA c/ Desc.",
+            formatCurrency(
+              response.total_sum - response.total_discount,
+              response.company_symbol,
+              response.company_position,
+            ),
+          ],
+          [
+            "Imposto/IVA:",
+            formatCurrency(
+              response.total_tax,
+              response.company_symbol,
+              response.company_position,
+            ),
+          ],
+        ];
 
-// // Adiciona retenção ao resumo, se existir
+        // Adiciona retenção ao resumo, se existir
 
-//   resumoBody.push([
-//       "Retenção",
-//       formatCurrency(response.retention_value, response.company_symbol, response.company_position),
-//   ]);
+        resumoBody.push([
+          "Retenção",
+          formatCurrency(
+            response.retention_value,
+            response.company_symbol,
+            response.company_position,
+          ),
+        ]);
 
-// // Adiciona o Total Geral ao final do resumo
-// resumoBody.push([
-//   "Total Geral:", formatCurrency(response.final_total, response.company_symbol, response.company_position),
-// ]);
+        // Adiciona o Total Geral ao final do resumo
+        resumoBody.push([
+          "Total Geral:",
+          formatCurrency(
+            response.final_total,
+            response.company_symbol,
+            response.company_position,
+          ),
+        ]);
 
-// if (response.currency_company !== response.currency_items) {
-//   resumoBody.push([
-//     "Total Convertido:", `${formatCurrency(response.converted_total, response.symbol, response.position)} (${response.currency_items})`,
-//   ]);
+        if (response.currency_company !== response.currency_items) {
+          resumoBody.push([
+            "Total Convertido:",
+            `${formatCurrency(response.converted_total, response.symbol, response.position)} (${response.currency_items})`,
+          ]);
+        }
 
-// }
+        doc.autoTable({
+          startY: doc.lastAutoTable.finalY + 10,
+          margin: { left: 10 },
+          pageBreak: "auto",
+          head: [["Descrição", "Valor"]],
+          body: resumoBody,
+          theme: "grid",
+          styles: { fontSize: 10, halign: "center" },
+          headStyles: { fillColor: [100, 100, 255], textColor: 255 },
+        });
 
-// doc.autoTable({
-//   startY: doc.lastAutoTable.finalY + 10,
-//   margin: { left: 10 },
-//   pageBreak: 'auto',
-//   head: [["Descrição", "Valor"]],
-//   body: resumoBody,
-//   theme: "grid",
-//   styles: { fontSize: 10, halign: "center" },
-//   headStyles: { fillColor: [100, 100, 255], textColor: 255 },
-// });
+        // Verifica o espaço após a tabela para adicionar Observações
+        if (currentY + 30 > doc.internal.pageSize.height) {
+          doc.addPage();
+          currentY = 20; // Reinicia o Y na nova página
+        }
 
-// // Verifica o espaço após a tabela para adicionar Observações
-// if (currentY + 30 > doc.internal.pageSize.height) {
-//   doc.addPage();
-//   currentY = 20; // Reinicia o Y na nova página
-// }
+        // Observações com verificação de espaço na página
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "bold");
+        doc.text("Observações:", 10, doc.lastAutoTable.finalY + 20);
 
-// // Observações com verificação de espaço na página
-// doc.setFontSize(10);
-// doc.setFont("helvetica", "bold");
-// doc.text("Observações:", 10, doc.lastAutoTable.finalY + 20);
+        // Verifica se há espaço suficiente na página atual
+        const pageHeight = doc.internal.pageSize.height; // Altura da página
+        currentY = doc.lastAutoTable.finalY + 25;
+        const textHeight =
+          doc.splitTextToSize(
+            response.observation || "Nenhuma observação adicionada.",
+            180,
+          ).length * 10;
 
-// // Verifica se há espaço suficiente na página atual
-// const pageHeight = doc.internal.pageSize.height; // Altura da página
-// currentY = doc.lastAutoTable.finalY + 25;
-// const textHeight = doc.splitTextToSize(response.observation || "Nenhuma observação adicionada.", 180).length * 10;
+        if (currentY + textHeight > pageHeight) {
+          doc.addPage(); // Adiciona uma nova página
+          currentY = 20; // Reinicia o Y na nova página
+          doc.text("Observações (continuação):", 10, currentY);
+          currentY += 5;
+        }
 
-// if (currentY + textHeight > pageHeight) {
-//     doc.addPage(); // Adiciona uma nova página
-//     currentY = 20; // Reinicia o Y na nova página
-//     doc.text("Observações (continuação):", 10, currentY);
-//     currentY += 5;
-// }
+        // Adiciona o texto das observações
+        doc.setFont("helvetica", "normal");
+        doc.text(
+          doc.splitTextToSize(
+            response.observation || "Nenhuma observação adicionada.",
+            180,
+          ),
+          10,
+          currentY,
+        );
 
-// // Adiciona o texto das observações
-// doc.setFont("helvetica", "normal");
-// doc.text(
-//     doc.splitTextToSize(response.observation || "Nenhuma observação adicionada.", 180),
-//     10,
-//     currentY
-// );
+        // Salvar PDF
+        doc.save(`Fatura_${response.company_name}_${response.codigo}.pdf`);
+        // Renderizar o PDF na tela
+        // const pdfData = doc.output("datauristring");
+        // const iframe = `<iframe width="100%" height="600px" src="${pdfData}"></iframe>`;
+        // document.body.innerHTML = iframe;
+      });
+    },
+    error: function () {
+      alert("Erro ao carregar os dados da fatura.");
+    },
+  });
 
-//                 // Salvar PDF
-//                 doc.save(`Fatura_${response.company_name}_${response.codigo}.pdf`);
-//                    // Renderizar o PDF na tela
-//           // const pdfData = doc.output("datauristring");
-//           // const iframe = `<iframe width="100%" height="600px" src="${pdfData}"></iframe>`;
-//           // document.body.innerHTML = iframe;
-//             });
-//         },
-//         error: function () {
-//             alert("Erro ao carregar os dados da fatura.");
-//         },
-//     });
-
-//     function generateQRCode(text) {
-//         const qr = qrcode(0, "L");
-//         qr.addData(text);
-//         qr.make();
-//         const qrCodeImgTag = qr.createImgTag(5);
-//         const base64Image = qrCodeImgTag.match(/src="([^"]*)"/)[1];
-//         return base64Image;
-//     }
-// });
+  function generateQRCode(text) {
+    const qr = qrcode(0, "L");
+    qr.addData(text);
+    qr.make();
+    const qrCodeImgTag = qr.createImgTag(5);
+    const base64Image = qrCodeImgTag.match(/src="([^"]*)"/)[1];
+    return base64Image;
+  }
+});
