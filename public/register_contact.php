@@ -99,6 +99,23 @@ require_once '../app/views/layout_creation.php';
     .btn-prev {
         background: #e5e7eb;
     }
+
+    #side-card {
+        background: #fff;
+        border-radius: 12px;
+        padding: 20px;
+    }
+
+    #side-card input,
+    #side-card select,
+    #side-card textarea {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+            transition: 0.2s;
+        font-size: .8rem !important;
+        padding: 0px 10px !important;
+        height: 20px !important;
+    }
 </style>
 
 <body>
@@ -129,7 +146,7 @@ require_once '../app/views/layout_creation.php';
                 <div class="row g-4">
 
                     <!-- LEFT (STEPS) -->
-                    <div class="col-lg-8">
+                    <div class="col-lg-9">
 
                         <!-- PROGRESS -->
                         <div class="step-progress">
@@ -322,21 +339,22 @@ require_once '../app/views/layout_creation.php';
                         <div class="step-actions">
                             <button type="button" class="btn-step btn-prev" id="prevBtn">Voltar</button>
                             <button type="button" class="btn-step btn-next" id="nextBtn">Próximo</button>
+                            <button type="button" class="btn-step btn-next d-none" id="saveChangesContact">Salvar</button>
                         </div>
 
                     </div>
 
                     <!-- RIGHT (ASIDE ORIGINAL) -->
                     <!-- Coluna Direita: Preferências e Contato Pessoal -->
-                    <div class="col-lg-4">
+                    <div class="col-lg-3">
                         <!-- Card: Configurações -->
                         <div class="card border-0 shadow-sm mb-4">
                             <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
                                 <h5 class="card-title fw-bold text-primary d-flex align-items-center">
-                                    <span class="material-icons-round me-2">settings</span> <?= t('Configurações') ?>
+                                    <span class="bi bi-gear"></span>&nbsp;<?= t('Configurações') ?>
                                 </h5>
                             </div>
-                            <div class="card-body pt-3">
+                            <div class="card-body pt-3" id="side-card">
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" checked type="checkbox" id="usar_definicoes">
                                     <label class="form-check-label small"
@@ -395,20 +413,45 @@ require_once '../app/views/layout_creation.php';
         const steps = document.querySelectorAll(".step-content");
         const indicators = document.querySelectorAll(".step");
         const bar = document.getElementById("stepBar");
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
         const saveBtn = document.getElementById("saveChangesContact");
 
 
 
+
         function update() {
-            steps.forEach((s, i) => s.classList.toggle("active", i === current));
-            indicators.forEach((s, i) => s.classList.toggle("active", i <= current));
-            bar.style.width = (current / (steps.length - 1)) * 100 + "%";
+            const lastStep = steps.length - 1;
 
+            // STEP ACTIVE
+            steps.forEach((s, i) =>
+                s.classList.toggle("active", i === current)
+            );
+
+            // INDICATORS
+            indicators.forEach((s, i) =>
+                s.classList.toggle("active", i <= current)
+            );
+
+            // PROGRESS BAR
+            bar.style.width = (current / lastStep) * 100 + "%";
+
+            // BUTTONS
             prevBtn.style.display = current === 0 ? "none" : "block";
-            nextBtn.innerText = current === steps.length - 1 ? "Finalizar" : "Próximo";
-            // step < steps.length ? saveBtn.classList.add("d-none") : nextBtn.classList.add("d-none");
 
+            // FINAL STEP
+            const isLast = current === lastStep;
+
+            if (isLast) {
+                nextBtn.classList.add("d-none");
+                saveBtn.classList.remove("d-none");
+            } else {
+                nextBtn.classList.remove("d-none");
+                saveBtn.classList.add("d-none");
+                nextBtn.innerText = "Próximo";
+            }
         }
+
 
         nextBtn.onclick = () => {
             if (current < steps.length - 1) {

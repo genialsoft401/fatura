@@ -7,7 +7,7 @@ require_once '../app/views/head.php';
  
 
 ?>
-<div class="d-flex w-100">
+<div class="d-flex w-100" style="background: #f7f7f7;">
 <?php
 require_once '../app/views/side.php';
 require_once '../app/views/nav.php';

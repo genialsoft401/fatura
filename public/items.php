@@ -25,8 +25,16 @@ require_once '../app/views/layout_creation.php';
         letter-spacing: 0.6px;
         padding: 12px 16px;
         text-align: left;
+        border-right: 1px solid #e5e7eb57;
     }
 
+    #itemsTable thead th:last-child {
+        border-right: none;
+    }
+
+    #itemsTable tbody tr td {
+        border-right: 1px solid #e5e7eb57;
+    }
 
     /* ROW */
     #itemsTable tbody tr {
@@ -196,7 +204,7 @@ require_once '../app/views/layout_creation.php';
         text-overflow: ellipsis;
     }
 
-    /* 
+
     @media (max-width: 768px) {
 
 
@@ -223,7 +231,7 @@ require_once '../app/views/layout_creation.php';
             border-bottom: 2px solid #e9ecef;
             margin-bottom: 8px;
         }
-    } */
+    }
 </style>
 
 <body>

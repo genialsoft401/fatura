@@ -116,11 +116,11 @@
 
 body {
   font-family: "Roboto", sans-serif;
-  background: #f8f9fa;
+  background: #ebebec;
 }
 
 main {
-  background: #f8f9fa;
+  background: #000 !important;
 }
 
 header {

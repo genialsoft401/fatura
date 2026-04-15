@@ -169,10 +169,11 @@
     }
 
     /* ICON SIZE */
-    .nav-section .submenu i[data-lucide] {
-        width: 18px;
-        height: 18px;
+    .nav-section .submenu svg {
+        width: 15px !important;
+        /* height: 15px !important; */
     }
+
 
     .nav-item i:last-child {
         transition: transform .3s;
@@ -196,7 +197,11 @@
 </style>
 
 <div class="sidebar">
-    <div class="brand"><img src="assets/img/logo/BXpert2-Branca.png" alt="logo"></div>
+    <div class="brand">
+        <a href="index.php">
+            <img src="assets/img/logo/BXpert2-Branca.png" alt="logo">
+        </a>
+    </div>
     <div class="nav-section">
         <br>
 
@@ -277,17 +282,19 @@
     </div>
 
     <div class="footer">
-        <a href="help.php" class="nav-item">
-            <span><i data-lucide="help-circle"></i> Ajuda</span>
-        </a>
 
         <a href="list_companies.php" class="nav-item">
-            <span><i data-lucide="settings"></i> Configurações</span>
+            <span><i data-lucide="settings"></i> Definições</span>
         </a>
 
         <a href="subscription.php" class="nav-item">
             <span><i data-lucide="credit-card"></i> Meu Plano</span>
         </a>
+
+        <a href="help.php" target="_blank" class="nav-item">
+            <span><i data-lucide="help-circle"></i> Ajuda</span>
+        </a>
+
         <div class="col-12 above">
             <div class="card border-0 rounded-xl bg-plan p-3">
                 <!-- Informações do Plano -->
@@ -308,7 +315,7 @@
     </div>
 </div>
 
-<script src="https://unpkg.com/lucide@latest"></script>
+<script src="assets/js/lucide.js"></script>
 <script>
     $(document).ready(function() {
         // Assinatura / limites

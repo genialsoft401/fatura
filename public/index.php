@@ -167,11 +167,20 @@ require_once '../app/views/layout_creation.php';
         overflow-y: auto;
     }
 
-    
+    .h-title {
+        color: #007abd;
+        border: 2px solid #007bbd41;
+        border-radius: 8px;
+        padding: 5px;
+        font-weight: bolder;
+        width: auto;
+        margin: 0;
+        font-size: 0.9rem;
+    }
 </style>
 
 <body>
-    <main>
+    <main style="background: #f7f7f7;">
         <div>
             <!-- Gráficos -->
             <div class="container-fluid">
@@ -200,7 +209,7 @@ require_once '../app/views/layout_creation.php';
                                         </div>
                                         <h4 class="mt-3 fw-semibold" id="trimestral_volume">AOA 98.000</h4>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Volume Trimestral</span>
+                                            <span class="small-text">Volume de Vendas Trimestral</span>
                                             <span id="trimestral_volume_dif" class="small"><i class="bi bi-arrow-up-right"></i>+12%</span>
                                         </div>
                                     </div>
@@ -211,7 +220,7 @@ require_once '../app/views/layout_creation.php';
                                         <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="month_average">€32.666</h4>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Média Mensal</span>
+                                            <span class="small-text">Média Mensal de Vendas</span>
                                             <span id="month_average_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>
                                         </div>
                                     </div>
@@ -222,7 +231,7 @@ require_once '../app/views/layout_creation.php';
                                         <div class="icon-box"><i class="bi bi-people text-primary"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="total_customer">64</h4>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Clientes</span>
+                                            <span class="small-text">Total de Clientes Activos</span>
                                             <span id="total_customer_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>
                                         </div>
                                     </div>
@@ -233,7 +242,7 @@ require_once '../app/views/layout_creation.php';
                                         <div class="icon-box"><i class="bi bi-file-earmark-text text-primary"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="total_docs">157</h4>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Documentos</span>
+                                            <span class="small-text">Documentos Processados</span>
                                             <span id="total_doc_dif" class="small"><i class="bi bi-arrow-up-right"></i> 0</span>
                                         </div>
                                     </div>
@@ -247,8 +256,8 @@ require_once '../app/views/layout_creation.php';
                                 <div class="col-lg-8">
                                     <div class="card card-custom p-4" id="chart-card">
                                         <div class="d-flex justify-content-between mb-3">
-                                            <h6>Evolução Trimestral</h6>
-                                            <small class="text-muted">Jan – Mar 2026</small>
+                                            <h6 class="h-title"><i class="bi bi-graph-up"></i> Evolução Trimestral</h6>
+                                            <small class="text-muted d-none">Jan – Mar 2026</small>
                                         </div>
                                         <canvas id="chart"></canvas>
                                     </div>
@@ -257,7 +266,7 @@ require_once '../app/views/layout_creation.php';
                                 <div class="col-lg-4">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex justify-content-between mb-3">
-                                            <h6>Últimas Facturas</h6>
+                                            <h6 class="h-title"><i class="bi bi-file-earmark-text"></i> Últimas Facturas</h6>
                                             <a href="list_invoices.php" class="small text-primary">Ver todas <i class="bi bi-chevron-right"></i></a>
                                         </div>
 
@@ -274,7 +283,9 @@ require_once '../app/views/layout_creation.php';
                                     </div>
 
                                     <div class="card card-custom p-3" id="clients">
-                                        <h6 class="mb-3">Principais Clientes</h6>
+                                        <div class="d-flex justify-content-between mb-3">
+                                            <h6 class="mb-3 h-title"><i class="bi bi-people"></i> Principais Clientes</h6>
+                                        </div>
 
                                         <div class="col-12" id="topClients">
 
@@ -310,7 +321,7 @@ require_once '../app/views/layout_creation.php';
                                         <h4 class="fw-bold mt-3" id="rh_total_employees">47</h4>
 
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Total Funcionários</small>
+                                            <small class="text-muted">Total Funcionários Activos</small>
                                             <!-- <span id="rh_total_employees_dif" class="text-primary small fw-semibold"><i class="bi bi-arrow-up-right"></i> +2</span> -->
                                         </div>
                                     </div>
@@ -324,7 +335,7 @@ require_once '../app/views/layout_creation.php';
                                         </div>
 
                                         <h4 class="fw-bold mt-3" id="rh_total_salary">€62.300</h4>
-                                        <small class="text-muted">Salário Mensal Total</small>
+                                        <small class="text-muted">Folha Salárial Mensal</small>
                                     </div>
                                 </div>
 
@@ -336,7 +347,7 @@ require_once '../app/views/layout_creation.php';
                                         </div>
 
                                         <h4 class="fw-bold mt-3" id="rh_pending_vacations">4</h4>
-                                        <small class="text-muted">Férias Pendentes</small>
+                                        <small class="text-muted">Pedido de Férias Pendentes</small>
                                     </div>
                                 </div>
 
@@ -350,7 +361,7 @@ require_once '../app/views/layout_creation.php';
                                         <h4 class="fw-bold mt-3" id="rh_absences">12</h4>
 
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Faltas Este Mês</small>
+                                            <small class="text-muted">Faltas no Mês</small>
                                             <span id="rh_absences_month_dif" class="small fw-semibold"><i class="bi bi-arrow-up-right"></i> -2</span>
                                         </div>
                                     </div>
@@ -364,7 +375,9 @@ require_once '../app/views/layout_creation.php';
                                 <!-- FÉRIAS -->
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
-                                        <h6 class="fw-semibold mb-3">Lista de Férias</h6>
+                                        <div class="d-flex">
+                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-list"></i> Lista de Férias</h6>
+                                        </div>
 
                                         <div class="col-12" id="rh_vacations_list">
 
@@ -376,7 +389,9 @@ require_once '../app/views/layout_creation.php';
                                 <!-- FALTAS -->
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
-                                        <h6 class="fw-semibold mb-3">Funcionários com Mais Faltas</h6>
+                                        <div class="d-flex">
+                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-list"></i> Funcionários com Mais Faltas</h6>
+                                        </div>
                                         <div class="col-12" id="rh_absences_list"></div>
 
                                     </div>
@@ -398,7 +413,7 @@ require_once '../app/views/layout_creation.php';
                                         </div>
                                         <h4 class="fw-bold mt-3" id="kpi-depots">3</h4>
                                         <div class="d-flex justify-content-between">
-                                            <small class="text-muted">Depósitos</small>
+                                            <small class="text-muted ">Nº de Depósitos</small>
                                             <span id="kpi-depots-growth" class="text-primary small">+14 <i class="bi bi-arrow-up-right"></i></span>
                                         </div>
                                     </div>
@@ -424,7 +439,7 @@ require_once '../app/views/layout_creation.php';
                                         </div>
                                         <h4 class="fw-bold mt-3" id="kpi-total-value">€257.000</h4>
                                         <div class="d-flex justify-content-between">
-                                            <small class="text-muted">Valor Total</small>
+                                            <small class="text-muted">Valor Total do Stock</small>
                                             <span id="kpi-total-value-growth" class="text-primary small">+3.1% <i class="bi bi-arrow-up-right"></i></span>
                                         </div>
                                     </div>
@@ -436,7 +451,7 @@ require_once '../app/views/layout_creation.php';
                                             <i class="bi bi-exclamation-triangle"></i>
                                         </div>
                                         <h4 class="fw-bold mt-3" id="kpi-low-stock">4</h4>
-                                        <small class="text-muted">Stock Baixo</small>
+                                        <small class="text-muted">Produtos com Stock Baixo</small>
                                     </div>
                                 </div>
 
@@ -444,7 +459,9 @@ require_once '../app/views/layout_creation.php';
 
                             <!-- DEPÓSITOS -->
                             <div class="card mt-4 card-custom p-3">
-                                <h6 class="fw-semibold mb-3">Depósitos</h6>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="fw-semibold h-title"><i class="bi bi-geo-alt"></i>Principais Depósitos</h6>
+                                </div>
 
                                 <div class="row g-3" id="depots_list">
 
@@ -457,7 +474,9 @@ require_once '../app/views/layout_creation.php';
                                 <!-- STOCK BAIXO -->
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
-                                        <h6 class="fw-semibold mb-3">Produtos com Stock Baixo</h6>
+                                        <div class="d-flex">
+                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-exclamation-triangle"></i> Produtos com Stock Baixo</h6>
+                                        </div>
                                         <div class="col-12" id="low_stock_list">
 
                                         </div>
@@ -468,7 +487,7 @@ require_once '../app/views/layout_creation.php';
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex justify-content-between mb-3">
-                                            <h6 class="fw-semibold">Lista de Compras</h6>
+                                            <h6 class="fw-semibold h-title"><i class="bi bi-list"></i> Lista de Compras</h6>
                                             <small class="text-muted">Últimos 5 itens</small>
                                         </div>
 
@@ -942,7 +961,7 @@ require_once '../app/views/footer.php';
 
                             <div class="d-flex justify-content-between mt-2">
                                 <small class="text-muted">${dep.total_items || 0} itens</small>
-                                <span class="fw-bold text-primary">
+                                <span class="fw-bold text-success">
                                     ${formatCurrency(dep.total_value)}
                                 </span>
                             </div>

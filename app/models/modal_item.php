@@ -1,104 +1,211 @@
 <!-- Modal item -->
 <style>
-    .trumbowyg-box,
-    .trumbowyg-editor {
-        overflow: auto !important;
-        /* Adiciona barra de rolagem quando necessário */
+    .modal-item {
+        background: linear-gradient(135deg, #007abd, #6ea8ff);
+        color: #fff;
+        border-bottom: none;
+    }
+
+    .modal-item .btn-close {
+        filter: invert(1);
+    }
+
+    .modal-content {
+        background: #f5f5f5;
+        border-radius: 18px;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+        padding: 0;
+    }
+
+    .form-control,
+    .form-select {
+        border-radius: 12px;
+        padding: 0px 12px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #007abd;
+        box-shadow: 0 0 0 3px rgba(47, 107, 255, 0.1);
+    }
+
+    .form-label {
+        font-weight: 600;
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    .soft-card {
+        background: #fff;
+        border-radius: 14px;
+        padding: 16px;
+        border: 1px solid #eef0f6;
+    }
+
+    .btn-primary {
+        background: #007abd;
+        border: none;
+        border-radius: 12px;
+    }
+
+    .btn-success {
+        border-radius: 12px;
+        padding: 10px 20px;
+        font-weight: 600;
+    }
+
+    .btn-outline-secondary {
+        border-radius: 12px;
+    }
+
+    #gerarCodigo {
+        border-radius: 10px;
+        width: 100px;
+        height: 40px;
+        margin-left: -5px;
+
+    }
+
+    #codeInput {
+        width: 70%;
+    }
+
+    #codeInput_content {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        align-content: center;
+        justify-items: center;
+        justify-content: center;
     }
 </style>
-<div class="modal fade" id="itemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
+
+<div class="modal fade" id="itemModal" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
+
+            <!-- HEADER -->
             <div class="modal-header modal-item">
-                <h5 class="modal-title" id="itemModalLabel"><?= t('Adicionar Novo Item') ?></h5>
-                <button type="button" class="btn-close" id="modalCloseButton" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div>
+                    <h5 class="modal-title mb-1" style="background: none !important;"><?= t('Adicionar Novo Item') ?></h5>
+                    <small class="opacity-75" style="margin-left: -50px !important;">Preencha os dados do produto/serviço</small>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body">
+
+            <!-- BODY -->
+            <div class="modal-body p-2">
                 <form id="itemForm">
-                    <?php
-                    $companies = getUserCompanies($_SESSION['user']['id']);
-                    ?>
-                    <input type="text" hidden readonly value="<?= $_SESSION['user']['company_id'] ?>" class="form-control" id="id_company" name="id_company" required>
 
-                    <div class="row">
-                        <div class="col-md-10 mb-3">
-                            <label for="codigo" class="form-label"><?= t('Código') ?>:</label>
-                            <input type="text" class="form-control" id="codigo" name="codigo" required>
-                        </div>
-                        <div class="col-md-2 mb-3">
-                            <button type="button" id="gerarCodigo" class="btn btn-primary mt-4">Gerar</button>
-                        </div>
+                    <input type="hidden" value="<?= $_SESSION['user']['company_id'] ?>" name="id_company">
 
-                    </div>
+                    <!-- BLOCO 1 -->
+                    <div class="soft-card mb-2 mt-4">
+                        <div class="row align-items-end g-3">
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="unidade" class="form-label"><?= t('Unidade') ?>:</label>
-                            <select class="form-select" id="unidade" name="unidade">
-                                <option value="servico"><?= t('Serviço') ?></option>
-                                <option value="unidade"><?= t('Unidade') ?></option>
-                            </select>
-                        </div>
+                            <!-- CÓDIGO -->
+                            <div class="col-md-5 col-12">
+                                <label class="form-label"><?= t('Código') ?></label>
 
-                        <div class="col-md-6 mb-3">
-                            <label for="currency" class="form-label"><?= t('Moeda Padrão') ?>:</label>
-                            <select class="form-select" name="currency" required id="currency">
-                                <?= currencySelects(); ?>
-                            </select>
-                        </div>
+                                <div class="d-flex gap-2">
+                                    <input type="text" class="form-control" id="codigo" name="codigo" required>
 
+                                    <button type="button" id="gerarCodigo" class="btn btn-primary px-3">
+                                        Gerar
+                                    </button>
+                                </div>
+                            </div>
 
+                            <!-- DESCRIÇÃO -->
+                            <div class="col-md-7 col-12">
+                                <label class="form-label"><?= t('Descrição') ?></label>
+                                <textarea class="form-control" rows="1" id="descricao" name="descricao"></textarea>
+                            </div>
 
-                    </div>
-
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="preco" class="form-label"><?= t('Preço Unitário') ?>:</label>
-                            <input type="number" class="form-control" id="preco" name="preco" step="0.01" required>
-                        </div>
-
-
-                        <div class="col-md-6 mb-3">
-                            <label for="taxa" class="form-label"><?= t('Taxa/IVA') ?>:</label>
-                            <select class="form-select" id="taxa" name="taxa">
-                                <option value="">- Selecione -</option>
-                                <option value="IVA - 14%">IVA - 14%</option>
-                                <option value="IVA - 7%">IVA - 7%</option>
-                                <option value="IVA - 5%">IVA - 5%</option>
-                                <option value="Isento">Isento</option>
-                            </select>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="pvp" class="form-label"><?= t('PVP') ?>:</label>
-                            <input type="number" class="form-control" id="pvp" name="pvp" step="0.01" required>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="retencao" class="form-label"><?= t('Retenção') ?>:</label>
-                            <select class="form-select" id="retencao" name="retencao">
-                                <option value="nao_aplicar"><?= t('Não Aplicar') ?></option>
-                                <option value="6,5">6,5% - Art. 67.º do CII</option>
-                            </select>
+
+                    <!-- BLOCO 2 -->
+                    <div class="soft-card mb-2">
+                        <div class="row">
+
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label"><?= t('Unidade') ?></label>
+                                <select class="form-select" name="unidade">
+                                    <option value="servico"><?= t('Serviço') ?></option>
+                                    <option value="unidade"><?= t('Unidade') ?></option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label"><?= t('Moeda') ?></label>
+                                <select class="form-select" name="currency" required>
+                                    <?= currencySelects(); ?>
+                                </select>
+                            </div>
+
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label for="descricao" class="form-label"><?= t('Descrição') ?>:</label>
-                            <textarea class="form-control" id="descricao" name="descricao" required></textarea>
+                    <!-- BLOCO 3 -->
+                    <div class="soft-card mb-2">
+                        <div class="row">
+
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label"><?= t('Preço Unitário') ?></label>
+                                <input type="number" class="form-control" name="preco" step="0.01" required>
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label"><?= t('Taxa / IVA') ?></label>
+                                <select class="form-select" name="taxa">
+                                    <option value="">- Selecione -</option>
+                                    <option value="IVA - 14%">IVA - 14%</option>
+                                    <option value="IVA - 7%">IVA - 7%</option>
+                                    <option value="IVA - 5%">IVA - 5%</option>
+                                    <option value="Isento">Isento</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label"><?= t('PVP') ?></label>
+                                <input type="number" class="form-control" name="pvp" step="0.01" required>
+                            </div>
+
+                            <div class="col-md-6 mb-2">
+                                <label class="form-label"><?= t('Retenção') ?></label>
+                                <select class="form-select" name="retencao">
+                                    <option value="nao_aplicar"><?= t('Não Aplicar') ?></option>
+                                    <option value="6,5">6,5% - Art. 67.º do CII</option>
+                                </select>
+                            </div>
+
                         </div>
                     </div>
 
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-success" id="saveItem"><?= t('Salvar') ?></button>
+
+            <!-- FOOTER -->
+            <div class="modal-footer px-4 pb-4 border-0 p-0">
+                <button class="btn btn-success w-1/5" id="saveItem">
+                    <?= t('Salvar Item') ?>
+                </button>
             </div>
+
         </div>
     </div>
 </div>
+
 <script>
     // Função para verificar se o código já existe
     document.getElementById('codigo').addEventListener('blur', function() {
@@ -146,7 +253,7 @@
             .catch(error => console.error('Erro:', error));
     });
 
-    $('#descricao').trumbowyg({
-        autogrow: false
-    });
+    // $('#descricao').trumbowyg({
+    //     autogrow: false
+    // });
 </script>

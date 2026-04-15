@@ -12,12 +12,12 @@ $company_id = (int)($_SESSION['user']['company_id'] ?? 0);
 // A troca de empresa acontece via sessão (navbar). Esta tela sempre segue a empresa ativa.
 // Se alguém chegar com company_id via GET, limpamos a URL (evita confusão e cache).
 if (isset($_GET['company_id'])) {
-    header('Location: subscription.php');
-    exit;
+  header('Location: subscription.php');
+  exit;
 }
 
 if (!$company_id) {
-    die('Empresa inválida');
+  die('Empresa inválida');
 }
 
 require_once '../app/views/layout_creation.php';
@@ -30,186 +30,465 @@ $usage = subscription_usage($pdo, $company_id);
 $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
 ?>
 
+<style>
+  body {
+    background: #f6f8fc;
+  }
+
+  .plan-card-top {
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.06);
+  }
+
+  .plan-info {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .plan-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: #eef4ff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2f6bff;
+    font-weight: 700;
+  }
+
+  .badge-days {
+    background: #e8fff1;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+  }
+
+  .section-card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.05);
+    border: 1px solid #eef0f6;
+  }
+
+  .soft-box {
+    background: #fff;
+    border: 1px solid #edf0f5;
+    border-radius: 14px;
+    padding: 14px;
+  }
+
+  .progress {
+    height: 6px;
+    border-radius: 50px;
+    background: #e9edf5;
+  }
+
+  .progress-bar {
+    background: #3b82f6;
+  }
+
+  .limit-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: #f9fafc;
+    border-radius: 12px;
+    margin-bottom: 10px;
+  }
+
+  .progress {
+    height: 8px;
+    border-radius: 999px;
+    background: #e9edf5;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    background: linear-gradient(90deg, #005a87b4, #0398e8e3);
+    border-radius: 999px;
+    transition: width 0.6s ease;
+  }
+
+  /* Estilos para transformar a tabela em cards no mobile */
+
+  /* ===== TABELA ESTILO ===== */
+  #tblOrders {
+    border-collapse: separate;
+    border-spacing: 0 12px;
+    width: 100%;
+  }
+
+  /* HEADER */
+  #tblOrders thead th {
+    border: none;
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 12px 16px;
+    text-align: left;
+    border-right: 1px solid #e5e7eb57;
+  }
+
+  #tblOrders thead th:last-child {
+    border-right: none;
+  }
+
+  #tblOrders tbody tr td {
+    border-right: 1px solid #e5e7eb57;
+  }
+
+  /* ROW */
+  #tblOrders tbody tr {
+    background: #fff !important;
+    border-radius: 14px;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+    text-align: left !important;
+  }
+
+
+  /* HOVER PRO */
+  #tblOrders tbody tr:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  }
+
+  /* CELLS */
+  #tblOrders tbody td {
+    border: none;
+    padding: 18px 16px;
+    vertical-align: middle;
+    font-size: 0.95rem;
+    background: #fff !important;
+    text-align: left !important;
+  }
+
+  #tblOrders thead td {
+    background: #111 !important;
+    display: none;
+    max-width: 80px !important;
+  }
+
+  /* BORDAS ARREDONDADAS */
+  #tblOrders tbody td:first-child {
+    border-top-left-radius: 14px;
+    border-bottom-left-radius: 14px;
+    background: #fff !important;
+  }
+
+  #tblOrders tbody th {
+    text-align: left !important;
+  }
+
+  #tblOrders tbody td:last-child {
+    border-top-right-radius: 14px;
+    border-bottom-right-radius: 14px;
+    text-align: right;
+    padding-right: 24px;
+  }
+
+  /* ===== NOME (PRINCIPAL) ===== */
+  #tblOrders tbody td:first-child {
+    font-weight: 600;
+    color: #111;
+  }
+
+  /* SUBINFO */
+  #tblOrders tbody td small {
+    display: block;
+    color: #6b7280;
+  }
+
+  .pagination .page-link {
+    border-radius: 10px !important;
+    margin: 0 2px;
+    border: none;
+    background: #f3f6fb;
+    color: #333;
+    font-size: 13px;
+  }
+
+  .pagination .page-item.active .page-link {
+    background: #2f6bff;
+    color: #fff;
+  }
+
+  .pagination .page-item.disabled .page-link {
+    opacity: 0.5;
+  }
+
+  .h-title {
+    color: #007abd;
+    border: 2px solid #007bbd41;
+    border-radius: 8px;
+    padding: 5px;
+    font-weight: bolder;
+    width: auto;
+    margin: 0;
+    font-size: 0.9rem;
+  }
+</style>
+
 <main class="main-content">
   <div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4 class="mb-0">Assinatura / Plano</h4>
-      <a class="btn btn-outline-secondary" href="list_companies.php">Voltar</a>
-    </div>
 
-    <div class="card">
-      <div class="card-body">
+    <!-- CARD PRINCIPAL -->
+    <div">
+      <div>
+
         <?php
-          $fmtExp = ($c['plan_expires_at'] ?? null) ? date('d/m/Y', strtotime($c['plan_expires_at'])) : '-';
-          $fmtStart = ($c['plan_started_at'] ?? null) ? date('d/m/Y', strtotime($c['plan_started_at'])) : '-';
-          $inf = '∞';
-          $limInv = $plan['invoice_limit_month'] === null ? $inf : (int)$plan['invoice_limit_month'];
-          $limUsers = $plan['user_limit'] === null ? $inf : (int)$plan['user_limit'];
-          $limRh = $plan['rh_employee_limit'] === null ? $inf : (int)$plan['rh_employee_limit'];
-          $limStock = $plan['stock_item_limit'] === null ? $inf : (int)$plan['stock_item_limit'];
+        $fmtExp = ($c['plan_expires_at'] ?? null) ? date('d/m/Y', strtotime($c['plan_expires_at'])) : '-';
+        $fmtStart = ($c['plan_started_at'] ?? null) ? date('d/m/Y', strtotime($c['plan_started_at'])) : '-';
+        $inf = '∞';
+        $limInv = $plan['invoice_limit_month'] === null ? $inf : (int)$plan['invoice_limit_month'];
+        $limUsers = $plan['user_limit'] === null ? $inf : (int)$plan['user_limit'];
+        $limRh = $plan['rh_employee_limit'] === null ? $inf : (int)$plan['rh_employee_limit'];
+        $limStock = $plan['stock_item_limit'] === null ? $inf : (int)$plan['stock_item_limit'];
         ?>
 
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <!-- HEADER INFO PLAN -->
+        <div class="bg-white p-4 shadow-md rounded border-0 d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
           <div>
-            <h5 class="card-title mb-1">Plano: <?= htmlspecialchars($plan['name']) ?></h5>
-            <div class="text-muted" style="font-size:0.95rem;">
-              Início: <strong><?= $fmtStart ?></strong> • Vencimento: <strong><?= $fmtExp ?></strong>
-              <?php if ($daysLeft !== null): ?> • <span class="badge bg-<?= $daysLeft <= 7 ? 'danger' : ($daysLeft <= 15 ? 'warning text-dark' : 'success') ?>"><?= (int)$daysLeft ?> dias restantes</span><?php endif; ?>
+            <h5 class="mb-1 fw-bold fs-6 bg-gradient-to-r from-blue-500 to-blue-700 text-transparent bg-clip-text">
+              Plano <?= htmlspecialchars($plan['name']) ?>
+            </h5>
+
+            <div class="text-muted d-flex align-items-center gap-1" style="font-size:0.9rem;">
+              <div>Início: <strong><?= $fmtStart ?></strong></div> <i class="bi bi-dot text-muted fs-2 opacity-25"></i>
+              <div>Vencimento: <strong><?= $fmtExp ?></strong></div> <i class="bi bi-dot text-muted fs-2 opacity-25"></i>
+              <div>
+                <?php if ($daysLeft !== null): ?>
+                  <span class="badge-days ms-2">
+                    <?= (int)$daysLeft ?> dias restantes
+                  </span>
+                <?php endif; ?>
+              </div>
             </div>
           </div>
 
           <div class="d-flex gap-2 flex-wrap">
-            <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalPlans">Alterar plano</button>
-            <button class="btn btn-primary" id="btnRenew">Renovar</button>
-            <button class="btn btn-outline-success" id="btnMarkPaid">Marcar como pago</button>
-          </div>
-
-          <!-- Modal: escolher método de pagamento -->
-          <div class="modal fade" id="modalPayMethod" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Renovar plano</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                  <div class="mb-3">
-                    <label class="form-label">Método de pagamento</label>
-                    <select class="form-select" id="payMethod">
-                      <option value="REF">REF (Referência)</option>
-                      <option value="GPO">GPO (Pagamento por telefone)</option>
-                    </select>
-                  </div>
-                  <div class="mb-3" id="boxPhone" style="display:none;">
-                    <label class="form-label">Telefone (GPO)</label>
-                    <input type="text" class="form-control" id="payPhone" placeholder="Ex: 9xxxxxxxx">
-                    <div class="form-text">Informe um número válido para receber a cobrança no telefone.</div>
-                  </div>
-                  <div class="alert alert-info mb-0" style="font-size:0.9rem;">
-                    Ao confirmar, vamos gerar uma cobrança no AppyPay para este plano.
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                  <button type="button" class="btn btn-primary" id="btnConfirmPay">Gerar cobrança</button>
-                </div>
-              </div>
-            </div>
+            <button class="btn-sm btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalPlans">
+              Alterar plano
+            </button>
+            <button class="btn-sm btn btn-primary" id="btnRenew">
+              Renovar
+            </button>
+            <button class="btn-sm btn btn-outline-success" id="btnMarkPaid">
+              Marcar como pago
+            </button>
           </div>
         </div>
 
-        <div class="row mt-3 g-3">
+        <!-- USO + LIMITES -->
+        <div class="row g-3">
+
+          <!-- USO -->
           <div class="col-md-6">
-            <div class="border rounded p-3 h-100">
-              <h6 class="mb-2">Uso do mês (<?= htmlspecialchars($usage['ym']) ?>)</h6>
-              <div class="row g-2">
-                <div class="col-6"><div class="p-2 bg-light rounded"><div class="text-muted" style="font-size:0.85rem">Faturas</div><div><strong><?= (int)$usage['invoice_count'] ?></strong> / <?= $limInv ?></div></div></div>
-                <div class="col-6"><div class="p-2 bg-light rounded"><div class="text-muted" style="font-size:0.85rem">Utilizadores</div><div><strong><?= (int)$usage['user_count'] ?></strong> / <?= $limUsers ?></div></div></div>
-                <div class="col-6"><div class="p-2 bg-light rounded"><div class="text-muted" style="font-size:0.85rem">RH (ativos)</div><div><strong><?= (int)$usage['employee_count'] ?></strong> / <?= $limRh ?></div></div></div>
-                <div class="col-6"><div class="p-2 bg-light rounded"><div class="text-muted" style="font-size:0.85rem">Stock (itens)</div><div><strong><?= (int)$usage['stock_item_count'] ?></strong> / <?= $limStock ?></div></div></div>
+            <div class="soft-box h-100">
+              <div class="d-flex">
+                <h6 class="mb-3 fw-bold h-title" style="margin-left: 10px;"><i class="bi bi-bar-chart"></i> Uso do mês (<?= htmlspecialchars($usage['ym']) ?>)</h6>
               </div>
-            </div>
-          </div>
 
-          <div class="col-md-6">
-            <div class="border rounded p-3 h-100">
-              <h6 class="mb-2">Limites do plano</h6>
-              <ul class="mb-0">
-                <li>Faturas/mês: <strong><?= $limInv ?></strong></li>
-                <li>Utilizadores: <strong><?= $limUsers ?></strong></li>
-                <li>RH (funcionários): <strong><?= $limRh ?></strong></li>
-                <li>Stock (itens): <strong><?= $limStock ?></strong></li>
-              </ul>
-              <div class="text-muted mt-2" style="font-size:0.85rem;">
-                Integração com API de pagamento entra depois. Por enquanto, Renovar cria pedido pendente e Marcar como pago confirma manualmente.
-              </div>
-            </div>
-          </div>
-        </div>
+              <?php
+              $invoicePct = $limInv === '∞' ? 0 : min(100, ($usage['invoice_count'] / $limInv) * 100);
+              $userPct    = $limUsers === '∞' ? 0 : min(100, ($usage['user_count'] / $limUsers) * 100);
+              $rhPct      = $limRh === '∞' ? 0 : min(100, ($usage['employee_count'] / $limRh) * 100);
+              $stockPct   = $limStock === '∞' ? 0 : min(100, ($usage['stock_item_count'] / $limStock) * 100);
+              ?>
 
-        <!-- Modal de planos -->
-        <div class="modal fade" id="modalPlans" tabindex="-1" aria-hidden="true">
-          <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-              <div class="modal-header">
-                <h5 class="modal-title">Alterar plano</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-              </div>
-              <div class="modal-body">
-                <div class="row g-3">
-                  <?php foreach ($plans as $code => $p):
-                    $liInv = $p['invoice_limit_month'] === null ? $inf : (int)$p['invoice_limit_month'];
-                    $liUsers = $p['user_limit'] === null ? $inf : (int)$p['user_limit'];
-                    $liRh = $p['rh_employee_limit'] === null ? $inf : (int)$p['rh_employee_limit'];
-                    $liStock = $p['stock_item_limit'] === null ? $inf : (int)$p['stock_item_limit'];
-                    $active = ($code === $planCode);
-                  ?>
-                  <div class="col-md-6">
-                    <div class="border rounded p-3 h-100 <?= $active ? 'border-primary' : '' ?>">
-                      <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                          <div style="font-weight:700; font-size:1.05rem;"><?= htmlspecialchars($p['name']) ?></div>
-                          <div class="text-muted" style="font-size:0.9rem;"><?= htmlspecialchars($code) ?></div>
-                        </div>
-                        <?php if ($active): ?><span class="badge bg-primary">Atual</span><?php endif; ?>
-                      </div>
-                      <div class="mt-2"><strong><?= number_format((float)$p['price_quarter'], 0, ',', '.') ?> Kz</strong> <span class="text-muted">/ trimestral</span></div>
-                      <ul class="mt-2 mb-0">
-                        <li>Faturas/mês: <strong><?= $liInv ?></strong></li>
-                        <li>Utilizadores: <strong><?= $liUsers ?></strong></li>
-                        <li>RH: <strong><?= $liRh ?></strong></li>
-                        <li>Stock: <strong><?= $liStock ?></strong></li>
-                      </ul>
-                      <div class="mt-3">
-                        <button class="btn btn-sm btn-outline-primary w-100 btnChoosePlan" data-code="<?= htmlspecialchars($code) ?>" <?= $active ? 'disabled' : '' ?>>Escolher este plano</button>
-                      </div>
-                    </div>
+              <div class="d-flex col-md-12 justify-content-between">
+                <!-- Faturas -->
+                <div class="mb-3 col-6 p-2">
+                  <div class="d-flex justify-content-between">
+                    <span>Faturas</span>
+                    <strong><?= (int)$usage['invoice_count'] ?> / <?= $limInv ?></strong>
                   </div>
-                  <?php endforeach; ?>
+                  <div class="progress mt-1">
+                    <div class="progress-bar" style="width: <?= $invoicePct ?>%"></div>
+                  </div>
+                </div>
+
+                <!-- Utilizadores -->
+                <div class="mb-3 col-6 p-2">
+                  <div class="d-flex justify-content-between">
+                    <span>Utilizadores</span>
+                    <strong><?= (int)$usage['user_count'] ?> / <?= $limUsers ?></strong>
+                  </div>
+                  <div class="progress mt-1">
+                    <div class="progress-bar" style="width: <?= $userPct ?>%"></div>
+                  </div>
                 </div>
               </div>
-              <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+
+              <div class="d-flex col-md-12 justify-content-between">
+                <!-- RH -->
+                <div class="mb-3 col-md-6 p-2">
+                  <div class="d-flex justify-content-between">
+                    <span>RH</span>
+                    <strong><?= (int)$usage['employee_count'] ?> / <?= $limRh ?></strong>
+                  </div>
+                  <div class="progress mt-1">
+                    <div class="progress-bar" style="width: <?= $rhPct ?>%"></div>
+                  </div>
+                </div>
+
+                <!-- Stock -->
+                <div class="mb-0 col-md-6 p-2">
+                  <div class="d-flex justify-content-between">
+                    <span>Stock</span>
+                    <strong><?= (int)$usage['stock_item_count'] ?> / <?= $limStock ?></strong>
+                  </div>
+                  <div class="progress mt-1">
+                    <div class="progress-bar" style="width: <?= $stockPct ?>%"></div>
+                  </div>
+                </div>
               </div>
+
             </div>
           </div>
+
+
+          <!-- LIMITES -->
+          <div class="col-md-6">
+            <div class="soft-box h-100">
+              <div class="d-flex">
+                <h6 class="mb-3 fw-bold h-title" style="margin-left: 10px;"><i class="bi bi-graph-up"></i> Limites do plano</h6>
+              </div>
+
+              <?php
+              // mesmos percentuais para consistência visual
+              $invoicePct = $limInv === '∞' ? 0 : min(100, ($usage['invoice_count'] / $limInv) * 100);
+              $userPct    = $limUsers === '∞' ? 0 : min(100, ($usage['user_count'] / $limUsers) * 100);
+              $rhPct      = $limRh === '∞' ? 0 : min(100, ($usage['employee_count'] / $limRh) * 100);
+              $stockPct   = $limStock === '∞' ? 0 : min(100, ($usage['stock_item_count'] / $limStock) * 100);
+              ?>
+
+              <!-- GRID 2 COLUNAS -->
+              <div class="d-flex flex-wrap">
+
+                <!-- Faturas -->
+                <div class="col-6 p-2">
+                  <div class="d-flex justify-content-between">
+                    <span>Faturas/mês</span>
+                    <strong><?= $limInv ?></strong>
+                  </div>
+                  <div class="progress mt-1">
+                    <div class="progress-bar" style="width: <?= $invoicePct ?>%"></div>
+                  </div>
+                </div>
+
+                <!-- Utilizadores -->
+                <div class="col-6 p-2">
+                  <div class="d-flex justify-content-between">
+                    <span>Utilizadores</span>
+                    <strong><?= $limUsers ?></strong>
+                  </div>
+                  <div class="progress mt-1">
+                    <div class="progress-bar" style="width: <?= $userPct ?>%"></div>
+                  </div>
+                </div>
+
+                <!-- RH -->
+                <div class="col-6 p-2">
+                  <div class="d-flex justify-content-between">
+                    <span>RH</span>
+                    <strong><?= $limRh ?></strong>
+                  </div>
+                  <div class="progress mt-1">
+                    <div class="progress-bar" style="width: <?= $rhPct ?>%"></div>
+                  </div>
+                </div>
+
+                <!-- Stock -->
+                <div class="col-6 p-2">
+                  <div class="d-flex justify-content-between">
+                    <span>Stock</span>
+                    <strong><?= $limStock ?></strong>
+                  </div>
+                  <div class="progress mt-1">
+                    <div class="progress-bar" style="width: <?= $stockPct ?>%"></div>
+                  </div>
+                </div>
+
+              </div>
+
+              <small class="text-muted d-none mt-3">
+                Integração de pagamento será ativada futuramente.
+              </small>
+
+            </div>
+          </div>
+
         </div>
 
-      <hr class="my-4">
+        <!-- HISTÓRICO -->
+        <hr class="my-4">
 
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <h5 class="mb-0">Histórico de pagamentos</h5>
-        <div class="d-flex gap-2">
-          <button class="btn btn-outline-secondary btn-sm" id="btnSyncOrders">Atualizar status</button>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h5 class="mb-0 h-title mb-2"><i class="bi bi-clock-history"></i> Histórico de pagamentos</h5>
+
+          <button class="btn btn-outline-secondary btn-sm" id="btnSyncOrders">
+            <i class="bi bi-arrow-repeat"></i> Atualizar status
+          </button>
         </div>
-      </div>
-      <div class="text-muted" style="font-size:0.85rem;">Mostra as últimas 30 transações. Pagamentos aprovados creditam automaticamente os meses e liberam módulos/limites.</div>
 
-      <div class="table-responsive mt-2">
-        <table class="table table-sm" id="tblOrders">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Plano</th>
-              <th>Método</th>
-              <th>Referência</th>
-              <th>Valor</th>
-              <th>Status</th>
-              <th>Transação</th>
-              <th>Data</th>
-              <th>Pago em</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td colspan="9" class="text-muted">Carregando...</td></tr>
-          </tbody>
-        </table>
-      </div>
+        <small class="text-muted d-block mb-2">
+          Últimas 30 transações do sistema
+        </small>
+
+        <div class="table-responsive">
+          <table class="table" id="tblOrders">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Plano</th>
+                <th>Método</th>
+                <th>Referência</th>
+                <th>Valor</th>
+                <th>Status</th>
+                <th>Transação</th>
+                <th>Data</th>
+                <th>Pago em</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="9" class="text-muted">Carregando...</td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="d-flex justify-content-between align-items-center mt-3">
+
+            <!-- INFO -->
+            <small class="text-muted" id="ordersInfo">
+              Página 1
+            </small>
+
+            <!-- PAGINATION -->
+            <nav>
+              <ul class="pagination pagination-sm mb-0" id="ordersPagination"></ul>
+            </nav>
+
+          </div>
+
+        </div>
 
       </div>
-    </div>
+  </div>
   </div>
 </main>
+
 
 <script>
   const COMPANY_ID = <?= (int)$company_id ?>;
@@ -225,92 +504,237 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
     }, 400);
   }
 
-  function formatDt(x){
-    if(!x) return '-';
-    try { return new Date(String(x).replace(' ', 'T')).toLocaleString('pt-PT'); } catch(e){ return String(x); }
+  function formatDt(x) {
+    if (!x) return '-';
+    try {
+      return new Date(String(x).replace(' ', 'T')).toLocaleString('pt-PT');
+    } catch (e) {
+      return String(x);
+    }
   }
 
-  function formatDue(x){
-    if(!x) return '-';
+  function formatDue(x) {
+    if (!x) return '-';
     try {
       // aceita ISO com timezone (ex: 2026-03-11T12:54:31.560507+00:00)
       const d = new Date(String(x));
-      if(String(d) !== 'Invalid Date') return d.toLocaleString('pt-PT');
-    } catch(e) {}
+      if (String(d) !== 'Invalid Date') return d.toLocaleString('pt-PT');
+    } catch (e) {}
     // fallback simples
-    try { return String(x).replace('T',' ').replace('+00:00',''); } catch(e){ return String(x); }
+    try {
+      return String(x).replace('T', ' ').replace('+00:00', '');
+    } catch (e) {
+      return String(x);
+    }
   }
 
-  function renderOrders(rows){
+  let currentPage = 1;
+  const limit = 10;
+  let totalPages = 1;
+
+  /**
+   * =========================
+   * RENDER ORDERS TABLE
+   * =========================
+   */
+  function renderOrders(rows) {
     const $tb = $('#tblOrders tbody');
-    $tb.empty();
-    if(!rows || !rows.length){
-      $tb.append('<tr><td colspan="9" class="text-muted">Nenhuma transação encontrada.</td></tr>');
+
+    if (!rows || !rows.length) {
+      $tb.html('<tr><td colspan="9" class="text-muted">Nenhuma transação encontrada.</td></tr>');
       return;
     }
+
+    let html = '';
+
     rows.forEach(r => {
       const st = String(r.status || '-');
       const gw = String(r.gateway_status || '-');
 
-      // Status interno (pt-AO)
+      // STATUS INTERNO
       let stLabel = st;
       let badge = 'secondary';
-      if (st === 'paid') { stLabel = 'Pago'; badge = 'success'; }
-      else if (st === 'pending') { stLabel = 'Pendente'; badge = 'warning text-dark'; }
-      else if (st === 'canceled') { stLabel = 'Cancelado'; badge = 'danger'; }
 
-      // Status do gateway (pt-AO)
+      if (st === 'paid') {
+        stLabel = 'Pago';
+        badge = 'success';
+      } else if (st === 'pending') {
+        stLabel = 'Pendente';
+        badge = 'warning text-dark';
+      } else if (st === 'canceled') {
+        stLabel = 'Cancelado';
+        badge = 'danger';
+      }
+
+      // GATEWAY STATUS
       let gwLabel = gw;
       const gwL = gw.toLowerCase();
-      if (gwL === 'success' || gwL === 'paid' || gwL === 'completed' || gwL === 'approved' || gwL === 'succeeded') gwLabel = 'Sucesso';
+
+      if (['success', 'paid', 'completed', 'approved', 'succeeded'].includes(gwL)) gwLabel = 'Sucesso';
       else if (gwL === 'pending') gwLabel = 'Pendente';
-      else if (gwL === 'failed' || gwL === 'failure') gwLabel = 'Falhou';
-      else if (gwL === 'canceled' || gwL === 'cancelled') gwLabel = 'Cancelado';
+      else if (['failed', 'failure'].includes(gwL)) gwLabel = 'Falhou';
+      else if (['canceled', 'cancelled'].includes(gwL)) gwLabel = 'Cancelado';
 
-      const gwTxt = (gw !== '-' && gw !== 'null' && gw !== '') ? ` <span class="text-muted">(${gwLabel})</span>` : '';
+      const gwTxt = (gw && gw !== '-') ? ` <span class="text-muted">(${gwLabel})</span>` : '';
 
+      // REFERÊNCIA
       let refTxt = '-';
-      try{
-        const pr = r.payment_ref ? JSON.parse(r.payment_ref) : null;
-        if(pr && (pr.entity || pr.referenceNumber)){
-          const ent = pr.entity ? String(pr.entity) : '';
-          const ref = pr.referenceNumber ? String(pr.referenceNumber) : '';
-          const due = pr.dueDate ? formatDue(pr.dueDate) : '';
-          refTxt = (ent && ref) ? `<span style="font-family:monospace">${ent} / ${ref}</span>` : `<span style="font-family:monospace">${ent || ref}</span>`;
-          if(due && due !== '-') refTxt += `<div class="text-muted" style="font-size:0.75rem">Vence: ${due}</div>`;
-        }
-      }catch(e){}
 
-      $tb.append(`
-        <tr>
-          <td>${r.id}</td>
-          <td>${r.plan_code || '-'}</td>
-          <td>${r.payment_method || '-'}</td>
-          <td>${refTxt}</td>
-          <td>${Number(r.amount || 0).toFixed(2)} AOA</td>
-          <td><span class="badge bg-${badge}">${stLabel}</span>${gwTxt}</td>
-          <td style="font-family:monospace; font-size:0.85rem;">${r.merchant_transaction_id || '-'}</td>
-          <td>${formatDt(r.created_at)}</td>
-          <td>${formatDt(r.paid_at)}</td>
-        </tr>
-      `);
+      try {
+        const pr = r.payment_ref ? JSON.parse(r.payment_ref) : null;
+
+        if (pr && (pr.entity || pr.referenceNumber)) {
+          const ent = pr.entity || '';
+          const ref = pr.referenceNumber || '';
+          const due = pr.dueDate ? formatDue(pr.dueDate) : '';
+
+          refTxt = `<span style="font-family:monospace">${ent} / ${ref}</span>`;
+
+          if (due && due !== '-') {
+            refTxt += `<div class="text-muted" style="font-size:0.75rem">Vence: ${due}</div>`;
+          }
+        }
+      } catch (e) {}
+
+      html += `
+      <tr>
+        <td>${r.id}</td>
+        <td style="font-size:0.8rem;">${r.plan_code || '-'}</td>
+        <td>${r.payment_method || '-'}</td>
+        <td>${refTxt}</td>
+        <td>${Number(r.amount || 0).toFixed(2)} AOA</td>
+        <td><span class="badge bg-${badge}">${stLabel}</span>${gwTxt}</td>
+        <td style="font-family:monospace; font-size:0.85rem;">${r.merchant_transaction_id || '-'}</td>
+        <td>${formatDt(r.created_at)}</td>
+        <td>${formatDt(r.paid_at)}</td>
+      </tr>
+    `;
     });
+
+    $tb.html(html);
   }
 
-  function loadOrders(){
-    return $.getJSON('subscription/ajax/list_orders.php', { company_id: COMPANY_ID })
+  /**
+   * =========================
+   * LOAD ORDERS
+   * =========================
+   */
+  function loadOrders(page = 1) {
+    page = parseInt(page);
+    if (isNaN(page) || page < 1) page = 1;
+
+    currentPage = page;
+
+    $('#tblOrders tbody').html(`
+    <tr>
+      <td colspan="9" class="text-muted">Carregando...</td>
+    </tr>
+  `);
+
+    return $.getJSON('subscription/ajax/list_orders.php', {
+        company_id: COMPANY_ID,
+        page: currentPage,
+        limit: limit
+      })
       .done(resp => {
-        if(resp && resp.success){
-          renderOrders(resp.orders);
+        if (!resp || !resp.success) {
+          $('#tblOrders tbody').html(`
+        <tr><td colspan="9" class="text-danger">Erro ao carregar dados</td></tr>
+      `);
+          return;
         }
+
+        renderOrders(resp.orders || []);
+
+        totalPages = parseInt(resp.total_pages || 1);
+
+        renderPagination(resp.total || 0);
+      })
+      .fail(() => {
+        $('#tblOrders tbody').html(`
+      <tr><td colspan="9" class="text-danger">Falha na comunicação com o servidor</td></tr>
+    `);
       });
   }
 
-  function syncOrders(){
-    return $.post('subscription/ajax/sync_orders.php', { company_id: COMPANY_ID }, null, 'json')
+  /**
+   * =========================
+   * PAGINATION RENDER
+   * =========================
+   */
+  function renderPagination(totalItems = 0) {
+    const $pg = $('#ordersPagination');
+    $pg.empty();
+
+    $('#ordersInfo').text(
+      `Página ${currentPage} de ${totalPages} • ${totalItems} registos`
+    );
+
+    const prev = currentPage - 1;
+    const next = currentPage + 1;
+
+    // PREV
+    $pg.append(`
+    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+      <a class="page-link" href="#" data-page="${prev}">‹</a>
+    </li>
+  `);
+
+    // PAGES (janela inteligente)
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === currentPage || (i >= currentPage - 2 && i <= currentPage + 2)) {
+        $pg.append(`
+        <li class="page-item ${i === currentPage ? 'active' : ''}">
+          <a class="page-link" href="#" data-page="${i}">${i}</a>
+        </li>
+      `);
+      }
+    }
+
+    // NEXT
+    $pg.append(`
+    <li class="page-item ${currentPage >= totalPages ? 'disabled' : ''}">
+      <a class="page-link" href="#" data-page="${next}">›</a>
+    </li>
+  `);
+  }
+
+  /**
+   * =========================
+   * CLICK PAGINATION
+   * =========================
+   */
+  $(document).on('click', '#ordersPagination a', function(e) {
+    e.preventDefault();
+
+    const $item = $(this).closest('.page-item');
+
+    if ($item.hasClass('disabled')) return;
+
+    const page = parseInt($(this).data('page'));
+
+    if (!isNaN(page)) {
+      loadOrders(page);
+    }
+  });
+
+  /**
+   * =========================
+   * INIT
+   * =========================
+   */
+  $(document).ready(function() {
+    loadOrders(1);
+  });
+
+
+  function syncOrders() {
+    return $.post('subscription/ajax/sync_orders.php', {
+        company_id: COMPANY_ID
+      }, null, 'json')
       .done(resp => {
-        if(resp && resp.success){
-          if((resp.paid||0) > 0){
+        if (resp && resp.success) {
+          if ((resp.paid || 0) > 0) {
             Swal.fire('Pagamento aprovado', 'Encontramos pagamento(s) aprovado(s). O plano foi creditado e os módulos/limites foram liberados.', 'success')
               .then(() => location.reload());
           }
@@ -318,7 +742,7 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
       });
   }
 
-  $('#btnSyncOrders').on('click', function(){
+  $('#btnSyncOrders').on('click', function() {
     $(this).prop('disabled', true).text('Atualizando...');
     syncOrders().always(() => {
       $('#btnSyncOrders').prop('disabled', false).text('Atualizar status');
@@ -331,32 +755,39 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
   syncOrders().always(loadOrders);
 
   // sincronização periódica (a cada 3 min) enquanto estiver na página
-  setInterval(() => { syncOrders().always(loadOrders); }, 180000);
+  setInterval(() => {
+    syncOrders().always(loadOrders);
+  }, 180000);
 
   const payModal = new bootstrap.Modal(document.getElementById('modalPayMethod'));
 
-  $('#payMethod').on('change', function(){
+  $('#payMethod').on('change', function() {
     const m = $(this).val();
     $('#boxPhone').toggle(m === 'GPO');
   });
 
-  $('#btnRenew').on('click', function(){
+  $('#btnRenew').on('click', function() {
     // Renovar plano atual (ou o selecionado, se tiver vindo de Alterar plano)
     $('#payMethod').val('REF').trigger('change');
     $('#payPhone').val('');
     payModal.show();
   });
 
-  $('#btnConfirmPay').on('click', function(){
+  $('#btnConfirmPay').on('click', function() {
     const method = $('#payMethod').val();
     const phone = $('#payPhone').val();
 
     $(this).prop('disabled', true).text('Gerando...');
 
-    $.post('subscription/ajax/create_charge.php', { company_id: COMPANY_ID, method, phone, plan_code: SELECTED_PLAN_CODE }, function(resp){
+    $.post('subscription/ajax/create_charge.php', {
+      company_id: COMPANY_ID,
+      method,
+      phone,
+      plan_code: SELECTED_PLAN_CODE
+    }, function(resp) {
       $('#btnConfirmPay').prop('disabled', false).text('Gerar cobrança');
 
-      if(resp.success){
+      if (resp.success) {
         payModal.hide();
 
         // depois de gerar cobrança, faz sync + recarrega histórico (para aparecer imediatamente)
@@ -365,43 +796,45 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
         let extra = '';
         if ((resp.method || '') === 'REF' && resp.ref && resp.ref.entity && resp.ref.referenceNumber) {
           extra = '<hr><div class="text-start">' +
-                  '<div><b>Entidade:</b> '+ resp.ref.entity +'</div>' +
-                  '<div><b>Referência:</b> '+ resp.ref.referenceNumber +'</div>' +
-                  (resp.ref.dueDate ? '<div><b>Vencimento:</b> '+ formatDue(resp.ref.dueDate) +'</div>' : '') +
-                  '</div>';
+            '<div><b>Entidade:</b> ' + resp.ref.entity + '</div>' +
+            '<div><b>Referência:</b> ' + resp.ref.referenceNumber + '</div>' +
+            (resp.ref.dueDate ? '<div><b>Vencimento:</b> ' + formatDue(resp.ref.dueDate) + '</div>' : '') +
+            '</div>';
         }
 
         const details = JSON.stringify(resp.charge || {}, null, 2);
         Swal.fire({
           title: 'Cobrança gerada',
-          html: '<div class="text-start"><b>Plano:</b> '+ (SELECTED_PLAN_CODE || '-') +'<br><b>Transação:</b> '+ (resp.merchantTransactionId || '-') +'<br><b>Método:</b> '+ (resp.method || '-') +'</div>' +
-                extra +
-                '<details class="mt-2"><summary>Detalhes técnicos</summary>'+
-                '<pre style="text-align:left; max-height:220px; overflow:auto; background:#0b1220; color:#e5e7eb; padding:12px; border-radius:8px;">'+ details +'</pre>'+
-                '</details>',
+          html: '<div class="text-start"><b>Plano:</b> ' + (SELECTED_PLAN_CODE || '-') + '<br><b>Transação:</b> ' + (resp.merchantTransactionId || '-') + '<br><b>Método:</b> ' + (resp.method || '-') + '</div>' +
+            extra +
+            '<details class="mt-2"><summary>Detalhes técnicos</summary>' +
+            '<pre style="text-align:left; max-height:220px; overflow:auto; background:#0b1220; color:#e5e7eb; padding:12px; border-radius:8px;">' + details + '</pre>' +
+            '</details>',
           icon: 'success',
           confirmButtonText: 'Ok'
         });
       } else {
         Swal.fire('Erro', resp.message || 'Falha ao gerar cobrança.', 'error');
       }
-    }, 'json').fail(function(){
+    }, 'json').fail(function() {
       $('#btnConfirmPay').prop('disabled', false).text('Gerar cobrança');
       Swal.fire('Erro', 'Falha na requisição.', 'error');
     });
   });
 
-  $('#btnMarkPaid').on('click', function(){
-    $.post('subscription/ajax/mark_paid.php', { company_id: COMPANY_ID }, function(resp){
-      if(resp.success){
-        Swal.fire('Ok', 'Renovação confirmada. Plano estendido.', 'success').then(()=> location.reload());
+  $('#btnMarkPaid').on('click', function() {
+    $.post('subscription/ajax/mark_paid.php', {
+      company_id: COMPANY_ID
+    }, function(resp) {
+      if (resp.success) {
+        Swal.fire('Ok', 'Renovação confirmada. Plano estendido.', 'success').then(() => location.reload());
       } else {
         Swal.fire('Erro', resp.message || 'Falha ao confirmar.', 'error');
       }
     }, 'json');
   });
 
-  $(document).on('click', '.btnChoosePlan', function(){
+  $(document).on('click', '.btnChoosePlan', function() {
     const code = $(this).data('code');
     SELECTED_PLAN_CODE = code;
 
