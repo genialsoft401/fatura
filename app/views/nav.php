@@ -3,6 +3,11 @@
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
         border-bottom: 1px solid #eee;
+        z-index: 5;
+    }
+
+    .app-navbar.mobile-active {
+        transform: translateX(250px);
     }
 
     /* Botões */
@@ -102,7 +107,7 @@
 
             <!-- Mobile -->
             <button id="mobileMenuBtn" class="btn d-lg-none nav-icon-btn">
-                <i class="material-icons-round">menu</i>
+                <i class="material-icons-round text-primary">menu</i>
             </button>
 
             <!-- Empresa -->
@@ -256,4 +261,5 @@
         });
 
     });
+
 </script>

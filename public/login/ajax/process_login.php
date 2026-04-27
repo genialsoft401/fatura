@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if ($user && password_verify($password, $user['password'])) {
         unset($user['password']);
-        $_SESSION['user'] = $user; 
+        $_SESSION['user'] = $user;
 
         $created_at = gmdate('Y-m-d H:i:s');
         $expires_at = $remember_me
@@ -61,12 +61,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             ':user_id' => $user['id'],
             ':token' => $token,
             ':expires_at' => $expires_at,
-            ':created_at'=> $created_at
+            ':created_at' => $created_at
         ]);
 
         setcookie('session_token', $token, strtotime($expires_at), "/", "", true, true);
         $_SESSION['token'] = $token;
-        $_SESSION['expires_at'] = $expires_at; 
+        $_SESSION['expires_at'] = $expires_at;
 
         echo json_encode(['success' => true, 'data' => $_SESSION['user']]);
     } else {

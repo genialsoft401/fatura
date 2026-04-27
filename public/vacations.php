@@ -14,42 +14,138 @@ try {
 require_once '../app/views/layout_creation.php';
 ?>
 
+<style>
+    /* Estilos para transformar a tabela em cards no mobile */
+
+    /* ===== TABELA ESTILO ===== */
+    #vacationsTable {
+        border-collapse: separate;
+        border-spacing: 0 12px;
+        width: 100%;
+    }
+
+    /* HEADER */
+    #vacationsTable thead th {
+        border: none;
+        font-size: 12px;
+        color: #9ca3af;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 12px 16px;
+        text-align: left;
+        border-right: 1px solid #e5e7eb57;
+    }
+
+    #vacationsTable thead th:last-child {
+        border-right: none;
+    }
+
+    #vacationsTable tbody tr td {
+        border-right: 1px solid #e5e7eb57;
+    }
+
+    /* ROW */
+    #vacationsTable tbody tr {
+        background: #fff !important;
+        border-radius: 14px;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        text-align: left !important;
+    }
+
+
+    /* HOVER PRO */
+    #vacationsTable tbody tr:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    }
+
+    /* CELLS */
+    #vacationsTable tbody td {
+        border: none;
+        padding: 18px 16px;
+        vertical-align: middle;
+        font-size: 0.95rem;
+        background: #fff !important;
+        text-align: left !important;
+    }
+
+    #vacationsTable thead td {
+        background: #111 !important;
+        display: none;
+        max-width: 80px !important;
+    }
+
+    /* BORDAS ARREDONDADAS */
+    #vacationsTable tbody td:first-child {
+        border-top-left-radius: 14px;
+        border-bottom-left-radius: 14px;
+        background: #fff !important;
+    }
+
+    #vacationsTable tbody th {
+        text-align: left !important;
+    }
+
+    #vacationsTable tbody td:last-child {
+        border-top-right-radius: 14px;
+        border-bottom-right-radius: 14px;
+        text-align: right;
+        padding-right: 24px;
+    }
+
+    /* ===== NOME (PRINCIPAL) ===== */
+    #vacationsTable tbody td:first-child {
+        font-weight: 600;
+        color: #111;
+    }
+
+    /* SUBINFO */
+    #vacationsTable tbody td small {
+        display: block;
+        color: #6b7280;
+    }
+</style>
+
 <main class="main-content">
     <div class="container-fluid mt-5">
         <div class="row">
             <div class="col-12">
-                <div class="card">
+                <div class="">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Férias e Licenças</h5>
-                        <button id="addVacationBtn" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalVacation">
-                            <i class="material-icons-round">event</i>
+                        <h2 class="mb-0 fw-bold mt-4">Férias e Licenças</h2>
+                        <button id="addVacationBtn" class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalVacation">
+                            <i class="bi bi-calendar"></i>
                             Registrar Período
                         </button>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body mt-4">
                         <!-- Filtros -->
-                        <div class="row g-2 mb-3 align-items-end">
-                            <div class="col-md-3">
-                                <label class="form-label mb-1">Mês de referência</label>
-                                <input type="month" id="filter_mes" class="form-control" value="<?= date('Y-m') ?>">
+                        <div class="d-flex flex-wrap justify-content-between g-2 mb-3 align-items-end">
+                            <div class="col-6 col-md-6 d-flex gap-2">
+                                <div class="col-md-4">
+                                    <label class="form-label mb-1">Mês de referência</label>
+                                    <input type="month" id="filter_mes" class="form-control" value="<?= date('Y-m') ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label mb-1">Funcionário</label>
+                                    <select id="filter_funcionario" class="form-control"></select>
+                                </div>
                             </div>
-                            <div class="col-md-5">
-                                <label class="form-label mb-1">Funcionário</label>
-                                <select id="filter_funcionario" class="form-control"></select>
-                            </div>
-                            <div class="col-md-4 d-flex gap-2 justify-content-end">
-                                <button id="btnFiltrarVac" class="btn btn-outline-primary">
-                                    <i class="material-icons-round">search</i> Filtrar
+                            <div class="col-6 col-md-6 d-flex gap-2 justify-content-end">
+                                <button id="btnFiltrarVac" class="btn btn-outline-primary rounded-pill d-flex gap-2">
+                                    <i class="bi bi-filter"></i> Filtrar
                                 </button>
-                                <button id="btnLimparVac" class="btn btn-outline-secondary">Limpar</button>
-                                <button id="btnExportVacPdf" class="btn btn-danger">
-                                    <i class="material-icons-round">picture_as_pdf</i> Exportar PDF
+                                <button id="btnLimparVac" class="btn btn-outline-secondary rounded-pill">Limpar</button>
+                                <button id="btnExportVacPdf" class="btn btn-outline-danger rounded-pill">
+                                    <i class="bi bi-file-pdf"></i> Exportar PDF
                                 </button>
                             </div>
                         </div>
 
                         <div class="table-responsive">
-                            <table id="vacationsTable" class="table table-bordered table-striped w-100">
+                            <table id="vacationsTable" class="table w-100">
                                 <thead>
                                     <tr>
                                         <th>Funcionário</th>
@@ -80,31 +176,34 @@ require_once '../app/views/layout_creation.php';
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label>Funcionário</label>
+                    <div class="row p-3">
+                        <div class="col-md-12 mb-3 card border-0 p-3">
+                            <label class="fw-bold" style="margin-bottom: -10px;">Funcionário</label><br>
                             <select name="employee_id" id="employee_id" class="form-control"></select>
                         </div>
-                        <div class="col-md-6">
-                            <label>Tipo</label>
-                            <select name="type" class="form-control">
-                                <option value="Férias">Férias</option>
-                                <option value="Licença Médica">Licença Médica</option>
-                                <option value="Licença Maternidade">Licença Maternidade</option>
-                                <option value="Outros">Outros</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3">
-                            <label>Início</label>
-                            <input type="date" name="start_date" class="form-control" required>
-                        </div>
-                        <div class="col-md-3">
-                            <label>Fim</label>
-                            <input type="date" name="end_date" class="form-control" required>
-                        </div>
-                        <div class="col-md-12">
-                            <label>Motivo</label>
-                            <textarea name="reason" class="form-control"></textarea>
+
+                        <div class="d-flex flex-wrap gap-2 bg-white border-0 p-3">
+                            <div class="col-md-12">
+                                <label class="fw-bold">Tipo</label>
+                                <select name="type" class="form-control">
+                                    <option value="Férias">Férias</option>
+                                    <option value="Licença Médica">Licença Médica</option>
+                                    <option value="Licença Maternidade">Licença Maternidade</option>
+                                    <option value="Outros">Outros</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="fw-bold">Início</label>
+                                <input type="date" name="start_date" class="form-control" required>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="fw-bold">Fim</label>
+                                <input type="date" name="end_date" class="form-control" required>
+                            </div>
+                            <div class="col-md-12">
+                                <labe class="fw-bold">Motivo</label>
+                                <textarea name="reason" class="form-control"></textarea>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -223,8 +322,12 @@ require_once '../app/views/layout_creation.php';
                 url: 'rh/ajax/search_employees.php',
                 dataType: 'json',
                 delay: 250,
-                data: params => ({ term: params.term }),
-                processResults: data => ({ results: data })
+                data: params => ({
+                    term: params.term
+                }),
+                processResults: data => ({
+                    results: data
+                })
             }
         });
 

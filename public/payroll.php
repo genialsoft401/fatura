@@ -15,6 +15,98 @@ require_once '../app/views/layout_creation.php';
 
 ?>
 
+<style>
+    /* ===== TABELA ESTILO ===== */
+    #payrollTable {
+        border-collapse: separate;
+        border-spacing: 0 12px;
+        width: 100%;
+    }
+
+    /* HEADER */
+    #payrollTable thead th {
+        border: none;
+        font-size: 12px;
+        color: #9ca3af;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 12px 16px;
+        text-align: left;
+        border-right: 1px solid #e5e7eb57;
+    }
+
+    #payrollTable thead th:last-child {
+        border-right: none;
+    }
+
+    #payrollTable tbody tr td {
+        border-right: 1px solid #e5e7eb57;
+    }
+
+    /* ROW */
+    #payrollTable tbody tr {
+        background: #fff !important;
+        border-radius: 14px;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        text-align: left !important;
+    }
+
+
+    /* HOVER PRO */
+    #payrollTable tbody tr:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    }
+
+    /* CELLS */
+    #payrollTable tbody td {
+        border: none;
+        padding: 18px 16px;
+        vertical-align: middle;
+        font-size: 0.95rem;
+        background: #fff !important;
+        text-align: left !important;
+    }
+
+    #payrollTable thead td {
+        background: #111 !important;
+        display: none;
+        max-width: 80px !important;
+    }
+
+    /* BORDAS ARREDONDADAS */
+    #payrollTable tbody td:first-child {
+        border-top-left-radius: 14px;
+        border-bottom-left-radius: 14px;
+        background: #fff !important;
+    }
+
+    #payrollTable tbody th {
+        text-align: left !important;
+    }
+
+    #payrollTable tbody td:last-child {
+        border-top-right-radius: 14px;
+        border-bottom-right-radius: 14px;
+        text-align: right;
+        padding-right: 24px;
+    }
+
+    /* ===== NOME (PRINCIPAL) ===== */
+    #payrollTable tbody td:first-child {
+        font-weight: 600;
+        color: #111;
+    }
+
+    /* SUBINFO */
+    #payrollTable tbody td small {
+        display: block;
+        color: #6b7280;
+    }
+</style>
+
 <main class="main-content">
     <div class="container-fluid mt-5">
         <div class="mb-3 d-flex align-items-center">
@@ -25,7 +117,7 @@ require_once '../app/views/layout_creation.php';
         </div>
         <div class="row">
             <div class="col-12">
-                <div class="card">
+                <div class="">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Folha de Pagamento</h5>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalPayroll">
@@ -39,7 +131,7 @@ require_once '../app/views/layout_creation.php';
 
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table id="payrollTable" class="table table-bordered table-striped w-100">
+                            <table id="payrollTable" class="table w-100">
                                 <thead>
                                     <tr>
                                         <th>Funcionário</th>
@@ -209,9 +301,9 @@ require_once '../app/views/layout_creation.php';
                 {
                     data: null,
                     render: row => `
-                        <button class='btn btn-sm btn-warning'>Editar</button>
-                        <button class='btn btn-sm btn-outline-danger openReceipt'
-                            data-id='${row.id}'>Recibo</button>`
+                        <button class='btn btn-sm text-warning'><i class="bi bi-pencil"></i></button>
+                        <button class='btn btn-sm text-danger openReceipt'
+                            data-id='${row.id}'><i class="bi bi-file-pdf"></i></button>`
                 }
             ]
         });

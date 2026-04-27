@@ -14,13 +14,105 @@ try {
 require_once '../app/views/layout_creation.php';
 ?>
 
+<style>
+    /* ===== TABELA ESTILO ===== */
+    #positionsTable {
+        border-collapse: separate;
+        border-spacing: 0 12px;
+        width: 100%;
+    }
+
+    /* HEADER */
+    #positionsTable thead th {
+        border: none;
+        font-size: 12px;
+        color: #9ca3af;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 12px 16px;
+        text-align: left;
+        border-right: 1px solid #e5e7eb57;
+    }
+
+    #positionsTable thead th:last-child {
+        border-right: none;
+    }
+
+    #positionsTable tbody tr td {
+        border-right: 1px solid #e5e7eb57;
+    }
+
+    /* ROW */
+    #positionsTable tbody tr {
+        background: #fff !important;
+        border-radius: 14px;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        text-align: left !important;
+    }
+
+
+    /* HOVER PRO */
+    #positionsTable tbody tr:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    }
+
+    /* CELLS */
+    #positionsTable tbody td {
+        border: none;
+        padding: 18px 16px;
+        vertical-align: middle;
+        font-size: 0.95rem;
+        background: #fff !important;
+        text-align: left !important;
+    }
+
+    #positionsTable thead td {
+        background: #111 !important;
+        display: none;
+        max-width: 80px !important;
+    }
+
+    /* BORDAS ARREDONDADAS */
+    #positionsTable tbody td:first-child {
+        border-top-left-radius: 14px;
+        border-bottom-left-radius: 14px;
+        background: #fff !important;
+    }
+
+    #positionsTable tbody th {
+        text-align: left !important;
+    }
+
+    #positionsTable tbody td:last-child {
+        border-top-right-radius: 14px;
+        border-bottom-right-radius: 14px;
+        text-align: right;
+        padding-right: 24px;
+    }
+
+    /* ===== NOME (PRINCIPAL) ===== */
+    #positionsTable tbody td:first-child {
+        font-weight: 600;
+        color: #111;
+    }
+
+    /* SUBINFO */
+    #positionsTable tbody td small {
+        display: block;
+        color: #6b7280;
+    }
+</style>
+
 <main class="main-content">
     <div class="container-fluid mt-5">
         <div class="row">
             <div class="col-12">
-                <div class="card">
+                <div>
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Cargos e Salários</h5>
+                        <h2 class="mb-0 fw-bold mt-5">Cargos e Salários</h2>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalPosition">
                             <i class="material-icons-round">add</i>
                             Adicionar Cargo
@@ -28,7 +120,7 @@ require_once '../app/views/layout_creation.php';
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-                            <table id="positionsTable" class="table table-bordered table-striped w-100">
+                            <table id="positionsTable" class="table w-100">
                                 <thead>
                                     <tr>
                                         <th>Nome do Cargo</th>
@@ -148,7 +240,7 @@ require_once '../app/views/layout_creation.php';
                     data: null,
                     render: function(row) {
                         return `
-                          <button class='btn btn-sm btn-warning editPosition'
+                          <button class='btn btn-sm text-warning editPosition'
                             data-id='${row.id}'
                             data-name='${row.name}'
                             data-salary='${row.suggested_salary}'
@@ -156,11 +248,11 @@ require_once '../app/views/layout_creation.php';
                             data-transport_allowance='${row.transport_allowance || 0}'
                             data-vacation_subsidy_pct='${row.vacation_subsidy_pct || 0}'
                             data-thirteenth_subsidy_pct='${row.thirteenth_subsidy_pct || 0}'
-                          >Editar</button>
-                          <button class='btn btn-sm btn-danger deletePosition'
+                          ><i class="bi bi-pencil"></i></button>
+                          <button class='btn btn-sm text-danger deletePosition'
                             data-id='${row.id}'
                             data-name='${row.name}'
-                          >Eliminar</button>
+                          ><i class="bi bi-trash"></i></button>
                         `;
                     }
                 }
@@ -202,7 +294,9 @@ require_once '../app/views/layout_creation.php';
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (!result.isConfirmed) return;
-                $.post('rh/ajax/delete_position.php', { id }, function(resp) {
+                $.post('rh/ajax/delete_position.php', {
+                    id
+                }, function(resp) {
                     if (resp.success) {
                         table.ajax.reload();
                         Swal.fire('Ok', 'Cargo eliminado.', 'success');

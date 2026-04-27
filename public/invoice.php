@@ -117,46 +117,41 @@ require_once '../app/views/layout_creation.php';
         <aside class="action-panel shadow-sm">
 
             <!-- topo verde -->
-            <button class="btn btn-success w-100 mb-3 fw-semibold" id="btnRecibo">
+            <button class="btn text-center d-flex align-items-center align-content-center btn-success w-100 mb-2 fw-semibold" id="btnRecibo">
                 <span class="material-icons-outlined">paid</span>
                 Pagamento / Recibo
             </button>
 
-            <button class="btn btn-primary w-100 mb-3 d-none" id="btnEditar">
+            <button class="btn text-center d-flex align-items-center align-content-center btn-primary w-100 mb-2 d-none" id="btnEditar">
                 <span class="material-icons-outlined">edit</span>
-                Editar Fatura
+                Editar 
             </button>
 
-            <button class="btn btn-warning w-100 mb-3 d-none" id="btnFinalizar">
+            <button class="btn btn-warning w-100 mb-2" id="btnFinalizar">
                 <span class="material-icons-outlined">check_circle</span>
-                Finalizar Fatura
+                Finalizar 
             </button>
 
-            <button class="btn btn-outline-success w-100 mb-3"
-                data-bs-toggle="modal"
-                data-bs-target="#modalPagamento">
-                <span class="material-icons-outlined">add_card</span>
-                Registrar pagamento
+            <!-- <h6 class="section-title">Documento</h6> -->
+
+            <button class="btn text-center d-none align-items-center align-content-center btn-outline-dark w-100 mb-2" id="btnNotaCredito">
+                <span class="material-icons-outlined">assignment_return</span>
+                Nota de Crédito
             </button>
 
             <!-- grupo Documento -->
-            <h6 class="section-title">Documento</h6>
 
-            <button class="btn btn-danger w-100 mb-2" id="generatePdf">
+            <button class="btn text-center d-none align-items-center align-content-center btn-danger w-100 mb-2" id="generatePdf">
                 <span class="material-icons-outlined">picture_as_pdf</span>
                 Baixar PDF
             </button>
 
-            <button class="btn btn-primary text-white w-100 mb-2" id="btnEnviar"
+            <button class="btn text-center d-none align-items-center align-content-center btn-primary text-white w-100 mb-2" id="btnEnviar"
                 data-bs-toggle="modal" data-bs-target="#modalEnviarEmail">
                 <span class="material-icons-outlined">send</span>
                 Enviar fatura
             </button>
 
-            <button class="btn btn-outline-dark w-100 mb-2" id="btnNotaCredito">
-                <span class="material-icons-outlined">assignment_return</span>
-                Emitir Nota de Crédito
-            </button>
 
         </aside>
     </div>
@@ -172,36 +167,38 @@ require_once '../app/views/layout_creation.php';
 
                 <div class="modal-body">
                     <!-- Valor -->
-                    <div class="mb-3">
-                        <label class="form-label">Valor</label>
-                        <div class="input-group">
-                            <input type="number" step="0.01" min="0" id="pg_valor"
-                                name="amount" class="form-control" required>
-                            <span class="input-group-text" id="pg_saldo"></span>
+                    <div class="p-3 bg-white rounded shadow-sm mb-2">
+                        <div class="mb-3">
+                            <label class="form-label">Valor</label>
+                            <div class="input-group d-flex gap-0">
+                                <input type="number" step="0.01" min="0" id="pg_valor"
+                                    name="amount" class="form-control" required>
+                                <span class="input-group-text" id="pg_saldo"></span>
+                            </div>
+                            <!-- o .invalid-feedback será inserido aqui quando necessário -->
                         </div>
-                        <!-- o .invalid-feedback será inserido aqui quando necessário -->
-                    </div>
 
 
-                    <!-- Data -->
-                    <div class="mb-3">
-                        <label class="form-label">Data</label>
-                        <input type="date" id="pg_data" name="pay_date"
-                            class="form-control" required>
                     </div>
 
                     <!-- Série -->
-                    <div class="mb-3">
-                        <label class="form-label">Série</label>
-                        <select id="pg_serie" name="serie" class="form-select" required>
-                            <option value="2025">2025</option>
-                            <option value="A">A</option>
-                            <!-- … -->
-                        </select>
+                    <div class="p-3 bg-white rounded shadow-sm mb-2 d-flex gap-2">
+                        <!-- Data -->
+                        <div class="mb-3 col-6">
+                            <label class="form-label">Data</label>
+                            <input type="date" id="pg_data" name="pay_date"
+                                class="form-control" required>
+                        </div>
+
+                        <div class="mb-3 col-6">
+                            <label class="form-label">Série</label>
+                            <input id="pg_serie" name="serie" class="form-control" required placeholder="EX: 12/2026">
+                        </div>
+
+                        <!-- Meio de pagamento -->
                     </div>
 
-                    <!-- Meio de pagamento -->
-                    <div class="mb-3">
+                    <div class="mb-3 p-3 bg-white rounded shadow-sm mb-2">
                         <label class="form-label">Meio de pagamento</label>
                         <select id="pg_meio" name="payment_method" class="form-select" required>
                             <option>Transferência bancária</option>
@@ -212,14 +209,17 @@ require_once '../app/views/layout_creation.php';
                     </div>
 
                     <!-- Observações -->
-                    <div class="mb-3">
-                        <label class="form-label">Observações</label>
-                        <textarea id="pg_obs" name="notes" rows="2"
-                            class="form-control"></textarea>
-                    </div>
+                    <div class="p-3 bg-white rounded shadow-sm mb-2">
 
-                    <!-- campo oculto com ID da fatura -->
-                    <input type="hidden" name="invoice_id" value="">
+                        <div class="mb-3">
+                            <label class="form-label">Observações</label>
+                            <textarea id="pg_obs" name="notes" rows="2"
+                                class="form-control"></textarea>
+                        </div>
+
+                        <!-- campo oculto com ID da fatura -->
+                        <input type="hidden" name="invoice_id" value="">
+                    </div>
                 </div>
 
                 <div class="modal-footer">

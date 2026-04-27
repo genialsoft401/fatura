@@ -111,7 +111,7 @@ require_once '../app/views/layout_creation.php';
     #side-card textarea {
         border: 1px solid #e5e7eb;
         border-radius: 8px;
-            transition: 0.2s;
+        transition: 0.2s;
         font-size: .8rem !important;
         padding: 0px 10px !important;
         height: 20px !important;
@@ -236,7 +236,7 @@ require_once '../app/views/layout_creation.php';
                                             <label for="email"
                                                 class="form-label text-muted small fw-bold"><?= t('Email Corporativo') ?></label>
                                             <input type="email" class="form-control" id="email" name="email"
-                                                placeholder="contato@empresa.com">
+                                                placeholder="contato@empresa.com" required>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="website"
@@ -250,7 +250,7 @@ require_once '../app/views/layout_creation.php';
                                                 class="form-label text-muted small fw-bold required"><?= t('Telefone Fixo') ?></label>
                                             <div class="input-group flex-nowrap">
                                                 <select class="form-select countryPhone tel" name="telephone_ddi"
-                                                    id="telephone_ddi" style="max-width: 90px;">
+                                                    id="telephone_ddi" style="max-width: 90px;" required>
                                                     <option selected value="">DDI</option>
                                                 </select>
                                                 <input type="text" name="telephone" class="form-control telnumber"
@@ -325,13 +325,6 @@ require_once '../app/views/layout_creation.php';
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Botões de Ação -->
-                        <div class="mt-5 pt-4 border-top d-flex justify-content-end">
-                            <div id="divsaveContact" class="w-100 w-md-auto">
-                                <!-- O botão de salvar será injetado aqui pelo JavaScript -->
                             </div>
                         </div>
 
@@ -416,10 +409,9 @@ require_once '../app/views/layout_creation.php';
         const prevBtn = document.getElementById("prevBtn");
         const nextBtn = document.getElementById("nextBtn");
         const saveBtn = document.getElementById("saveChangesContact");
+        const contactForm = document.getElementById("contactForm");
 
-
-
-
+        // ================= UPDATE UI =================
         function update() {
             const lastStep = steps.length - 1;
 
@@ -439,7 +431,6 @@ require_once '../app/views/layout_creation.php';
             // BUTTONS
             prevBtn.style.display = current === 0 ? "none" : "block";
 
-            // FINAL STEP
             const isLast = current === lastStep;
 
             if (isLast) {
@@ -452,21 +443,173 @@ require_once '../app/views/layout_creation.php';
             }
         }
 
+        // ================= VALIDATION =================
+        function validateStep(stepIndex) {
+            const currentStep = steps[stepIndex];
+            const requiredFields = currentStep.querySelectorAll("[required]");
 
+            for (let field of requiredFields) {
+                const value = field.value.trim();
+
+                // limpa erro anterior
+                field.classList.remove("is-invalid");
+
+                if (!value) {
+                    showError(`Preencha o campo: ${getLabel(field)}`);
+                    field.classList.add("is-invalid");
+                    field.focus();
+                    return false;
+                }
+
+                // NAME
+                if (field.name === "name" && value.length < 6) {
+                    showError("Nome deve ter no mínimo 6 caracteres.");
+                    field.classList.add("is-invalid");
+                    field.focus();
+                    return false;
+                }
+
+                // NIF
+                if (field.name === "contributor") {
+                    const nifRegex1 = /^5\d+$/; // começa com 5 e só números
+                    const nifRegex2 = /^\d{9}[A-Za-z0-9]+$/; // 9 dígitos + alfanumérico
+
+                    if (!(nifRegex1.test(value) || nifRegex2.test(value))) {
+                        showError("NIF inválido. Ex: 943798589UB049 ou 50000000123214");
+                        field.classList.add("is-invalid");
+                        field.focus();
+                        return false;
+                    } else {
+                        document.getElementById('contributor').addEventListener('blur', function() {
+                            const registration_number = this.value;
+
+                            if (nif) {
+                                fetch('index/ajax/check_contribuitor.php', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({
+                                            registration_number
+                                        })
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.exists) {
+                                            showError("Este NIF já existe. Por favor, insira outro.");
+                                            field.classList.add("is-invalid");
+                                            field.focus();
+                                            return false;
+                                            this.value = '';
+                                        }
+                                    })
+                                    .catch(error => console.error('Erro:', error));
+                            }
+                        });
+                    }
+                }
+
+                // EMAIL
+                if (field.name === "email" && value && !value.includes("@")) {
+                    showError("Email inválido.");
+                    field.classList.add("is-invalid");
+                    field.focus();
+                    return false;
+                }
+
+                // TELEFONE
+                // TELEPHONE (fixo - flexível)
+                if (field.name === "telephone") {
+                    const phoneRegex = /^\d{6,15}$/; // aceita 6 a 15 dígitos
+
+                    if (!phoneRegex.test(value)) {
+                        showError("Telefone inválido. Deve conter apenas números.");
+                        field.classList.add("is-invalid");
+                        field.focus();
+                        return false;
+                    }
+                }
+
+                // CELLPHONE (móvel - Angola)
+                if (field.name === "cellphone") {
+                    const phoneRegex = /^9\d{8}$/;
+
+                    if (value && !phoneRegex.test(value)) {
+                        showError("Telemóvel inválido. Deve começar com 9 e ter 9 dígitos.");
+                        field.classList.add("is-invalid");
+                        field.focus();
+                        return false;
+                    }
+                }
+
+                // TELEFONE PREFERENCIAL
+                if (field.name === "pref_telephone") {
+                    const phoneRegex = /^\d{6,15}$/;
+
+                    if (value && !phoneRegex.test(value)) {
+                        showError("Telefone preferencial inválido.");
+                        field.classList.add("is-invalid");
+                        field.focus();
+                        return false;
+                    }
+                }
+
+                // CELLPHONE PREFERENCIAL
+                if (field.name === "pref_cellphone") {
+                    const phoneRegex = /^9\d{8}$/;
+
+                    if (value && !phoneRegex.test(value)) {
+                        showError("Telemóvel preferencial inválido.");
+                        field.classList.add("is-invalid");
+                        field.focus();
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        // ================= HELPERS =================
+        function showError(message) {
+            Swal.fire({
+                icon: "error",
+                title: "Erro!",
+                text: message,
+            });
+        }
+
+        function getLabel(field) {
+            const label = field.closest(".col-12, .col-md-6, .mb-3")?.querySelector("label");
+            return label ? label.innerText : field.name;
+        }
+
+        // ================= EVENTS =================
         nextBtn.onclick = () => {
+            // 🔥 VALIDA ANTES DE AVANÇAR
+            if (!validateStep(current)) return;
+
             if (current < steps.length - 1) {
                 current++;
                 update();
-            } else {
-                contactForm.submit();
             }
         };
 
         prevBtn.onclick = () => {
-            current--;
-            update();
+            if (current > 0) {
+                current--;
+                update();
+            }
         };
 
+        // (opcional) limpar erro ao digitar
+        document.querySelectorAll("input, textarea, select").forEach(field => {
+            field.addEventListener("input", () => {
+                field.classList.remove("is-invalid");
+            });
+        });
+
+        // INIT
         update();
     </script>
 

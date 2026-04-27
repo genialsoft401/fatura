@@ -116,15 +116,15 @@
 
 body {
   font-family: "Roboto", sans-serif;
-  background: #ebebec;
+  background: #f7f7f7;
 }
 
 main {
-  background: #000 !important;
+  background: #f7f7f7 !important;
 }
 
 header {
-  background-color: #f8f9fa;
+  background-color: #fff;
   border-bottom: solid 0px none;
 }
 
@@ -386,6 +386,15 @@ a {
 .select2-dropdown,
 .select2-dropdown--below {
   z-index: 2000 !important;
+}
+
+.modal-header {
+  background: linear-gradient(135deg, #005a87, #007abd);
+  color: #fff;
+}
+
+.modal-header button.btn-close {
+  color: #fff !important;
 }
 
 /* FimSelect2 */

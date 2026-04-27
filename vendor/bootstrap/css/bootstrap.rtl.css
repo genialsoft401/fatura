@@ -5335,9 +5335,12 @@ textarea.form-control-lg {
 }
 
 .modal-dialog-centered {
-  display: flex;
-  align-items: center;
-  min-height: calc(100% - var(--bs-modal-margin) * 2);
+  margin: auto;
+  /* min-height: calc(100% - var(--bs-modal-margin) * 2); */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center;
+  min-height: 100vh;
 }
 
 .modal-content {

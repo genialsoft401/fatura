@@ -1,7 +1,10 @@
 <?php
 require_once '../../../app/config/db.php';
-header('Content-Type: application/json'); 
+header('Content-Type: application/json; charset=utf-8');
 session_start();
+ini_set('display_errors', 0);
+error_reporting(0);
+
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,4 +21,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo json_encode(['exists' => false]);
     }
 }
-?>

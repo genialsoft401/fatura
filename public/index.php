@@ -177,16 +177,134 @@ require_once '../app/views/layout_creation.php';
         margin: 0;
         font-size: 0.9rem;
     }
+
+    .card-item {
+        width: 18.1rem !important;
+    }
+
+    #trimestreSelect {
+        width: 200px !important;
+        float: right !important;
+    }
+
+    /* ============================= */
+    /* RESPONSIVIDADE EXTRA */
+    /* ============================= */
+
+    /* ====== TAGS (menu superior) ====== */
+    @media (max-width: 768px) {
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .tag-link {
+            flex: 1;
+            text-align: center;
+            font-size: 13px;
+            padding: 8px;
+        }
+    }
+
+    /* ====== CARDS PRINCIPAIS ====== */
+    @media (max-width: 1200px) {
+        .card-item {
+            width: 18rem !important;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .card-item {
+            width: 48% !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .card-item {
+            width: 100% !important;
+        }
+
+        .cards {
+            flex-direction: column;
+        }
+    }
+
+    /* ====== CHART + SIDEBAR ====== */
+    @media (max-width: 992px) {
+        #chart-card {
+            margin-bottom: 20px;
+        }
+    }
+
+    /* ====== SELECT TRIMESTRE ====== */
+    @media (max-width: 576px) {
+        #trimestreSelect {
+            width: 100% !important;
+            float: none !important;
+        }
+    }
+
+    /* ====== CLIENTES / SCROLL ====== */
+    @media (max-width: 768px) {
+        #clients {
+            height: auto !important;
+        }
+
+        #topClients {
+            max-height: 250px;
+        }
+    }
+
+    /* ====== RH / STOCK CARDS ====== */
+    @media (max-width: 992px) {
+        .col-md-3 {
+            flex: 0 0 50%;
+            max-width: 50%;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .col-md-3 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+
+    /* ====== LISTAS ====== */
+    @media (max-width: 768px) {
+        .row.g-3.mt-2 {
+            flex-direction: column;
+        }
+    }
+
+    /* ====== OWL CAROUSEL FIX MOBILE ====== */
+    @media (max-width: 576px) {
+        .owl-carousel .card {
+            margin: 0 auto;
+            width: 100%;
+        }
+    }
+
+    /* ====== TÍTULOS ====== */
+    @media (max-width: 576px) {
+        .h-title {
+            font-size: 0.8rem;
+            width: 100%;
+            text-align: center;
+        }
+    }
 </style>
 
 <body>
     <main style="background: #f7f7f7;">
         <div>
             <!-- Gráficos -->
-            <div class="container-fluid">
+            <div class="container-fluid px-lg-5 px-2">
                 <div class="row g-4 mt-5">
                     <div class="col-12">
-                        <div class="d-flex col-4 col-sm-12">
+                        <div class="d-flex col-12 col-sm-12">
                             <div class="tags">
                                 <a href="#" data-tag="sell" class="tag-link active btn">Vendas</a>
                                 <a href="#" data-tag="stock" class="tag-link btn">Stock</a>
@@ -200,49 +318,60 @@ require_once '../app/views/layout_creation.php';
                         <!-- Sessao Gestao de Vendas -->
                         <div class="col-12 tag-content active" data-tag-content="sell">
                             <!-- ================== CARDS ================== -->
-                            <div class="row g-3 mb-4">
+                            <div class="cards d-flex flex-md-wrap gap-3 mb-4">
 
-                                <div class="col-md-3">
+                                <div class="card-item">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex justify-content-between">
                                             <div class="icon-box"><i class="bi bi-coin text-primary"></i></div>
                                         </div>
                                         <h4 class="mt-3 fw-semibold" id="trimestral_volume">AOA 98.000</h4>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Volume de Vendas Trimestral</span>
+                                            <span class="small-text">Volume global de vendas</span>
                                             <span id="trimestral_volume_dif" class="small"><i class="bi bi-arrow-up-right"></i>+12%</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="card-item">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="month_average">€32.666</h4>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Média Mensal de Vendas</span>
+                                            <span class="small-text">Média mensal de vendas</span>
                                             <span id="month_average_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="card-item">
+                                    <div class="card card-custom p-3">
+                                        <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
+                                        <h4 class="mt-3 fw-semibold" id="month_sell">€32.666</h4>
+                                        <div class="d-flex justify-content-between">
+                                            <span class="small-text">Venda do período (mês)</span>
+                                            <span id="month_sell_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-item">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-people text-primary"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="total_customer">64</h4>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Total de Clientes Activos</span>
+                                            <span class="small-text">Clientes pagantes no período (mês)</span>
                                             <span id="total_customer_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div class="col-md-3">
+                                <div class="card-item">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-file-earmark-text text-primary"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="total_docs">157</h4>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Documentos Processados</span>
+                                            <span class="small-text">Documentos emitidos</span>
                                             <span id="total_doc_dif" class="small"><i class="bi bi-arrow-up-right"></i> 0</span>
                                         </div>
                                     </div>
@@ -257,7 +386,14 @@ require_once '../app/views/layout_creation.php';
                                     <div class="card card-custom p-4" id="chart-card">
                                         <div class="d-flex justify-content-between mb-3">
                                             <h6 class="h-title"><i class="bi bi-graph-up"></i> Evolução Trimestral</h6>
-                                            <small class="text-muted d-none">Jan – Mar 2026</small>
+                                            <div class="mb-3">
+                                                <select id="trimestreSelect" class="form-select col-2 w-40">
+                                                    <option value="1">Iº Trim. (Jan - Mar)</option>
+                                                    <option value="2" selected>IIº Trim. (Abr - Jun)</option>
+                                                    <option value="3">IIIº Trim. (Jul - Set)</option>
+                                                    <option value="4">IVº Trim. (Out - Dez)</option>
+                                                </select>
+                                            </div>
                                         </div>
                                         <canvas id="chart"></canvas>
                                     </div>
@@ -300,14 +436,13 @@ require_once '../app/views/layout_creation.php';
 
                             <!-- ================== FACTURAS POR CLIENTE ================== -->
 
-
                         </div>
 
 
                         <!-- Sessao Gestao de RH -->
                         <div class="col-12 tag-content" data-tag-content="rh">
                             <!-- CARDS -->
-                            <div class="row g-3">
+                            <div class="row g-3 g-3">
 
                                 <!-- CARD 1 -->
                                 <div class="col-12 col-md-3">
@@ -335,7 +470,7 @@ require_once '../app/views/layout_creation.php';
                                         </div>
 
                                         <h4 class="fw-bold mt-3" id="rh_total_salary">€62.300</h4>
-                                        <small class="text-muted">Folha Salárial Mensal</small>
+                                        <small class="text-muted">Custo salárial mensal</small>
                                     </div>
                                 </div>
 
@@ -404,7 +539,7 @@ require_once '../app/views/layout_creation.php';
                         <!-- Sessao Gestao de Stock -->
                         <div class="col-12 tag-content" data-tag-content="stock">
                             <!-- CARDS -->
-                            <div class="row g-3">
+                            <div class="row g-3 g-3">
 
                                 <div class="col-12 col-md-3">
                                     <div class="card card-custom p-3">
@@ -413,7 +548,7 @@ require_once '../app/views/layout_creation.php';
                                         </div>
                                         <h4 class="fw-bold mt-3" id="kpi-depots">3</h4>
                                         <div class="d-flex justify-content-between">
-                                            <small class="text-muted ">Nº de Depósitos</small>
+                                            <small class="text-muted ">Nº de depósitos</small>
                                             <span id="kpi-depots-growth" class="text-primary small">+14 <i class="bi bi-arrow-up-right"></i></span>
                                         </div>
                                     </div>
@@ -426,7 +561,7 @@ require_once '../app/views/layout_creation.php';
                                         </div>
                                         <h4 class="fw-bold mt-3" id="kpi-products">957</h4>
                                         <div class="d-flex justify-content-between">
-                                            <small class="text-muted">Total Produtos</small>
+                                            <small class="text-muted">Quantidade de produtos em stock</small>
                                             <span id="kpi-products-growth" class="text-primary small">+14 <i class="bi bi-arrow-up-right"></i></span>
                                         </div>
                                     </div>
@@ -439,7 +574,7 @@ require_once '../app/views/layout_creation.php';
                                         </div>
                                         <h4 class="fw-bold mt-3" id="kpi-total-value">€257.000</h4>
                                         <div class="d-flex justify-content-between">
-                                            <small class="text-muted">Valor Total do Stock</small>
+                                            <small class="text-muted">Valor total dos produtos em stock</small>
                                             <span id="kpi-total-value-growth" class="text-primary small">+3.1% <i class="bi bi-arrow-up-right"></i></span>
                                         </div>
                                     </div>
@@ -451,7 +586,7 @@ require_once '../app/views/layout_creation.php';
                                             <i class="bi bi-exclamation-triangle"></i>
                                         </div>
                                         <h4 class="fw-bold mt-3" id="kpi-low-stock">4</h4>
-                                        <small class="text-muted">Produtos com Stock Baixo</small>
+                                        <small class="text-muted">Produtos com stock baixo</small>
                                     </div>
                                 </div>
 
@@ -460,7 +595,7 @@ require_once '../app/views/layout_creation.php';
                             <!-- DEPÓSITOS -->
                             <div class="card mt-4 card-custom p-3">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <h6 class="fw-semibold h-title"><i class="bi bi-geo-alt"></i>Principais Depósitos</h6>
+                                    <h6 class="fw-semibold h-title"><i class="bi bi-geo-alt"></i>Principais depósitos</h6>
                                 </div>
 
                                 <div class="row g-3" id="depots_list">
@@ -475,7 +610,7 @@ require_once '../app/views/layout_creation.php';
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex">
-                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-exclamation-triangle"></i> Produtos com Stock Baixo</h6>
+                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-exclamation-triangle"></i> Produtos com stock baixo</h6>
                                         </div>
                                         <div class="col-12" id="low_stock_list">
 
@@ -487,7 +622,7 @@ require_once '../app/views/layout_creation.php';
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex justify-content-between mb-3">
-                                            <h6 class="fw-semibold h-title"><i class="bi bi-list"></i> Lista de Compras</h6>
+                                            <h6 class="fw-semibold h-title"><i class="bi bi-list"></i> Lista de compras</h6>
                                             <small class="text-muted">Últimos 5 itens</small>
                                         </div>
 
@@ -710,13 +845,14 @@ require_once '../app/views/footer.php';
     function renderNumbers(data) {
         const kpis = data?.kpis || {};
 
-        $("#trimestral_volume").text(formatCurrency(kpis.volume_trimestral));
+        $("#trimestral_volume").text(formatCurrency(kpis.volume_global));
         $("#month_average").text(formatCurrency(kpis.media_mensal));
-        $("#month_average_dif").text(0);
+        $("#month_sell").text(formatCurrency(kpis.venda_periodo));
         $("#total_customer").text(kpis.clientes || 0);
         $("#total_docs").text(kpis.documentos || 0);
         setDif("trimestral_volume_dif", kpis.crescimento || 0);
         setDif("month_average_dif", kpis.media_mensal_dif || 0);
+        setDif("month_sell_dif", kpis.venda_periodo_growth || 0);
         setDif("total_customer_dif", kpis.crescimento_clientes || 0);
         setDif("total_doc_dif", kpis.crescimento_documentos || 0);
 
@@ -738,51 +874,102 @@ require_once '../app/views/footer.php';
     function renderGraphics(apiData) {
         const evolucao = apiData?.evolucao || [];
 
-        const getLast3Months = () => {
-            const meses = [];
-            const hoje = new Date();
+        const nomesMeses = [
+            'Jan', 'Fev', 'Mar',
+            'Abr', 'Mai', 'Jun',
+            'Jul', 'Ago', 'Set',
+            'Out', 'Nov', 'Dez'
+        ];
 
-            for (let i = 3; i >= 0; i--) {
-                const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
-                meses.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
-            }
-            return meses;
+        const trimestres = {
+            1: [1, 2, 3], // Jan, Fev, Mar
+            2: [4, 5, 6], // Abr, Mai, Jun
+            3: [7, 8, 9], // Jul, Ago, Set
+            4: [10, 11, 12] // Out, Nov, Dez
         };
 
-        const nomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const anoAtual = new Date().getFullYear();
 
+        // Mapeia os valores existentes da base
         const map = {};
-        evolucao.forEach(i => map[i.mes] = Number(i.total));
+        evolucao.forEach(item => {
+            map[item.mes] = Number(item.total || 0);
+        });
 
-        const meses = getLast3Months();
-        const labels = meses.map(m => nomes[parseInt(m.split('-')[1]) - 1]);
-        const valores = meses.map(m => map[m] || 0);
+        // o select de trimestre caso ainda não exista
+        const trimestreSelect = document.getElementById("trimestreSelect");
 
-        const canvas = document.getElementById('chart');
+
+
+        const canvas = document.getElementById("chart");
         if (!canvas) return;
 
-        if (chartInstance) chartInstance.destroy();
+        function atualizarGrafico() {
+            const trimestreSelecionado = Number(trimestreSelect.value);
+            const mesesDoTrimestre = trimestres[trimestreSelecionado];
 
-        chartInstance = new Chart(canvas.getContext('2d'), {
-            type: 'bar',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Receita',
-                    data: valores,
-                    borderRadius: 10
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
+            const labels = [];
+            const valores = [];
+
+            mesesDoTrimestre.forEach(numeroMes => {
+                const mesFormatado = `${anoAtual}-${String(numeroMes).padStart(2, '0')}`;
+
+                labels.push(nomesMeses[numeroMes - 1]);
+                valores.push(map[mesFormatado] || 0);
+            });
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            const ctx = canvas.getContext("2d");
+
+            // Gradiente linear
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, "#007abd");
+            gradient.addColorStop(1, "#007bbd41");
+
+            chartInstance = new Chart(ctx, {
+                type: "bar",
+                data: {
+                    labels,
+                    datasets: [{
+                        label: "Receita",
+                        data: valores,
+                        backgroundColor: gradient,
+                        borderColor: "transparent",
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        hoverBackgroundColor: gradient
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
+
+        trimestreSelect.addEventListener("change", atualizarGrafico);
+
+        atualizarGrafico();
     }
+
 
     /* =============================
        🔹 TOP CLIENTS

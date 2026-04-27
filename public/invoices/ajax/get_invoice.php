@@ -85,7 +85,8 @@ try {
     // Busca itens da fatura
     $sqlItems = "SELECT 
                     ii.item_id,
-                    it.code, 
+                    it.code,
+                    it.name, 
                     it.description, 
                     ii.quantity, 
                     ii.unit_price, 

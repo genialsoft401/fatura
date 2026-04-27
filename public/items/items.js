@@ -1,101 +1,155 @@
 $(document).ready(function () {
-  // Função para renderizar a tabela manualmente
+  let table;
+
+  $.ajax({
+    url: "items/ajax/get_items.php",
+    method: "GET",
+    dataType: "json",
+    success: function (data) {
+      if (data.error) {
+        console.error(data.error);
+        return;
+      }
+
+      renderTable(data?.data || []);
+    },
+    error: function (xhr, status, error) {
+      console.error("❌ Erro ao buscar items:", status, error);
+    },
+  });
+
   function renderTable(data) {
     let tbody = $("#itemsTable tbody");
     tbody.empty();
 
-    if (data.length === 0) {
-      tbody.append(
-        '<tr><td colspan="6" class="text-center">Nenhum produto/serviço encontrado.</td></tr>',
-      );
-      return;
+    // destrói DataTable corretamente (mais seguro)
+    if ($.fn.DataTable.isDataTable("#itemsTable")) {
+      $("#itemsTable").DataTable().clear().destroy();
     }
 
-    // 🔹 Função fora do loop (melhor prática)
-    function hideText(text) {
-      if (!text) return "";
-      return text.length > 100 ? text.substring(0, 100) + "..." : text;
+    if (!data.length) {
+      tbody.append(`
+        <tr>
+          <td colspan="7" class="text-center text-muted py-4">
+            Nenhum produto ou serviço encontrado
+          </td>
+        </tr>
+      `);
+      return;
     }
 
     data.forEach((row) => {
       let rowData = encodeURIComponent(JSON.stringify(row));
 
-      // 🔥 Aqui você processa antes
-      const description = row.description_plain || row.description;
-      const shortDescription = hideText(description);
+      const description = row.name != null ? row.name : row.description;
 
-      let tr = `
-      <tr>
-        <td data-label="Código" style="color: blue;"><i class="bi bi-tag fw-bold fs-5"></i></td>
-        <td>${row.code}</td>
+      const price =
+        (row.sale_price !== null && row.sale_price !== ""
+          ? row.sale_price
+          : null) ??
+        (row.cost_price !== null && row.cost_price !== ""
+          ? row.cost_price
+          : null) ??
+        row.unit_price ??
+        0;
+      const tax = row.tax ?? 0;
 
-        <td class="text-truncate-custom" title="${description}">
-            ${shortDescription}
-        </td>
+      const retention = row.retention_applicable ? "Sim" : "Não";
 
-        <td data-label="Preço Unitário" class="text-success fw-bold">
-          ${formatCurrency(row.unit_price, row.symbol, row.position)}
-        </td>
+      tbody.append(`
+    <tr data-id="${row.id}">
 
-        <td data-label="Taxa/IVA">${row.tax}</td>
+      <!-- ICON -->
+      <td>
+        <i class="${
+          row.item_type === "service"
+            ? "bi bi-tag fw-bold fs-5"
+            : "bi bi-box-seam fw-bold fs-5"
+        }"></i>
+      </td>
 
-        <td data-label="PVP" class="text-success fw-bold">
-          ${formatCurrency(row.pvp, row.symbol, row.position)}
-        </td>
+      <!-- CODE -->
+      <td>${row.code || "-"}</td>
 
-        <td data-label="Ações">
-          <div class="d-flex flex-nowrap justify-content-center">
-            
-            <button class="btn text-dark btn-sm edit-btn"
-              data-row="${rowData}"
-              data-bs-toggle="tooltip"
-              title="Editar item">
-              <i class="bi bi-pencil"></i>
-            </button> 
+      <!-- DESCRIPTION -->
+      <td class="text-truncate-custom" title="${description}">
+        ${description}
+      </td>
 
-            <button class="btn text-danger btn-sm delete-btn"
-              data-id="${row.id}"
-              data-bs-toggle="tooltip"
-              title="Excluir item">
-              <i class="bi bi-trash"></i>
-            </button>
+      <!-- DESCRIPTION -->
+      <td class="text-truncate-custom" title="${row.description}">
+        ${row.description}
+      </td>
 
-          </div>
-        </td>
-      </tr>
-    `;
+      <!-- PRICE -->
+      <td class="text-success fw-bold">
+        ${formatCurrency(row.unit_price, row.currency, row.position)}
+      </td>
 
-      tbody.append(tr);
+      <!-- TAX -->
+      <td>
+        ${row.vat_applicable ? `${tax}%` : "Isento"}
+      </td>
+
+      <!-- PVP -->
+      <td class="text-primary fw-bold">
+        ${formatCurrency(row.pvp ?? 0, row.currency, row.position)}
+      </td>
+
+      <!-- ACTIONS -->
+      <td>
+        <div class="d-flex justify-content-center gap-2">
+
+          <button class="btn btn-sm text-dark edit-btn"
+            data-row="${rowData}"
+            data-bs-toggle="tooltip"
+            title="Editar">
+            <i class="bi bi-pencil fs-6"></i>
+          </button>
+
+          <button class="btn btn-sm text-danger delete-btn"
+            data-id="${row.id}"
+            data-bs-toggle="tooltip"
+            title="Excluir">
+            <i class="bi bi-trash fs-6"></i>
+          </button>
+
+        </div>
+      </td>
+
+    </tr>
+  `);
+    });
+    // reinicializa DataTable após render
+    table = $("#itemsTable").DataTable({
+      pageLength: 25,
+      lengthMenu: [10, 25, 50, 100],
+
+      destroy: true, // evita conflitos futuros
+
+      language: {
+        search: "",
+        searchPlaceholder: "Pesquisar produtos...",
+        lengthMenu: "Mostrar _MENU_",
+        zeroRecords: "Nenhum registro encontrado",
+        info: "_START_–_END_ de _TOTAL_",
+        infoEmpty: "Sem dados",
+        infoFiltered: "(filtrado de _MAX_)",
+        paginate: {
+          first: "«",
+          last: "»",
+          next: "›",
+          previous: "‹",
+        },
+      },
     });
 
-    // 🔥 Bootstrap 5 (forma correta)
-    const tooltipTriggerList = document.querySelectorAll(
-      '[data-bs-toggle="tooltip"]',
-    );
-    tooltipTriggerList.forEach((el) => new bootstrap.Tooltip(el));
+    // tooltips (evita duplicação)
+    setTimeout(() => {
+      $('[data-bs-toggle="tooltip"]').tooltip("dispose"); // limpa antigos
+      $('[data-bs-toggle="tooltip"]').tooltip(); // recria
+    }, 150);
   }
-
-  // Carregar os dados via AJAX
-  function loadItems() {
-    $.ajax({
-      url: "items/ajax/get_items.php",
-      method: "GET",
-      dataType: "json",
-      success: function (data) {
-        if (data.error) {
-          console.error(data.error);
-          return;
-        }
-        renderTable(data);
-      },
-      error: function (xhr, status, error) {
-        console.error("Erro ao carregar os dados:", error);
-      },
-    });
-  }
-
-  // Carrega inicialmente
-  loadItems();
 
   // Função simples de pesquisa (Filtro)
   // Adicione um input com id="searchInput" no seu HTML se quiser usar
@@ -106,62 +160,109 @@ $(document).ready(function () {
     });
   });
 
-  // EDITAR ITEM
+
+ 
   $("#itemsTable").on("click", ".edit-btn", function () {
-    // Recupera os dados diretamente do atributo data-row
-    let rawData = $(this).data("row");
+    const rawData = $(this).data("row");
 
     if (!rawData) {
       console.error("Dados não encontrados para edição.");
       return;
     }
 
-    // Decodifica a string JSON
-    let rowData = JSON.parse(decodeURIComponent(rawData));
+    const row = JSON.parse(decodeURIComponent(rawData));
+    const form = document.getElementById("editItemForm");
 
-    // Preencher modal com os dados do item
-    $("#edit_id").val(rowData.id);
-    $("#edit_codigo").val(rowData.code);
-    $("#edit_descricao").val(rowData.description);
-    $("#edit_preco").val(rowData.unit_price);
-    $("#edit_pvp").val(rowData.pvp);
-    $("#edit_currency").val(rowData.currency);
-    $("#editItemForm").data("id_company", rowData.id_company);
+    if (!form) return;
 
-    // Preencher selects corretamente
-    $("#edit_unidade").val(rowData.unit2).trigger("change");
-    $("#edit_retencao").val(rowData.retention2).trigger("change");
-    $("#edit_taxa").val(rowData.tax2).trigger("change");
+    // =========================
+    // ID
+    // =========================
+    form.id.value = row.id ?? "";
 
-    // Abrir a modal de edição
+    // =========================
+    // CÓDIGO (hidden + display)
+    // =========================
+    if (form.codigo) form.codigo.value = row.code ?? "";
+
+    const codigoDisplay = document.getElementById("codigo_display");
+    if (codigoDisplay) codigoDisplay.value = row.code ?? "";
+
+    // =========================
+    // IDENTIFICAÇÃO
+    // =========================
+    if (form.name) form.name.value = row.name ?? "";
+    if (form.descricao) form.descricao.value = row.description ?? "";
+
+    // =========================
+    // CLASSIFICAÇÃO
+    // =========================
+    $(form.querySelector("[name='item_type']"))
+      .val(row.item_type ?? "product")
+      .trigger("change");
+
+    $(form.querySelector("[name='unit_measure']"))
+      .val(row.unit_measure ?? "unit")
+      .trigger("change");
+
+    $(form.querySelector("[name='currency']"))
+      .val(row.currency ?? "AOA")
+      .trigger("change");
+
+    // =========================
+    // STOCK
+    // =========================
+    $(form.querySelector("[name='stock_id']"))
+      .val(row.stock_id ?? "")
+      .trigger("change");
+
+    if (form.quantidade) form.quantidade.value = row.quantity ?? 0;
+    if (form.min_stock) form.min_stock.value = row.min_quantity ?? 1;
+
+    // =========================
+    // PREÇOS
+    // =========================
+    if (form.unit_price) form.unit_price.value = row.unit_price ?? 0;
+    if (form.cost_price) form.cost_price.value = row.cost_price ?? 0;
+    if (form.sale_price) form.sale_price.value = row.sale_price ?? 0;
+    if (form.pvp) form.pvp.value = row.pvp ?? 0;
+
+    // =========================
+    // FISCAL
+    // =========================
+    if (form.tax) form.tax.value = row.tax ?? "";
+
+    $(form.querySelector("[name='retention']"))
+      .val(row.retention ?? 0)
+      .trigger("change");
+
+    $(form.querySelector("[name='tax']"))
+      .val(row.tax ?? 0)
+      .trigger("change");
+
+    // =========================
+    // COMPANY
+    // =========================
+    if (form.id_company) form.id_company.value = row.company_id ?? "";
+
+    // =========================
+    // MODAL
+    // =========================
     $("#editItemModal").modal("show");
   });
 
-  // SALVAR EDIÇÃO
+
   $("#saveEdit").on("click", function () {
-    // Manually construct the data object to ensure correct keys are sent
-    let dataToSend = {
-      id: $("#edit_id").val(),
-      id_company: $("#editItemForm").data("id_company"),
-      codigo: $("#edit_codigo").val(),
-      descricao: $("#edit_descricao").val(),
-      preco: $("#edit_preco").val(),
-      pvp: $("#edit_pvp").val(),
-      unidade: $("#edit_unidade").val(),
-      retencao: $("#edit_retencao").val(),
-      taxa: $("#edit_taxa").val(),
-      currency: $("#edit_currency").val(),
-    };
+    const form = $("#editItemForm");
 
-    console.log(dataToSend); // For debugging: check what data is being sent
-
+    let formData = form.serialize(); //
     $.ajax({
       url: "items/ajax/edit_item.php",
       method: "POST",
-      data: dataToSend, // Changed from formData to dataToSend
+      data: formData,
       dataType: "json",
+
       success: function (response) {
-        console.log(response); // Debugging: check server response
         if (response.success) {
           $("#editItemModal").modal("hide");
 
@@ -169,29 +270,19 @@ $(document).ready(function () {
             toast: true,
             position: "top-end",
             icon: "success",
-            title: "Produto/Serviço atualizado com sucesso!",
+            title: "Item atualizado com sucesso!",
             showConfirmButton: false,
             timer: 3000,
           });
 
-          // Recarregar os dados na tabela
           loadItems();
         } else {
-          Swal.fire({
-            icon: "error",
-            title: "Erro!",
-            text: "Erro ao atualizar o produto/serviço.",
-            confirmButtonColor: "#d33",
-          });
+          Swal.fire("Erro", response.message || "Erro ao atualizar", "error");
         }
       },
+
       error: function () {
-        Swal.fire({
-          icon: "error",
-          title: "Erro!",
-          text: "Erro na requisição!",
-          confirmButtonColor: "#d33",
-        });
+        Swal.fire("Erro!", "Erro na requisição!", "error");
       },
     });
   });

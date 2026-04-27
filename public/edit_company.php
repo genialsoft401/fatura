@@ -5,7 +5,7 @@ require_once '../app/views/layout_creation.php';
 <style>
     .profile-cover {
         height: 200px;
-        background: linear-gradient(0deg, #005a87b4, #007abd, #003f5c00);
+        background: linear-gradient(135deg, #005a87, #007abd);
         border-radius: 0 0 20px 20px;
         margin-top: 50px;
     }
@@ -216,63 +216,43 @@ require_once '../app/views/layout_creation.php';
                             <div class="card-header bg-white fw-bold fs-5">Dados Fiscais</div>
 
                             <div class="card-body row g-3">
+
+                                <!-- REGIME -->
                                 <div class="col-md-6">
-                                    <label for="vat_regime" class="form-label">Regime de IVA</label>
+                                    <label class="form-label">Regime de IVA</label>
                                     <select name="vat_regime" id="vat_regime" class="form-select">
-                                        < <option value="">- Selecione -</option>
-                                            <option value="524">IVA - 14%</option>
-                                            <option value="563">IVA - 7%</option>
-                                            <option value="564">IVA - 5%</option>
-                                            <option value="525">M00 - Regime Simplificado</option>
-                                            <option value="526">M02 - Transmissão de bens e serviço não sujeita</option>
-                                            <option value="527">M04 - Regime de Exclusão</option>
-                                            <option value="528">M11 - Isento nos termos da alínea b) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="529">M12 - Isento nos termos da alínea c) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="530">M13 - Isento nos termos da alínea d) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="531">M14 - Isento nos termos da alínea e) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="532">M15 - Isento nos termos da alínea f) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="533">M16 - Isento nos termos da alínea g) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="534">M17 - Isento nos termos da alínea h) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="535">M18 - Isento nos termos da alínea i) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="536">M19 - Isento nos termos da alínea j) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="537">M20 - Isento nos termos da alínea k) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="538">M21 - Isento nos termos da alínea l) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="539">M22 - Isento nos termos da alínea m) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="540">M23 - Isento nos termos da alínea n) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="541">M24 - Isento nos termos da alínea o) do nº1 do artigo 12.º do CIVA </option>
-                                            <option value="542">M80 - Isento nos termos da alínea a) do nº1 do artigo 14.º do CIVA </option>
-                                            <option value="543">M81 - Isento nos termos da alínea b) do nº1 do artigo 14.º do CIVA </option>
-                                            <option value="544">M82 - Isento nos termos da alínea c) do nº1 do artigo 14.º do CIVA </option>
-                                            <option value="545">M83 - Isento nos termos da alínea d) do nº1 do artigo 14.º do CIVA </option>
-                                            <option value="546">M84 - Isento nos termos da alínea e) do nº1 do artigo 14.º do CIVA </option>
-                                            <option value="547">M85 - Isento nos termos da alínea a) do nº2 do artigo 14.º do CIVA </option>
-                                            <option value="548">M86 - Isento nos termos da alínea b) do nº2 do artigo 14.º do CIVA </option>
-                                            <option value="549">M30 - Isento nos termos da alínea a) do artigo 15.º do CIVA </option>
-                                            <option value="550">M31 - Isento nos termos da alínea b) do artigo 15.º do CIVA </option>
-                                            <option value="551">M32 - Isento nos termos da alínea c) do artigo 15.º do CIVA </option>
-                                            <option value="552">M33 - Isento nos termos da alínea d) do artigo 15.º do CIVA </option>
-                                            <option value="553">M34 - Isento nos termos da alínea e) do artigo 15.º do CIVA </option>
-                                            <option value="554">M35 - Isento nos termos da alínea f) do artigo 15.º do CIVA </option>
-                                            <option value="555">M36 - Isento nos termos da alínea g) do artigo 15.º do CIVA </option>
-                                            <option value="556">M37 - Isento nos termos da alínea h) do artigo 15.º do CIVA </option>
-                                            <option value="557">M38 - Isento nos termos da alínea i) do artigo 15.º do CIVA </option>
-                                            <option value="558">M90 - Isento nos termos da alinea a) do nº1 do artigo 16.º</option>
-                                            <option value="559">M91 - Isento nos termos da alinea b) do nº1 do artigo 16.º</option>
-                                            <option value="560">M92 - Isento nos termos da alinea c) do nº1 do artigo 16.º</option>
-                                            <option value="561">M93 - Isento nos termos da alinea d) do nº1 do artigo 16.º</option>
-                                            <option value="562">M94 - Isento nos termos da alinea e) do nº1 do artigo 16.º</option>
-
-                                    </select>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <label for="vat_irt" class="form-label">IRT</label>
-                                    <select name="vat_irt" id="vat_irt" class="form-select">
                                         <option value="">- Selecione -</option>
-                                        <option value="6,5">6,5% - Art. 67.º do CII</option>
-                                        <option value="6,5">6,5% - Art. 16.º, n.º 2, do CIRT</option>
+                                        <option value="geral">Regime Geral</option>
+                                        <option value="simplificado">Regime Simplificado</option>
+                                        <option value="isento">Exclusão</option>
                                     </select>
                                 </div>
+
+                                <!-- IVA DEFAULT -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Taxa IVA (%)</label>
+                                    <input type="number" step="0.01" name="default_vat_rate" id="default_vat_rate" class="form-control" value="14" disabled>
+                                </div>
+
+                                <!-- RETENÇÃO ATIVA -->
+                                <!-- <div class="col-md-4">
+                                    <label class="form-label">Aplicar Retenção?</label>
+                                    <select name="withholding_enabled" id="withholding_enabled" class="form-select">
+                                        <option value="0">Não</option>
+                                        <option value="1">Sim</option>
+                                    </select>
+                                </div>
+
+                                TAXA RETENÇÃO -->
+                                <!-- <div class="col-md-6">
+                                    <label class="form-label">Taxa de Retenção (%)</label>
+                                    <select name="withholding_rate" id="withholding_rate" class="form-select">
+                                        <option value="0">Sem retenção</option>
+                                        <option value="6.5">6,5% (Serviços ≥ 20.000 Kz)</option>
+                                        <option value="10">10% (Outros casos)</option>
+                                    </select>
+                                </div> -->
+
                             </div>
                         </div>
 
@@ -314,8 +294,8 @@ require_once '../app/views/layout_creation.php';
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="bank_name1" class="form-label">Banco Secundário</label>
-                                    <select class="form-select" id="bank_name1" name="bank_name1">
+                                    <label for="bank_name_optional" class="form-label">Banco Secundário</label>
+                                    <select class="form-select" id="bank_name_optional" name="bank_name_optional">
                                         <option value="" selected>- Selecione -</option>
                                         <option value="Banco Angolano de Investimentos (BAI)">Banco Angolano de Investimentos (BAI)</option>
                                         <option value="Banco de Fomento Angola (BFA)">Banco de Fomento Angola (BFA)</option>
@@ -341,8 +321,8 @@ require_once '../app/views/layout_creation.php';
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label for="iban1" class="form-label">IBAN</label>
-                                    <input type="text" class="form-control" id="iban1" name="iban1">
+                                    <label for="iban_optional" class="form-label">IBAN</label>
+                                    <input type="text" class="form-control" id="iban_optional" name="iban_optional">
                                 </div>
                             </div>
                         </div>
@@ -376,8 +356,77 @@ require_once '../app/views/layout_creation.php';
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
-
     <script src="edit_company/edit_company.js"></script>
+
+    <script>
+        $(document).ready(function() {
+
+            function updateFiscalRules() {
+
+                const regime = $("#vat_regime").val();
+                const ivaInput = $("#default_vat_rate");
+                const retentionEnabled = $("#withholding_enabled");
+                const retentionRate = $("#withholding_rate");
+
+                // RESET
+                retentionEnabled.prop("disabled", false);
+                retentionRate.prop("disabled", false);
+
+                if (regime === "geral") {
+
+                    ivaInput.val(14);
+
+                    retentionEnabled.val("1");
+                    retentionEnabled.prop("disabled", true);
+                    retentionRate.val("6.5");
+
+                } else if (regime === "simplificado") {
+
+                    ivaInput.val(7);
+
+                    retentionEnabled.val("0");
+                    retentionEnabled.prop("disabled", true);
+
+                    retentionRate.val("0");
+                    retentionRate.prop("disabled", true);
+
+                } else if (regime === "isento") {
+
+                    ivaInput.val(0);
+
+                    retentionEnabled.val("0");
+                    retentionEnabled.prop("disabled", true);
+
+                    retentionRate.val("0");
+                    retentionRate.prop("disabled", true);
+
+                }
+
+            }
+
+            function toggleRetention() {
+
+                const enabled = $("#withholding_enabled").val();
+
+                if (enabled === "1") {
+                    $("#withholding_rate").prop("disabled", false);
+                } else {
+                    $("#withholding_rate").val("0");
+                    $("#withholding_rate").prop("disabled", true);
+                }
+
+            }
+
+            // EVENTOS
+            $("#vat_regime").on("change", updateFiscalRules);
+            $("#withholding_enabled").on("change", toggleRetention);
+
+            // INIT
+            updateFiscalRules();
+            toggleRetention();
+
+        });
+    </script>
 
     <?php require_once '../app/views/footer.php'; ?>
 </body>

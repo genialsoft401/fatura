@@ -1,5 +1,6 @@
 <?php
 require_once '../../../app/config/db.php';
+// require_once
 
 header('Content-Type: application/json');
 

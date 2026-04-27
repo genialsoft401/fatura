@@ -25,15 +25,15 @@ require_once '../app/views/head.php';
 
             <!-- Formulário -->
             <form id="loginForm" class="w-100 px-3 d-flex align-items-center justify-content-center">
-                <div class="w-100" style="max-width: 400px;">
+                <div class="w-100 bg-white shadow-sm rounded p-3" style="max-width: 400px;">
                     <div class="mb-3">
                         <label for="user_email" class="form-label mb-0"><?= t('Usuário ou E-mail') ?></label>
-                        <input type="text" class="form-control" id="user_email" name="user_email" required>
+                        <input type="text" class="form-control p-2" id="user_email" name="user_email" required>
                     </div>
                     <div class="mb-3 position-relative">
                         <label for="password" class="form-label mb-0"><?= t('Senha') ?></label>
                         <div class="position-relative">
-                            <input type="password" class="form-control" id="password" name="password" required>
+                            <input type="password" class="form-control p-2" id="password" name="password" required>
                             <span class="position-absolute end-0 top-50 translate-middle-y me-2" id="togglePassword" style="cursor: pointer;">
                                 <i class="material-icons-outlined">visibility</i>
                             </span>
@@ -47,8 +47,8 @@ require_once '../app/views/head.php';
                         </div>
                         <a href="#" id="forgotPassword" class="text-decoration-none" style="font-size:13px;"><?= t('Esqueci minha senha') ?></a>
                     </div>
-                    <div class="w-100 d-flex justify-content-center">
-                        <button id="btnAcessar" class="btn btn-primary bg-blue w-100"><?= t('Acessar') ?></button>
+                    <div class="w-100 d-flex justify-content-center mt-2">
+                        <button id="btnAcessar" class="btn btn-primary bg-blue w-100 p-3"><?= t('Acessar') ?></button>
                     </div>
                 </div>
             </form>

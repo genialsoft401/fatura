@@ -232,21 +232,100 @@ require_once '../app/views/layout_creation.php';
             margin-bottom: 8px;
         }
     }
+
+    #downloadCSV,
+    #downloadExcel,
+    #downloadPDF,
+    #newContact {
+        transform: translateY(-1px);
+        font-size: 0.9rem;
+        padding: 5px 18px !important;
+        height: 35px !important;
+        margin-top: 10px;
+    }
+
+    #downloadCSV {
+        border-radius: 999px;
+        font-weight: 500;
+    }
+
+    #downloadCSV:hover,
+    #downloadExcel:hover,
+    #downloadPDF:hover {
+        transform: translateY(-1px);
+    }
+
+    #downloadCSV:hover {
+        background: #16a34a;
+        color: #fff;
+    }
+
+    #downloadExcel:hover {
+        background: #2563eb;
+        color: #fff;
+    }
+
+    #downloadPDF:hover {
+        background: #dc2626;
+        color: #fff;
+    }
+
+    #downloadExcel {
+        border-radius: 999px;
+        font-weight: 500;
+    }
+
+    #dt-search-0{
+        display: none !important;
+    }
 </style>
 
 <body>
     <main>
-        <div class="container mt-5">
-            <h2 class="mb-4">Lista de Produtos/Serviços</h2>
-            <table id="itemsTable" class="table nowrap w-100">
-                <div class="mb-3 col-lg-3">
-                    <input type="text" id="searchInput" class="form-control" placeholder="Pesquisar produtos/serviços...">
+        <div class="container-fluid px-lg-5 px-2 mt-5">
+            <!-- <br><br> -->
+            <div class="d-flex justify-content-between">
+                <h2 class="mb-4">Lista de Produtos/Serviços</h2>
+                <div class="d-flex flex-wrap gap-2">
+                    <button id="downloadCSV" class="btn btn-outline-success rounded-pill d-flex align-items-center gap-2"><i class="bi bi-download align-middle fs-6"></i> Baixar em CSV</button>
+                    <button id="downloadExcel" class="btn btn-outline-primary rounded-pill d-flex align-items-center gap-2"><i class="bi bi-filetype-xls align-middle fs-6"></i> Baixar em Excel</button>
+                    <button id="downloadPDF" class="btn btn-outline-danger rounded-pill d-flex align-items-center gap-2"><i class="bi bi-filetype-pdf align-middle fs-6"></i> Baixar em PDF</button>
+                    <button id="newContact" data-bs-toggle="modal" data-bs-target="#itemModal" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-plus-circle align-middle fs-6"></i> Novo Produto</button>
                 </div>
+            </div>
 
+            <table id="itemsTable" class="table nowrap w-100">
+                <div class="row g-2 mb-3 align-items-center">
+
+                    <!-- FILTRO -->
+                    <div class="col-md-8">
+                        <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted">Total de Itens</small>
+                                <h4 class="mb-0 fw-bold" id="items-count"></h4>
+                            </div>
+                            <!-- <i class="bi bi-box-seam fs-3 text-primary"></i> -->
+                        </div>
+                    </div>
+
+                    <!-- SEARCH -->
+                    <div class="col-md-4">
+                        <div class="position-relative">
+                            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                            <input
+                                type="text"
+                                id="searchInput"
+                                class="form-control ps-5"
+                                placeholder="Pesquisar produtos ou serviços...">
+                        </div>
+                    </div>
+
+                </div>
                 <thead>
                     <tr>
                         <th>#</th>
                         <th>Código</th>
+                        <th>Nome</th>
                         <th>Descrição</th>
                         <th>Preço Unitário</th>
                         <th>Taxa/IVA</th>

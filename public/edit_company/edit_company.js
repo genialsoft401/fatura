@@ -151,49 +151,105 @@ $(document).ready(function () {
   if (companyId) {
     $.get(
       "assets/ajax/get_company.php",
-      {
-        id: companyId,
-      },
+      { id: companyId },
       function (response) {
-        if (response.success) {
-          let selectedCountry = response.data.country || "";
-          let selectedCity = response.data.city || "";
-          let ddi = [response.data.phone_ddi] || "";
-
-          $.each(response.data, function (key, value) {
-            let field = $("#" + key);
-            if (field.length) {
-              if (field.is("input, textarea")) {
-                field.val(value);
-              } else if (field.is("select")) {
-                field.val(value).trigger("change"); // Para atualizar selects com Select2 ou similares
-                field.select2(); // Reinstancia o Select2
-              } else if (field.is("img")) {
-                field.attr("src", value);
-              }
-            }
-          });
-
-          // Tratamento especial para o logo
-          setLogoSrc("assets/img/companies/" + response.data.logo_url);
-
-          // Chamar a função selectCountry com os valores carregados
-          selectCountry(selectedCountry, selectedCity);
-          loadDDI({ phone_ddi: ddi });
-        } else {
+        if (!response.success) {
           Swal.fire("Erro", "Empresa não encontrada", "error");
+          return;
+        }
+
+        const data = response.data || {};
+
+        const selectedCountry = data.country || "";
+        const selectedCity = data.city || "";
+        const ddi = data.phone_ddi || "";
+
+        /*
+      |--------------------------------------------------------------------------
+      | Nome da empresa
+      |--------------------------------------------------------------------------
+      */
+        $("#companyName").text(data.name || "");
+
+        /*
+      |--------------------------------------------------------------------------
+      | Preencher campos automaticamente
+      |--------------------------------------------------------------------------
+      */
+        $.each(data, function (key, value) {
+          const field = $("#" + key);
+
+          if (!field.length) return;
+
+          // INPUT / TEXTAREA
+          if (field.is("input, textarea")) {
+            field.val(value ?? "");
+            return;
+          }
+
+          // SELECT
+          if (field.is("select")) {
+            field.val(value ?? "").trigger("change");
+
+            // Inicializa Select2 apenas se ainda não estiver iniciado
+            if (!field.hasClass("select2-hidden-accessible")) {
+              field.select2({
+                width: "100%",
+              });
+            }
+
+            return;
+          }
+
+          // IMG
+          if (field.is("img")) {
+            field.attr("src", value || "");
+          }
+        });
+
+        /*
+      |--------------------------------------------------------------------------
+      | Logo da empresa
+      |--------------------------------------------------------------------------
+      */
+        if (data.logo_url) {
+          setLogoSrc(`assets/img/companies/${data.logo_url}`);
+        }
+
+        /*
+      |--------------------------------------------------------------------------
+      | País + Cidade
+      |--------------------------------------------------------------------------
+      */
+        selectCountry(selectedCountry, selectedCity);
+
+        /*
+      |--------------------------------------------------------------------------
+      | DDI do telefone
+      |--------------------------------------------------------------------------
+      */
+        if (ddi) {
+          loadDDI({
+            phone_ddi: ddi,
+          });
         }
       },
       "json",
-    );
+    ).fail(function () {
+      Swal.fire(
+        "Erro",
+        "Não foi possível carregar os dados da empresa.",
+        "error",
+      );
+    });
   }
 
   $("#editCompanyForm").submit(function (e) {
     e.preventDefault();
+
     let formData = new FormData(this);
 
-    // Se tiver logo recortada, substitui o upload original
-    if (croppedLogoBlob) {
+    if (croppedLogoBlob instanceof Blob) {
       formData.delete("logo");
       formData.append("logo", croppedLogoBlob, "logo.png");
     }
@@ -204,6 +260,7 @@ $(document).ready(function () {
       data: formData,
       contentType: false,
       processData: false,
+      dataType: "json",
       success: function (response) {
         if (response.success) {
           Swal.fire(
@@ -212,10 +269,11 @@ $(document).ready(function () {
             "success",
           ).then(() => (window.location.href = "list_companies.php"));
         } else {
-          Swal.fire("Erro", response.message, "error");
+          Swal.fire("Erro", response.message || "Erro desconhecido", "error");
         }
       },
-      error: function () {
+      error: function (xhr) {
+        console.log("SERVER ERROR:", xhr.responseText);
         Swal.fire("Erro", "Erro ao atualizar empresa", "error");
       },
     });

@@ -21,6 +21,8 @@
         display: flex;
         flex-direction: column;
         border-right: 1px solid var(--border);
+        position: fixed;
+        z-index: 999;
     }
 
     .brand {
@@ -243,8 +245,8 @@
                 <i class="text-white" data-lucide="chevron-down"></i>
             </button>
             <div class="submenu" id="proformas">
-                <a href="/proformas/create" data-link><i data-lucide="plus"></i> Emitir</a>
-                <a href="/proformas/list" data-link><i data-lucide="list"></i> Listar</a>
+                <a href="create_proform.php" data-link><i data-lucide="plus"></i> Emitir</a>
+                <a href="proformas.php" data-link><i data-lucide="list"></i> Listar</a>
             </div>
 
             <button class="nav-item" data-submenu="#facturas">
@@ -318,6 +320,7 @@
 <script src="assets/js/lucide.js"></script>
 <script>
     $(document).ready(function() {
+
         // Assinatura / limites
         $.getJSON('assets/ajax/get_company_limits.php', {
             company_id: <?php echo (int)$_SESSION['user']['company_id']; ?>

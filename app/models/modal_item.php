@@ -1,4 +1,3 @@
-<!-- Modal item -->
 <style>
     .modal-item {
         background: linear-gradient(135deg, #007abd, #6ea8ff);
@@ -82,6 +81,24 @@
         justify-items: center;
         justify-content: center;
     }
+
+    #depot {
+        transform: scale(-50px);
+        opacity: 0;
+        height: 0px;
+        transition: all ease-in-out .3s;
+        position: absolute;
+        z-index: -999;
+    }
+
+    #depot.active {
+        transform: translateY(0px);
+        opacity: 1;
+        height: auto;
+        transition: .3s;
+        position: inherit;
+        z-index: inherit;
+    }
 </style>
 
 <div class="modal fade" id="itemModal" data-bs-backdrop="static" data-bs-keyboard="false">
@@ -98,101 +115,190 @@
             </div>
 
             <!-- BODY -->
-            <div class="modal-body p-2">
+            <div class="modal-body p-3">
                 <form id="itemForm">
 
                     <input type="hidden" value="<?= $_SESSION['user']['company_id'] ?>" name="id_company">
 
-                    <!-- BLOCO 1 -->
-                    <div class="soft-card mb-2 mt-4">
-                        <div class="row align-items-end g-3">
+                    <!-- ========================= -->
+                    <!-- 1. IDENTIFICAÇÃO -->
+                    <!-- ========================= -->
+                    <div class="soft-card mb-3">
+                        <h6 class="mb-3 fw-bold"><?= t('Identificação do Item') ?></h6>
+
+                        <div class="row g-3 align-items-end">
 
                             <!-- CÓDIGO -->
-                            <div class="col-md-5 col-12">
+                            <div class="col-md-4">
                                 <label class="form-label"><?= t('Código') ?></label>
-
-                                <div class="d-flex gap-2">
+                                <div class="d-flex align-items-center gap-2">
                                     <input type="text" class="form-control" id="codigo" name="codigo" required>
-
-                                    <button type="button" id="gerarCodigo" class="btn btn-primary px-3">
-                                        Gerar
-                                    </button>
+                                    <i class="bi bi-info-circle text-muted"
+                                        data-bs-toggle="tooltip"
+                                        title="Gerado automaticamente ao selecionar o stock"></i>
                                 </div>
                             </div>
 
+                            <!-- NOME -->
+                            <div class="col-md-8" id="nameBlock">
+                                <label class="form-label"><?= t('Nome') ?></label>
+                                <input type="text" class="form-control" name="name" id="name" required>
+                            </div>
+
                             <!-- DESCRIÇÃO -->
-                            <div class="col-md-7 col-12">
-                                <label class="form-label"><?= t('Descrição') ?></label>
-                                <textarea class="form-control" rows="1" id="descricao" name="descricao"></textarea>
+                            <div class="col-12">
+                                <label class="form-label"><?= t('Descrição detalhada') ?><small class="text-danger">(opcional)</small></label>
+                                <textarea class="form-control" rows="2" name="descricao" id="descricao"></textarea>
                             </div>
 
                         </div>
                     </div>
 
 
-                    <!-- BLOCO 2 -->
-                    <div class="soft-card mb-2">
-                        <div class="row">
+                    <!-- ========================= -->
+                    <!-- 2. CLASSIFICAÇÃO -->
+                    <!-- ========================= -->
+                    <div class="soft-card mb-3">
+                        <h6 class="mb-3 fw-bold"><?= t('Classificação') ?></h6>
 
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label"><?= t('Unidade') ?></label>
-                                <select class="form-select" name="unidade">
-                                    <option value="servico"><?= t('Serviço') ?></option>
-                                    <option value="unidade"><?= t('Unidade') ?></option>
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label class="form-label"><?= t('Tipo') ?></label>
+                                <select class="form-select" name="item_type" id="category" required>
+                                    <option value="selecione o Tipo de item" selected></option>
+                                    <option value="service"><?= t('Serviço') ?></option>
+                                    <option value="product"><?= t('Produto') ?></option>
+                                    <option value="consumable"><?= t('Consumível') ?></option>
+                                    <option value="raw_material"><?= t('Matéria-prima') ?></option>
+                                    <option value="finished_good"><?= t('Produto final') ?></option>
                                 </select>
                             </div>
 
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label"><?= t('Moeda') ?></label>
-                                <select class="form-select" name="currency" required>
-                                    <?= currencySelects(); ?>
+                            <div class="col-md-6">
+                                <label class="form-label">Subcategoria</label>
+                                <select class="form-select" name="subcategory" id="subcategory">
+                                    <option value="">Selecione</option>
+                                    <option value="essential">Bens essenciais</option>
+                                    <option value="agriculture">Insumos agrícolas</option>
+                                    <option value="other">Outros produtos</option>
                                 </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="soft-card mb-3 d-flex flex-wrap gap-2">
+                        <div class="col-md-5">
+                            <label class="form-label"><?= t('Unidade') ?></label>
+                            <select class="form-select" name="unit_measure">
+                                <option value="unit">Unidade</option>
+                                <option value="kg">Kg</option>
+                                <option value="liter">Litro</option>
+                                <option value="meter">Metro</option>
+                                <option value="service">Serviço</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label"><?= t('Moeda') ?></label>
+                            <select class="form-select" name="currency">
+                                <?= currencySelects(); ?>
+                            </select>
+                        </div>
+                    </div>
+
+
+                    <!-- ========================= -->
+                    <!-- 3. STOCK -->
+                    <!-- ========================= -->
+                    <div class="soft-card mb-3" id="depot">
+                        <h6 class="mb-3 fw-bold"><?= t('Gestão de Stock') ?></h6>
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label class="form-label"><?= t('Depósito / Stock') ?></label>
+                                <select class="form-select" name="stock_id" id="stock_id">
+                                    <option value=""><?= t('Selecione o stock') ?></option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label"><?= t('Quantidade Inicial') ?></label>
+                                <input type="number" class="form-control" name="quantidade" min="0">
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label"><?= t('Stock mínimo') ?></label>
+                                <input type="number" class="form-control" name="min_stock" min="1" value="1">
                             </div>
 
                         </div>
                     </div>
 
-                    <!-- BLOCO 3 -->
-                    <div class="soft-card mb-2">
-                        <div class="row">
 
-                            <div class="col-md-6 mb-2">
+                    <!-- ========================= -->
+                    <!-- 5. FISCAL -->
+                    <!-- ========================= -->
+                    <div class="soft-card mb-2">
+                        <h6 class="mb-3 fw-bold"><?= t('Fiscalidade') ?></h6>
+
+                        <div class="row g-3">
+
+                            <div class="col-md-4 mb-2">
                                 <label class="form-label"><?= t('Preço Unitário') ?></label>
-                                <input type="number" class="form-control" name="preco" step="0.01" required>
+                                <input type="number" class="form-control" name="unit_price" step="0.01" required>
                             </div>
 
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label"><?= t('Taxa / IVA') ?></label>
-                                <select class="form-select" name="taxa">
-                                    <option value="">- Selecione -</option>
-                                    <option value="IVA - 14%">IVA - 14%</option>
-                                    <option value="IVA - 7%">IVA - 7%</option>
-                                    <option value="IVA - 5%">IVA - 5%</option>
-                                    <option value="Isento">Isento</option>
-                                </select>
+                            <!-- IVA -->
+                            <div class="col-md-4">
+                                <label class="form-label"><?= t('IVA') ?></label>
+                                <input class="form-control" name="tax" id="tax" readonly>
                             </div>
 
-                        </div>
-
-                        <div class="row">
-
-                            <div class="col-md-6 mb-2">
-                                <label class="form-label"><?= t('PVP') ?></label>
-                                <input type="number" class="form-control" name="pvp" step="0.01" required>
-                            </div>
-
-                            <div class="col-md-6 mb-2">
+                            <!-- RETENÇÃO -->
+                            <div class="col-md-4">
                                 <label class="form-label"><?= t('Retenção') ?></label>
-                                <select class="form-select" name="retencao">
-                                    <option value="nao_aplicar"><?= t('Não Aplicar') ?></option>
-                                    <option value="6,5">6,5% - Art. 67.º do CII</option>
+                                <select class="form-select" name="retention" id="retention">
+                                    <option value="0">Não aplicar</option>
+                                    <option value="6.5">Aplicar (6.5%)</option>
                                 </select>
                             </div>
 
                         </div>
                     </div>
+
+
+                    <!-- ========================= -->
+                    <!-- 4. FINANCEIRO -->
+                    <!-- ========================= -->
+                    <div class="soft-card mb-3" id="financeBlock">
+                        <h6 class="mb-3 fw-bold"><?= t('Preços') ?></h6>
+
+                        <div class="row g-3">
+
+                            <div class="col-md-4">
+                                <label class="form-label"><?= t('Preço de Custo') ?></label>
+                                <input type="number" class="form-control" name="cost_price" step="0.01">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label"><?= t('Preço de Venda') ?></label>
+                                <input type="number" class="form-control" name="sale_price" step="0.01">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label"><?= t('PVP') ?></label>
+                                <input type="number" class="form-control" name="pvp" step="0.01">
+                            </div>
+
+                        </div>
+                    </div>
+
+
 
                 </form>
+
             </div>
 
             <!-- FOOTER -->
@@ -206,54 +312,4 @@
     </div>
 </div>
 
-<script>
-    // Função para verificar se o código já existe
-    document.getElementById('codigo').addEventListener('blur', function() {
-        const codigo = this.value;
-
-        if (codigo) {
-            fetch('items/ajax/check_code.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        codigo
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.exists) {
-                        alert('Este código já existe. Por favor, insira outro.');
-                        this.value = '';
-                    }
-                })
-                .catch(error => console.error('Erro:', error));
-        }
-    });
-
-    // Função para gerar código baseado no nome da empresa
-    document.getElementById('gerarCodigo').addEventListener('click', function() {
-
-
-        fetch('items/ajax/generate_code.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.generated_code) {
-                    document.getElementById('codigo').value = data.generated_code;
-                } else {
-                    alert('Erro ao gerar o código.');
-                }
-            })
-            .catch(error => console.error('Erro:', error));
-    });
-
-    // $('#descricao').trumbowyg({
-    //     autogrow: false
-    // });
-</script>
+<script src="../public/assets/js/modal_item.js"></script>

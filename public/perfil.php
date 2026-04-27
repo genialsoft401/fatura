@@ -6,7 +6,7 @@ require_once '../app/views/layout_creation.php';
     .profile-cover {
         height: 280px;
         transform: translateY(50px);
-        background: linear-gradient(0deg, #005a87b4, #007abd, #003f5c00);
+        background: linear-gradient(135deg, #005a87, #007abd);
         border-radius: 0 0 20px 20px;
     }
 

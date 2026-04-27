@@ -1,6 +1,4 @@
 $(document).ready(function () {
-  carregarEstoques();
-
   $("#createStock").on("click", function () {
     const icones = [
       "box",
@@ -51,111 +49,107 @@ $(document).ready(function () {
     ];
 
     Swal.fire({
-      title: "Novo Stock",
+      title: "Criar Novo Stock",
       width: "800px",
-      html: `
-      <div class="stripe-form">
-          <hr>
-          <!-- GRID -->
-          <div class="row g-4">
+      html: `<div class="row g-3">
+  <!-- Nome e Cor -->
+  <div class="col-md-8">
+    <label for="stockName" class="form-label fw-semibold">Nome do Stock</label>
+    <input type="text" id="stockName" class="form-control" placeholder="Ex: Almoxarifado Central">
+  </div>
+  <div class="col-md-4">
+    <label for="stockColor" class="form-label fw-semibold">Cor do Stock</label>
+    <input type="color" id="stockColor" class="form-control form-control-color w-100" value="#4e73df">
+  </div>
 
-            <!-- LEFT -->
-            <div class="col-md-6">
+  <!-- Descrição -->
+  <div class="col-12">
+    <label for="stockDesc" class="form-label fw-semibold">Descrição</label>
+    <textarea id="stockDesc" class="form-control" rows="2" placeholder="Ex: Galpão Norte, Setor 2..."></textarea>
+  </div>
 
-              <!-- INFO -->
-              <div class="stripe-card text-align-left">
-                <label class="form-label mb-3">Nome do Stock</label>
-                <input type="text" id="stockName" class="stripe-input" placeholder="Ex: Almoxarifado Central">
+  <hr class="m-2">
 
-                <label class="form-label mb-3">Descrição</label>
-                <textarea id="stockDesc" class="stripe-input" rows="4"></textarea>
+  <!-- Ícones -->
+  <div class="col-12">
+    <label class="form-label fw-bold">Ícone do Stock:</label>
+    <div class="d-flex flex-wrap gap-2" id="iconOptions">
+      ${icones.map((i) => `<div class="icon-box" data-icon="${i}"><i class="bi bi-${i}"></i></div>`).join("")}
+    </div>
+  </div>
 
-                <label class="form-label d-none">Cor</label>
-                <input type="color" id="stockColor" class="stripe-color d-none" value="#635bff">
-              </div>
+  <hr class="m-2">
 
-              <!-- ICON -->
-              <div class="stripe-card mt-3">
+  <!-- Localização Detalhada -->
+  <div class="col-12 fw-bold mb-1">Localização</div>
 
-                <label>Ícone</label>
+  <div class="col-md-8">
+    <input type="text" id="address" class="form-control" placeholder="Rua">
+  </div>
+  <div class="col-md-4">
+    <input type="text" id="address_number" class="form-control" placeholder="Número">
+  </div>
 
-                <div class="icon-dropdown" id="iconDropdown">
-                  <div class="icon-selected" id="selectedIcon">
-                    <i class="bi bi-box"></i>
-                    <span>Selecionar</span>
-                    <i class="bi bi-chevron-down ms-auto"></i>
-                  </div>
+  <div class="col-md-6">
+    <input type="text" id="neighborhood" class="form-control" placeholder="Bairro/Subdistrito">
+  </div>
+  <div class="col-md-6">
+    <input type="text" id="city" class="form-control" placeholder="Cidade / Vila / Aldeia">
+  </div>
 
-                  <div class="icon-dropdown-menu" id="iconOptions">
-                    ${icones
-                      .map(
-                        (i) => `
-                      <div class="icon-item" data-icon="${i}">
-                        <i class="bi bi-${i}"></i>
-                        <span>${i}</span>
-                      </div>
-                    `,
-                      )
-                      .join("")}
-                  </div>
-                </div>
+  <div class="col-md-6">
+    <input type="text" id="state" class="form-control" placeholder="Estado / Província">
+  </div>
+  <div class="col-md-6">
+    <input type="text" id="county" class="form-control" placeholder="Município (county)">
+  </div>
 
-              </div>
+  <div class="col-md-6">
+    <input type="hidden" id="state_district" class="form-control" placeholder="Distrito (state_district)">
+  </div>
+  <div class="col-md-6">
+    <input type="hidden" id="region" class="form-control" placeholder="Região (region)">
+  </div>
+ 
 
-            </div>
+  <!-- Coords -->
+  <div class="col-md-6">
+    <input type="text" id="latitude" class="form-control" placeholder="Latitude" readonly>
+  </div>
+  <div class="col-md-6">
+    <input type="text" id="longitude" class="form-control" placeholder="Longitude" readonly>
+  </div>
 
-            <!-- RIGHT -->
-            <div class="col-md-6">
+  <!-- Descrição e busca -->
+  <div class="col-12">
+    <input type="text" id="location_detail" class="form-control" placeholder="Digite o endereço aqui para pesquisar">
+  </div>
+  
+    <input type="hidden" id="zip_code">
+    <input type="hidden" id="country">
+    <input type="hidden" id="continent">
+    <input type="hidden" id="iso_region_code">
+    <input type="hidden" id="osm_type">
+    <input type="hidden" id="osm_id">
+    <input type="hidden" id="boundingbox">
+    <input type="hidden" id="display_name">
+    <input type="hidden" id="place_type">
+    <input type="hidden" id="place_class">
 
-              <div class="stripe-card">
 
-                <label>Endereço</label>
-                <input type="text" id="address" class="stripe-input" placeholder="Rua">
+  <div class="col-12">
+    <button type="button" id="searchAddress" class="btn btn-sm btn-outline-primary w-100">
+      <i class="bi bi-search me-1"></i> Buscar pelo Endereço
+    </button>
+  </div>
 
-                <div class="row g-2">
-                  <div class="col-6">
-                    <input type="text" id="address_number" class="stripe-input" placeholder="Número">
-                  </div>
-                  <div class="col-6">
-                    <input type="text" id="city" class="stripe-input" placeholder="Cidade">
-                  </div>
-                </div>
+  <!-- Mapa -->
+  <div class="col-12 mt-2">
+    <div id="mapPreview" class="rounded border" style="height: 200px;"></div>
+  </div>
+</div>
 
-                <input type="text" id="neighborhood" class="stripe-input" placeholder="Bairro">
-                <input type="text" id="state" class="stripe-input" placeholder="Província">
-
-                <input type="text" id="location_detail" class="stripe-input" placeholder="Pesquisar endereço">
-
-                <button type="button" id="searchAddress" class="stripe-btn">
-                  Buscar endereço
-                </button>
-
-              </div> 
-              </div>
-
-              <!-- MAP -->
-              <div class="stripe-card mt-3 p-2">
-                <div id="mapPreview" class="stripe-map"></div>
-              </div>
-
-          </div>
-
-          <!-- hidden -->
-          <input type="hidden" id="zip_code">
-          <input type="hidden" id="country">
-          <input type="hidden" id="continent">
-          <input type="hidden" id="iso_region_code">
-          <input type="hidden" id="osm_type">
-          <input type="hidden" id="osm_id">
-          <input type="hidden" id="boundingbox">
-          <input type="hidden" id="display_name">
-          <input type="hidden" id="place_type">
-          <input type="hidden" id="place_class">
-          <input type="hidden" id="latitude">
-          <input type="hidden" id="longitude">
-
-        </div>
-    `,
+`,
 
       showCancelButton: true,
       confirmButtonText: "Salvar",
@@ -365,153 +359,6 @@ $(document).ready(function () {
     });
   });
 });
-
-// =============================================== //
-//        Carregar Estoques           //
-// =============================================== //
-
-// 🔥 GLOBAL (fora da função)
-let selectedStock = null;
-let pieChartInstance = null;
-let barChartInstance = null;
-
-function carregarEstoques() {
-  $.get(
-    "stock/ajax/stock_controller.php",
-    { action: "list" },
-    function (data) {
-      const container = $("#estoquesContainer");
-      window.stocksData = data;
-      container.empty();
-
-      if (!data.length) {
-        container.append(`<p>Nenhum stock cadastrado.</p>`);
-        return;
-      }
-
-      data.forEach((d, i) => {
-        const lowCount = parseInt(d.low_stock_count || 0);
-        const lowItems = (d.low_stock_items || []).slice(0, 3);
-
-        const card = `
-          <div class="col-md-6">
-              <div class="card card-custom p-3">
-                  <div class="d-flex justify-content-between mb-3">
-                      <div class="d-flex gap-3">
-                          <div class="icon-box">
-                              <i class="bi bi-${d.icon} text-info"></i>
-                          </div>
-                          <div>
-                              <h6 class="fw-bold mb-0">${d.name}</h6>
-                              <small class="text-muted">${d.description}</small>
-                          </div>
-                      </div>
-                      <div class="d-flex gap-1">
-                          <a class="btn btn-sm btn-light text-info" href="stock_view.php?id=${d.id}">
-                              <i class="bi bi-eye"></i>
-                          </a>
-
-                          <!-- ✅ BOTÃO CORRIGIDO -->
-                          <button 
-                            class="btn btn-sm btn-light text-warning btn-insights" 
-                            onclick="showChartModal(${d.id})">
-                            <i class="bi bi-bar-chart"></i>
-                          </button>
-
-                          <button class="btn btn-sm btn-light text-success" onclick="editar(${i})" data-bs-toggle="modal" data-bs-target="#modalEditar">
-                              <i class="bi bi-pencil"></i>
-                          </button>
-
-                          <button class="btn btn-sm btn-light text-danger" data-bs-toggle="modal" data-bs-target="#modalDelete">
-                              <i class="bi bi-trash"></i>
-                          </button>
-                      </div>
-                  </div>
-
-                  <small class="text-muted">
-                      <i class="bi bi-geo-alt"></i> ${d.city ?? ""}
-                  </small>
-
-                  <hr>
-
-                  <div class="d-flex justify-content-between">
-                      <div>
-                          <small class="text-muted">Itens</small>
-                          <div class="fw-bold">${d.total_itens}</div>
-                      </div>
-
-                      <div class="text-end">
-                          <small class="text-muted">Valor</small>
-                          <div class="fw-bold text-success">
-                            ${formatCurrency(d.valor_total, "AOA", "pt-AO")}
-                          </div>
-                      </div>
-                  </div>
-              </div>
-          </div>
-        `;
-
-        container.append(card);
-      });
-    },
-    "json",
-  );
-}
-
-const showChartModal = (id) => {
-  selectedStock = id;
-  const modalInsights = document.getElementById("modalInsights");
-
-  modalInsights.addEventListener("shown.bs.modal", function () {
-    if (!selectedStock) {
-      console.warn("Nenhum stock selecionado");
-      return;
-    }
-
-    const labels = selectedStock.grafico?.labels || [];
-    const values = selectedStock.grafico?.values || [];
-
-    if (!labels.length || !values.length) {
-      console.warn("Sem dados para gráfico");
-      return;
-    }
-
-    // destruir gráficos antigos
-    if (pieChartInstance) pieChartInstance.destroy();
-    if (barChartInstance) barChartInstance.destroy();
-
-    // PIE
-    const ctxPie = document.getElementById("pieChart").getContext("2d");
-    pieChartInstance = new Chart(ctxPie, {
-      type: "doughnut",
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            data: values,
-            backgroundColor: gerarCoresDiferentes(values.length),
-          },
-        ],
-      },
-    });
-
-    // BAR
-    const ctxBar = document.getElementById("barChart").getContext("2d");
-    barChartInstance = new Chart(ctxBar, {
-      type: "bar",
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: "Quantidade",
-            data: values,
-            backgroundColor: "#4e73df",
-          },
-        ],
-      },
-    });
-  });
-};
 
 function abrirEstoque(id) {
   // Mostra o overlay e o loader antes de redirecionar

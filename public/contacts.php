@@ -452,6 +452,24 @@ require_once '../app/views/layout_creation.php';
         color: #2563eb;
         transform: scale(1.2);
     }
+
+    .dt-paging-button .page-link {
+        border-radius: 10px !important;
+        margin: 0 2px;
+        border: none;
+        background: #f3f6fb;
+        color: #333;
+        font-size: 13px;
+    }
+
+    .dt-paging-button .page-item.active .page-link {
+        background: #2f6bff;
+        color: #fff;
+    }
+
+    .dt-paging-button .page-item.disabled .page-link {
+        opacity: 0.5;
+    }
 </style>
 
 <body>
@@ -600,10 +618,10 @@ require_once '../app/views/layout_creation.php';
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0"><?= t('Meus Contatos') ?></h2>
                 <div class="d-flex flex-wrap gap-2">
-                    <button id="downloadCSV" class="btn btn-outline-success rounded-pill"><i class="material-icons-round align-middle fs-6">download</i> <?= t('Baixar em CSV') ?></button>
-                    <button id="downloadExcel" class="btn btn-outline-primary rounded-pill"><i class="material-icons-round align-middle fs-6">download</i> <?= t('Baixar em Excel') ?></button>
-                    <button id="downloadPDF" class="btn btn-outline-danger rounded-pill"><i class="material-icons-round align-middle fs-6">picture_as_pdf</i> <?= t('Baixar em PDF') ?></button>
-                    <a href="register_contact.php" id="newContact" class="btn btn-primary"><i class="material-icons-round align-middle fs-6">add</i> <?= t('Novo Contato') ?></a>
+                    <button id="downloadCSV" class="btn btn-outline-success rounded-pill d-flex align-items-center gap-2"><i class="bi bi-download align-middle fs-6"></i> <?= t('Baixar em CSV') ?></button>
+                    <button id="downloadExcel" class="btn btn-outline-primary rounded-pill d-flex align-items-center gap-2"><i class="bi bi-filetype-xls align-middle fs-6"></i> <?= t('Baixar em Excel') ?></button>
+                    <button id="downloadPDF" class="btn btn-outline-danger rounded-pill d-flex align-items-center gap-2"><i class="bi bi-filetype-pdf align-middle fs-6"></i> <?= t('Baixar em PDF') ?></button>
+                    <a href="register_contact.php" id="newContact" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-plus-circle align-middle fs-6"></i> <?= t('Novo Contato') ?></a>
                 </div>
             </div>
 
