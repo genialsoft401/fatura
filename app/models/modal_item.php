@@ -109,7 +109,7 @@
             <div class="modal-header modal-item">
                 <div>
                     <h5 class="modal-title mb-1" style="background: none !important;"><?= t('Adicionar Novo Item') ?></h5>
-                    <small class="opacity-75" style="margin-left: -50px !important;">Preencha os dados do produto/serviço</small>
+                    <small class="opacity-75">Preencha os dados do produto/serviço</small>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
@@ -259,7 +259,7 @@
                             <!-- RETENÇÃO -->
                             <div class="col-md-4">
                                 <label class="form-label"><?= t('Retenção') ?></label>
-                                <select class="form-select" name="retention" id="retention">
+                                <select class="form-select" name="retention" id="retention_tax">
                                     <option value="0">Não aplicar</option>
                                     <option value="6.5">Aplicar (6.5%)</option>
                                 </select>

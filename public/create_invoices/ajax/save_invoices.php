@@ -5,7 +5,7 @@ require_once '../../../app/helpers/subscription.php';
 header('Content-Type: application/json');
 session_start();
 
-// 🔥 DEBUG (remove em produção)
+// DEBUG (remove em produção)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -26,7 +26,7 @@ unset($fatura['edit_invoice_id']);
 try {
     $pdo->beginTransaction();
 
-    // 🔐 Validação sessão
+    // Validação sessão
     $companyIdSession = (int)($_SESSION['user']['company_id'] ?? 0);
     if (!$companyIdSession) {
         throw new Exception("Sessão inválida.");
@@ -39,7 +39,7 @@ try {
     }
 
     // =========================
-    // 📌 CONTACTO
+    // CONTACTO
     // =========================
     if (!empty($fatura['contact_id'])) {
         $contactId = (int)$fatura['contact_id'];
@@ -83,7 +83,7 @@ try {
     }
 
     // =========================
-    // 📌 FATURA
+    // FATURA
     // =========================
     $invoiceDbFields = [
         'contact_id' => $contactId,
@@ -108,7 +108,7 @@ try {
     ];
 
     // =========================
-    // 🧾 INSERT / UPDATE
+    // INSERT / UPDATE
     // =========================
     if ($editInvoiceId > 0) {
 
@@ -143,10 +143,99 @@ try {
     }
 
     // =========================
-    // 📦 ITENS
+    // ITENS
     // =========================
     if (empty($itemData)) {
         throw new Exception("Nenhum item enviado.");
+    }
+
+    // =========================
+    // SE FOR EDIÇÃO → DEVOLVER STOCK ANTIGO
+    // =========================
+    if ($editInvoiceId > 0) {
+
+        $stmtOld = $pdo->prepare("
+        SELECT item_id, quantity 
+        FROM invoice_items 
+        WHERE invoice_id = ?
+    ");
+        $stmtOld->execute([$editInvoiceId]);
+
+        $oldItems = $stmtOld->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($oldItems as $old) {
+
+            // verificar se controla stock
+            $check = $pdo->prepare("SELECT item_type, track_stock FROM items WHERE id = ?");
+            $check->execute([$old['item_id']]);
+            $info = $check->fetch(PDO::FETCH_ASSOC);
+
+            if ($info && $info['track_stock'] == 1 && $info['item_type'] !== 'service') {
+
+                $stmtStock = $pdo->prepare("CALL sp_increase_stock(?,?,?,?)");
+
+                $stmtStock->execute([
+                    $companyIdSession,
+                    (int)$old['item_id'],
+                    (float)$old['quantity'],
+                    $editInvoiceId
+                ]);
+
+                while ($stmtStock->nextRowset()) {
+                }
+            }
+        }
+    }
+
+    // =========================
+    // INSERIR NOVOS ITENS
+    // =========================
+    $stmt = $pdo->prepare("
+    INSERT INTO invoice_items (invoice_id,item_id,quantity,unit_price,tax,discount)
+    VALUES (?,?,?,?,?,?)
+");
+
+    foreach ($itemData as $item) {
+
+        if (empty($item['id'])) {
+            throw new Exception("Item inválido.");
+        }
+
+        $itemId = (int)$item['id'];
+        $quantity = (float)$item['quantity'];
+
+        // inserir item da fatura
+        $stmt->execute([
+            $invoiceId,
+            $itemId,
+            $quantity,
+            (float)$item['unit_price'],
+            (float)$item['tax'],
+            (float)$item['discount']
+        ]);
+
+        // =========================
+        // REDUZIR STOCK (SE NECESSÁRIO)
+        // =========================
+        $check = $pdo->prepare("SELECT item_type, track_stock FROM items WHERE id = ?");
+        $check->execute([$itemId]);
+        $info = $check->fetch(PDO::FETCH_ASSOC);
+
+        if ($info && $info['track_stock'] == 1 && $info['item_type'] !== 'service') {
+
+            $stmtStock = $pdo->prepare("CALL sp_reduce_stock(?,?,?,?)");
+
+            $stmtStock->execute([
+                $companyIdSession,
+                $itemId,
+                $quantity,
+                $invoiceId
+            ]);
+
+            // MUITO IMPORTANTE
+            while ($stmtStock->nextRowset()) {
+            }
+        }
     }
 
     $stmt = $pdo->prepare("
@@ -172,7 +261,7 @@ try {
 
     $pdo->commit();
 
-    // 🔥 IMPORTANTE: retornar ID
+    // IMPORTANTE: retornar ID
     echo json_encode([
         'success' => true,
         'invoice_id' => $invoiceId

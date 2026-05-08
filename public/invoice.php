@@ -102,7 +102,7 @@ require_once '../app/views/layout_creation.php';
                         <span class="subtitle" id="subtitle-client"></span>
                     </div>
                     <div>
-                        <span id="status-invoice"></span>
+                        <span id="status-invoice" class="d-none"></span>
                     </div>
                 </div>
             </div>
@@ -317,6 +317,7 @@ require_once '../app/views/layout_creation.php';
     </div>
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="invoices/invoice.js"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

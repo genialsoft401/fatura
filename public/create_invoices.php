@@ -204,12 +204,10 @@ require_once '../app/views/layout_creation.php';
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="mb-0"><?= t('Dados do Cliente') ?></h4>
 
-                            <button type="button"
-                                class="btn btn-success btn-sm rounded-pill px-3"
-                                data-bs-toggle="modal"
-                                data-bs-target="#createContactModal">
+                            <a href="register_contact.php"
+                                class="btn btn-success btn-sm rounded-pill px-3">
                                 <i class="bi bi-plus-circle"></i> Novo cliente
-                            </button>
+                            </a>
                         </div>
 
                         <hr>
@@ -231,7 +229,7 @@ require_once '../app/views/layout_creation.php';
                                     <div class="col-md-6 mb-3">
                                         <div>
                                             <label for="name" class="form-label"><?= t('Nome') ?>:</label>
-                                            <input type="text" class="form-control" id="name" name="name" required>
+                                            <input type="text" class="form-control" id="contact_name" name="name" required>
                                         </div>
                                         <div class="mt-2">
                                             <label for="contributor" class="form-label"><?= t('NIF') ?>:</label>
@@ -251,7 +249,7 @@ require_once '../app/views/layout_creation.php';
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="po_box" class="form-label"><?= t('Telefone') ?>:</label>
-                                        <input type="tel" class="form-control" id="po_box" name="po_box" required>
+                                        <input type="tel" class="form-control" id="po_box" name="po_box">
                                     </div>
                                 </div>
 
@@ -275,12 +273,12 @@ require_once '../app/views/layout_creation.php';
                     </div>
 
                     <!-- STEP 2 -->
-                    <div class="form-step bg-white shadow-sm p-3 rounded" data-step="2">
+                    <div class="form-step bg-white shadow-sm p-3 pb-4 rounded" data-step="2">
 
                         <h4><?= t('Detalhes do Documento') ?></h4>
                         <hr>
 
-                        <div class="row">
+                        <div class="row mb-4">
                             <input hidden readonly value="<?= $_SESSION['user']['company_id'] ?>" id="company_id" name="company_id" required>
                             <input hidden readonly value="<?= $_SESSION['user']['id'] ?>" id="user_id" name="user_id" required>
 
@@ -306,13 +304,13 @@ require_once '../app/views/layout_creation.php';
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="observation" class="form-label"><?= t('Observações') ?>:</label>
-                                <textarea style="height: 11rem;" type="text" class="form-control" id="observation" name="observation" required></textarea>
+                                <textarea style="height: 11rem;" type="text" class="form-control" id="observation" name="observation"></textarea>
                             </div>
                         </div>
                         <div class="row" style="margin-top: -45px !important;">
                             <div class="col-md-6 mb-3">
                                 <label for="series" class="form-label"><?= t('Série') ?>:</label>
-                                <input class="form-control" id="series" name="series" required>
+                                <input class="form-control" id="series" name="series" readonly>
                             </div>
 
                             <div class="col-md-6 mb-6 d-none" style="margin-top: 40px;">
@@ -483,9 +481,15 @@ require_once '../app/views/layout_creation.php';
         const current = document.querySelector(`.form-step[data-step="${step}"]`);
         if (current) current.classList.add("active");
 
-        prevBtn.classList.toggle("d-none", step === 1);
-        step === steps.length ? saveBtn.classList.remove("d-none") : nextBtn.classList.remove("d-none");
-        step < steps.length ? saveBtn.classList.add("d-none") : nextBtn.classList.add("d-none");
+        if (prevBtn) prevBtn.classList.toggle("d-none", step === 1);
+
+        if (step === steps.length) {
+            saveBtn?.classList.remove("d-none");
+            nextBtn?.classList.add("d-none");
+        } else {
+            saveBtn?.classList.add("d-none");
+            nextBtn?.classList.remove("d-none");
+        }
 
         updateStepper();
         updateProgress();
@@ -504,15 +508,18 @@ require_once '../app/views/layout_creation.php';
 
     /* ===== PROGRESS ===== */
     function updateProgress() {
-        document.getElementById("progressBar").style.width =
-            (currentStep / steps.length) * 100 + "%";
+        const bar = document.getElementById("progressBar");
+        if (!bar || steps.length === 0) return;
+
+        bar.style.width = ((currentStep / steps.length) * 100) + "%";
     }
 
     /* ===== VALIDATION ===== */
     function validateStep() {
         const current = document.querySelector(`.form-step[data-step="${currentStep}"]`);
-        const inputs = current.querySelectorAll("[required]");
+        if (!current) return true;
 
+        const inputs = current.querySelectorAll("[required]");
         let valid = true;
 
         inputs.forEach(input => {
@@ -529,15 +536,18 @@ require_once '../app/views/layout_creation.php';
 
     /* ===== LOCAL STORAGE ===== */
     function saveDraft() {
+        if (!form) return;
+
         const data = new FormData(form);
         const obj = {};
 
         data.forEach((v, k) => obj[k] = v);
-
         localStorage.setItem("invoiceDraft", JSON.stringify(obj));
     }
 
     function loadDraft() {
+        if (!form) return;
+
         const draft = JSON.parse(localStorage.getItem("invoiceDraft"));
         if (!draft) return;
 
@@ -552,62 +562,52 @@ require_once '../app/views/layout_creation.php';
         let total = 0;
 
         document.querySelectorAll(".item-row").forEach(row => {
-            const p = parseFloat(row.querySelector(".price").value) || 0;
-            const q = parseFloat(row.querySelector(".qty").value) || 0;
+            const p = parseFloat(row.querySelector(".price")?.value) || 0;
+            const q = parseFloat(row.querySelector(".qty")?.value) || 0;
 
             total += p * q;
         });
 
-        document.getElementById("final_total").innerText = total.toFixed(2);
+        const totalField = document.getElementById("final_total");
+        if (totalField) totalField.innerText = total.toFixed(2);
     }
 
     /* ===== EVENTS ===== */
-    nextBtn.addEventListener("click", () => {
+    nextBtn?.addEventListener("click", () => {
         if (!validateStep()) return;
 
         if (currentStep < steps.length) {
             currentStep++;
             showStep(currentStep);
-        } else {
-            form.submit();
-            localStorage.removeItem("invoiceDraft");
         }
     });
 
-    prevBtn.addEventListener("click", () => {
+    prevBtn?.addEventListener("click", () => {
         if (currentStep > 1) {
             currentStep--;
             showStep(currentStep);
         }
     });
 
-    //     document.getElementById("addItem").addEventListener("click", () => {
-    //         const div = document.createElement("div");
-    //         div.className = "item-row d-flex gap-2 mb-2";
-    //         div.innerHTML = `
-    //     <input class="form-control price" placeholder="Preço">
-    //     <input class="form-control qty" placeholder="Qtd">
-    // `;
-    //         document.getElementById("items").appendChild(div);
-    //     });
-
-    /* AUTO SAVE + CALC */
-    form.addEventListener("input", () => {
+    form?.addEventListener("input", () => {
         saveDraft();
         calc();
     });
 
-    /* INIT */
+    /* ===== INIT ===== */
     document.addEventListener("DOMContentLoaded", () => {
         loadDraft();
-        showStep(1);
+        showStep(currentStep);
+        calc();
     });
 
+    /* ===== CURRENCY ===== */
     let userCurrency = "<?= $_SESSION['user']['iso_code'] ?>";
     let currencySymbol = "<?= $_SESSION['user']['symbol'] ?>";
     let currencyPosition = "<?= $_SESSION['user']['position'] ?>";
 
-    const formClient = () => {
+    /* ===== FORM CLIENT ===== */
+    function formClient() {
         let current = 0;
 
         const steps = document.querySelectorAll(".step-contentC");
@@ -616,83 +616,73 @@ require_once '../app/views/layout_creation.php';
         const prevBtn = document.getElementById("prevCBtn");
         const nextBtn = document.getElementById("nextCBtn");
         const saveBtn = document.getElementById("saveChangesContact");
-
-
-
+        const contactForm = document.getElementById("contactForm");
 
         function update() {
             const lastStep = steps.length - 1;
 
-            // STEP ACTIVE
             steps.forEach((s, i) =>
                 s.classList.toggle("active", i === current)
             );
 
-            // INDICATORS
             indicators.forEach((s, i) =>
                 s.classList.toggle("active", i <= current)
             );
 
-            // PROGRESS BAR
-            bar.style.width = (current / lastStep) * 100 + "%";
+            if (bar && lastStep > 0) {
+                bar.style.width = (current / lastStep) * 100 + "%";
+            }
 
-            // BUTTONS
-            prevBtn.style.display = current === 0 ? "none" : "block";
+            if (prevBtn) prevBtn.style.display = current === 0 ? "none" : "block";
 
-            // FINAL STEP
             const isLast = current === lastStep;
 
             if (isLast) {
-                nextBtn.classList.add("d-none");
-                saveBtn.classList.remove("d-none");
+                nextBtn?.classList.add("d-none");
+                saveBtn?.classList.remove("d-none");
             } else {
-                nextBtn.classList.remove("d-none");
-                saveBtn.classList.add("d-none");
-                nextBtn.innerText = "Próximo";
+                nextBtn?.classList.remove("d-none");
+                saveBtn?.classList.add("d-none");
             }
         }
 
-
-        nextBtn.onclick = () => {
+        nextBtn?.addEventListener("click", () => {
             if (current < steps.length - 1) {
                 current++;
                 update();
             } else {
-                contactForm.submit();
+                contactForm?.submit();
             }
-        };
+        });
 
-        prevBtn.onclick = () => {
-            current--;
-            update();
-        };
+        prevBtn?.addEventListener("click", () => {
+            if (current > 0) {
+                current--;
+                update();
+            }
+        });
 
         update();
-
     }
 
-    formClient()
+    formClient();
 
+    /* ===== SERIES FIELD ===== */
     const seriesField = document.getElementById("series");
-    const date = new Date();
-    const year = date.getFullYear();
 
-    seriesField.setAttribute("value", year);
+    if (seriesField) {
+        const year = new Date().getFullYear();
+        seriesField.value = year;
 
-    /*
-    ============================================================
-              Buscar lista de informacoes da empresa
-    ============================================================
-   */
+        ["keydown", "paste", "drop"].forEach(evt =>
+            seriesField.addEventListener(evt, e => e.preventDefault())
+        );
+    }
 
+    /* ===== FETCH COMPANY ===== */
     async function fetchCompany() {
         try {
-            const response = await fetch(`assets/ajax/company_data.php`, {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            });
+            const response = await fetch(`assets/ajax/company_data.php`);
 
             if (!response.ok) {
                 throw new Error(`Erro HTTP: ${response.status}`);
@@ -711,32 +701,7 @@ require_once '../app/views/layout_creation.php';
         }
     }
 
-    /*
-          |--------------------------------------------------------------------------
-          | Renderizar items no select
-          |--------------------------------------------------------------------------
-          */
-
-    // const itemsSelect = document.getElementById("item_select");
-
-    // function renderItems(data = []) {
-    //     if (!itemsSelect) return;
-
-    //     // Reset mantendo a primeira option
-    //     itemsSelect.innerHTML = `<option value="">Selecione produto/serviço</option>`;
-
-    //     itemsSelect.innerHTML += data
-    //         .map((item) => {
-    //             return `<option value="${item.id}">${item.description}</option>`;
-    //         })
-    //         .join("");
-
-    // }
-
-    // Inicialização
-    setTimeout(async () => {
-        await fetchCompany();
-    }, 100);
+    setTimeout(fetchCompany, 100);
 </script>
 
 

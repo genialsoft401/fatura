@@ -1,8 +1,14 @@
+const currentYear = new Date().getFullYear();
+const pg_serie = document.getElementById("pg_serie");
 const get = new URLSearchParams(window.location.search).get("id");
 const invoiceId = get.substring(get.lastIndexOf("/") + 1);
+const document_type = "FT";
+
 if (!invoiceId) {
   alert("Fatura não encontrada!");
 }
+
+pg_serie.value = currentYear;
 function loadFaturaWithRetry(invoiceId, maxRetries = 5) {
   let attempts = 0;
   const $preloader = $("#preloader");
@@ -57,30 +63,51 @@ $(function () {
   // ---------- 2) carrega JSON da fatura ----------
   $.getJSON("invoices/ajax/get_invoice.php", { id: invoiceId })
     .done((inv) => {
-      currentInvoice = inv; // guarda p/ modal
-      $('#formPagamento [name="invoice_id"]').val(inv.id);
-      $("#fatura-id").text(
-        inv.status_invoice === "Rascunho"
-          ? inv.series + "/" + inv.id
-          : inv.numero_validacao,
-      );
-      $("#status-invoice").text(inv.status_invoice);
-      $("#subtitle-client").text(inv.client_name);
-
-      if (inv.status_invoice === "Rascunho") {
-        $("#btnFinalizar").removeClass("d-none");
-        $("#btnEditar").removeClass("d-none");
-      } else {
-        $("#btnEditar").addClass("d-none");
-        $("#btnFinalizar").addClass("d-none");
-        $("#btnNotaCredito").removeClass("d-none");
-        $("#generatePdf").removeClass("d-none");
-        $("#btnEnviar").removeClass("d-none");
+      if (!inv || !inv.id) {
+        console.error("Resposta inválida:", inv);
+        alert("Erro ao carregar fatura");
+        return;
       }
 
-      // se quiser pode atualizar algo da UI aqui
+      currentInvoice = inv;
+
+      // Preencher dados básicos
+      $('#formPagamento [name="invoice_id"]').val(inv.id);
+
+      const isDraft =
+        inv.status_invoice === "Rascunho" || inv.status_invoice == 1;
+
+      $("#fatura-id").text(isDraft ? ` ` : inv.reference || "---");
+
+      $("#status-invoice").text(
+        inv.status_invoice === "Rascunho" ? inv.status_invoice : " " || "-",
+      );
+      $("#subtitle-client").text(inv.client_name || "-");
+
+      // Reset geral (evita estados bugados)
+      const buttonsToHide = [
+        "#btnFinalizar",
+        "#btnEditar",
+        "#btnNotaCredito",
+        "#generatePdf",
+        "#btnEnviar",
+      ];
+
+      buttonsToHide.forEach((btn) => $(btn).addClass("d-none"));
+
+      $("#status-invoice").removeClass("d-none");
+
+      // Regras de UI
+      if (isDraft) {
+        $("#btnFinalizar, #btnEditar").removeClass("d-none");
+      } else {
+        $("#btnNotaCredito, #generatePdf, #btnEnviar").removeClass("d-none");
+      }
     })
-    .fail((xhr) => alert("Erro: " + xhr.responseText));
+    .fail((xhr) => {
+      console.error("Erro AJAX:", xhr);
+      alert("Erro ao carregar fatura");
+    });
 
   // ---------- 3) abrir recibo ou modal Pagamento ----------
   $("#btnRecibo").on("click", function () {
@@ -183,120 +210,127 @@ $(function () {
    * @returns {Promise<void>}
    */
   function gerarPdfFatura(el, filename = "fatura.pdf", copies = 2) {
-    return new Promise((resolve, reject) => {
-      const original = typeof el === "string" ? document.querySelector(el) : el;
+    return new Promise(async (resolve, reject) => {
+      try {
+        const original =
+          typeof el === "string" ? document.querySelector(el) : el;
 
-      if (!original) return reject("Elemento não encontrado");
+        if (!original) return reject("Elemento não encontrado");
 
-      // =========================
-      // 🔹 Helpers
-      // =========================
-      const createTempContainer = (html) => {
-        const div = document.createElement("div");
-        div.style.width = "190mm";
-        div.innerHTML = html;
-        document.body.appendChild(div);
-        return div;
-      };
+        $("#address").addClass("d-none");
 
-      const buildHtmlCopies = () => {
-        let html = "";
+        const waitImages = (container) => {
+          const imgs = container.querySelectorAll("img");
+          return Promise.all(
+            Array.from(imgs).map((img) => {
+              if (img.complete) return Promise.resolve();
+              return new Promise((res) => {
+                img.onload = res;
+                img.onerror = res;
+              });
+            }),
+          );
+        };
+
+        const tempDiv = document.createElement("div");
+        tempDiv.style.width = "210mm";
+        tempDiv.style.background = "#fff";
 
         for (let i = 0; i < copies; i++) {
-          html += `<div class="pdf-page">${original.innerHTML}</div>`;
+          const clone = original.cloneNode(true);
 
-          if (i < copies - 1) {
-            html += `<div class="page-break"></div>`;
-          }
+          // garantir footer visível
+          clone.querySelectorAll(".inv-footer").forEach((el) => {
+            el.classList.remove("d-none");
+          });
+
+          const wrapper = document.createElement("div");
+
+          // ✅ CORREÇÃO PRINCIPAL: NÃO forçar altura fixa
+          wrapper.style.width = "210mm";
+          wrapper.style.boxSizing = "border-box";
+
+          // 🔥 MAIS MARGEM NO CABEÇALHO
+          wrapper.style.paddingTop = "25mm"; // ajusta aqui o espaço do header
+          wrapper.style.paddingBottom = "10mm";
+
+          wrapper.appendChild(clone);
+          tempDiv.appendChild(wrapper);
+
+          // ❌ REMOVIDO pageBreakAfter (causava página em branco)
         }
 
-        return html;
-      };
+        document.body.appendChild(tempDiv);
 
-      const buildFooterLines = () => {
-        const ci = currentInvoice || {};
+        $(".action-panel").addClass("d-none");
 
-        const line1 = [
-          ci.company_name,
-          ci.company_address,
-          ci.company_city && ci.company_country
-            ? `${ci.company_city} - ${ci.company_country}`
-            : null,
-          ci.company_phone ? `Tel: ${ci.company_phone}` : null,
-        ]
-          .filter(Boolean)
-          .join(" | ");
+        await waitImages(tempDiv);
 
-        const line2 =
-          "Processado por programa validado n.º XXXXXXXXXX | BXpert";
+        const opt = {
+          margin: 0,
+          filename,
+          image: { type: "jpeg", quality: 1 },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#ffffff",
+          },
+          jsPDF: {
+            unit: "mm",
+            format: "a4",
+            orientation: "portrait",
+          },
+        };
 
-        return { line1, line2 };
-      };
+        html2pdf()
+          .set(opt)
+          .from(tempDiv)
+          .toPdf()
+          .get("pdf")
+          .then((pdf) => {
+            const pageCount = pdf.internal.getNumberOfPages();
 
-      const cleanup = () => {
-        $(".action-panel").removeClass("d-none");
-        if (tempDiv && tempDiv.parentNode) tempDiv.remove();
-      };
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(8);
 
-      // =========================
-      // 🔹 Preparação do HTML
-      // =========================
-      const html = buildHtmlCopies();
-      const tempDiv = createTempContainer(html);
+            const footerText =
+              "Processado por programa validado n.º XXXXXXXXXX | BXpert";
 
-      $(".action-panel").addClass("d-none");
-      $(tempDiv).find(".inv-footer").addClass("d-none");
+            for (let i = 1; i <= pageCount; i++) {
+              pdf.setPage(i);
 
-      // =========================
-      // 🔹 Config PDF
-      // =========================
-      const opt = {
-        margin: 10,
-        filename,
-        image: { type: "jpeg", quality: 1 },
-        html2canvas: { scale: 3, useCORS: true },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      };
+              pdf.text(footerText, 105, 290, { align: "center" });
+              pdf.text(`${i}/${pageCount}`, 200, 293, { align: "right" });
+            }
+          })
+          .save()
+          .then(() => {
+            cleanup();
+            resolve();
+          })
+          .catch((err) => {
+            cleanup();
+            reject(err);
+          });
 
-      // =========================
-      // 🔹 Geração PDF
-      // =========================
-      html2pdf()
-        .set(opt)
-        .from(tempDiv)
-        .toPdf()
-        .get("pdf")
-        .then((pdf) => {
-          const pageCount = pdf.internal.getNumberOfPages();
-          const { line1, line2 } = buildFooterLines();
+        function cleanup() {
+          $(".action-panel").removeClass("d-none");
+          $("#address").removeClass("d-none");
 
-          pdf.setFont("helvetica", "normal");
-          pdf.setFontSize(8);
-
-          for (let i = 1; i <= pageCount; i++) {
-            pdf.setPage(i);
-
-            pdf.text(line1, 105, 285, { align: "center" });
-            pdf.text(line2, 105, 289, { align: "center" });
-            pdf.text(`${i}/${pageCount}`, 200, 289, { align: "right" });
+          if (tempDiv && tempDiv.parentNode) {
+            tempDiv.parentNode.removeChild(tempDiv);
           }
-        })
-        .save()
-        .then(() => {
-          cleanup();
-          resolve();
-        })
-        .catch((err) => {
-          cleanup();
-          reject(err);
-        });
+        }
+      } catch (error) {
+        reject(error);
+      }
     });
   }
 
   $("#btnPdf, #generatePdf").on("click", function () {
     gerarPdfFatura(
       "#fatura-container",
-      `Fatura_${currentInvoice.codigo}.pdf`, // nome dinâmico
+      `${currentInvoice.reference}.pdf`, // nome dinâmico
       2, // nº de vias
     ).catch(console.error);
   });
@@ -453,6 +487,7 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
   });
 
   // ---------- 6) Finalizar Fatura (Rascunho -> Pendente) ----------
+  // ---------- 6) Finalizar Fatura (Rascunho -> Pendente) ----------
   $("#btnFinalizar").on("click", function () {
     Swal.fire({
       title: "Finalizar Fatura?",
@@ -466,7 +501,11 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
       if (result.isConfirmed) {
         $.post(
           "invoices/ajax/update_status.php",
-          { invoice_id: currentInvoice.id, new_status: "Pendente" },
+          {
+            invoice_id: currentInvoice.id,
+            new_status: "Pendente",
+            document_type: document_type,
+          },
           function (res) {
             if (res.success) {
               Swal.fire(
@@ -514,266 +553,45 @@ $(document).ready(function () {
       }
 
       $("#generatePdf").on("click", function () {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
+        const element = document.getElementById("invoice");
 
-        let currentY = 10;
+        html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: "#ffffff",
+        }).then((canvas) => {
+          const imgData = canvas.toDataURL("image/png");
 
-        // =========================
-        // LOGO
-        // =========================
-        if (response.logo_url) {
-          const img = new Image();
-          img.src = `assets/img/companies/${response.logo_url}`;
-          doc.addImage(img, "PNG", 10, currentY, 40, 20);
-        }
+          const { jsPDF } = window.jspdf;
+          const doc = new jsPDF("p", "mm", "a4");
 
-        // =========================
-        // EMPRESA
-        // =========================
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.text(response.company_name, 60, currentY + 5);
+          const pageWidth = 210;
+          const pageHeight = 297;
 
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
+          const imgWidth = pageWidth;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        currentY += 10;
-        doc.text(response.company_address.replace(/\n/g, " "), 60, currentY);
-        currentY += 5;
-        doc.text(`Tel: ${response.company_phone}`, 60, currentY);
-        currentY += 5;
-        doc.text(`E-mail: ${response.company_email}`, 60, currentY);
-        currentY += 5;
-        doc.text(`Contribuinte: ${response.registration_number}`, 60, currentY);
+          let y = 0;
 
-        // =========================
-        // QR CODE
-        // =========================
-        function generateRandomHash(length = 70) {
-          const chars =
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-          let hash = "";
-          for (let i = 0; i < length; i++) {
-            hash += chars[Math.floor(Math.random() * chars.length)];
+          while (y < imgHeight) {
+            doc.addImage(
+              imgData,
+              "PNG",
+              0,
+              -y, // 👈 ESSENCIAL (corrige o corte)
+              imgWidth,
+              imgHeight,
+            );
+
+            y += pageHeight;
+
+            if (y < imgHeight) {
+              doc.addPage();
+            }
           }
-          return hash;
-        }
 
-        const qrSize = 35;
-        const qrX = 170;
-        const qrY = 10;
-
-        const qrBase64 = generateQRCode(
-          "../public/invoice_public.php?id=" +
-            generateRandomHash() +
-            "_" +
-            response.company_id +
-            "/" +
-            response.id,
-        );
-
-        doc.addImage(qrBase64, "PNG", qrX, qrY, qrSize, qrSize);
-
-        // =========================
-        // CLIENTE
-        // =========================
-        currentY = Math.max(currentY + 10, 55);
-
-        doc.setFont("helvetica", "bold");
-        doc.text("Exmo.(s) Sr.(s):", 10, currentY);
-
-        doc.setFont("helvetica", "normal");
-        currentY += 6;
-        doc.text(response.client_name, 10, currentY);
-        currentY += 5;
-        doc.text(response.client_address.replace(/\n/g, " "), 10, currentY);
-        currentY += 5;
-        doc.text(`Contribuinte: ${response.client_contributor}`, 10, currentY);
-
-        // =========================
-        // FATURA INFO
-        // =========================
-        const formatDate = (date) =>
-          new Intl.DateTimeFormat("pt-BR", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          })
-            .format(date)
-            .replace(/\.$/, "");
-
-        const issueDate = new Date(response.issue_date);
-        const dueDate = new Date(issueDate);
-        dueDate.setDate(issueDate.getDate() + response.due_date);
-
-        currentY += 10;
-        doc.setFont("helvetica", "bold");
-        doc.text(`Fatura n.º ${response.codigo}`, 10, currentY);
-
-        doc.setFont("helvetica", "normal");
-        currentY += 5;
-        doc.text(`Emissão: ${formatDate(issueDate)}`, 10, currentY);
-        currentY += 5;
-        doc.text(`Vencimento: ${formatDate(dueDate)}`, 10, currentY);
-
-        currentY += 5;
-        doc.text(`Ref: ${response.reference || "-"}`, 10, currentY);
-
-        // =========================
-        // LINHA
-        // =========================
-        doc.setDrawColor(200);
-        doc.line(10, currentY + 5, 200, currentY + 5);
-
-        // =========================
-        // ITENS
-        // =========================
-        doc.autoTable({
-          startY: currentY + 10,
-          margin: { left: 10 },
-          head: [
-            ["Código", "Descrição", "P.Unit", "Qtd", "IVA", "Desc", "Total"],
-          ],
-          body: response.items.map((item) => [
-            item.code,
-            item.name,
-            formatCurrency(
-              item.unit_price,
-              response.company_symbol,
-              response.company_position,
-            ),
-            item.quantity,
-            item.tax + "%",
-            item.discount + "%",
-            formatCurrency(
-              item.unit_price * item.quantity,
-              response.company_symbol,
-              response.company_position,
-            ),
-          ]),
-          theme: "striped",
-          styles: { fontSize: 9, halign: "center" },
-          headStyles: { fillColor: [80, 80, 200], textColor: 255 },
+          doc.save("fatura.pdf");
         });
-
-        // =========================
-        // TAXAS + RETENÇÃO
-        // =========================
-        const taxDetails = response.tax_details.map((t) => [
-          `${t.tax_rate}%`,
-          formatCurrency(
-            t.tax_base,
-            response.company_symbol,
-            response.company_position,
-          ),
-          formatCurrency(
-            t.tax_value,
-            response.company_symbol,
-            response.company_position,
-          ),
-        ]);
-
-        if (response.retention_value > 0) {
-          taxDetails.push([
-            "Retenção",
-            "",
-            formatCurrency(
-              response.retention_value,
-              response.company_symbol,
-              response.company_position,
-            ),
-          ]);
-        }
-
-        doc.autoTable({
-          startY: doc.lastAutoTable.finalY + 10,
-          head: [["Taxa", "Base", "Valor"]],
-          body: taxDetails,
-          theme: "grid",
-          styles: { fontSize: 9 },
-          headStyles: { fillColor: [80, 80, 200], textColor: 255 },
-        });
-
-        // =========================
-        // RESUMO FINAL
-        // =========================
-        const resumo = [
-          [
-            "Subtotal",
-            formatCurrency(
-              response.total_sum,
-              response.company_symbol,
-              response.company_position,
-            ),
-          ],
-          [
-            "Desconto",
-            formatCurrency(
-              response.total_discount,
-              response.company_symbol,
-              response.company_position,
-            ),
-          ],
-          [
-            "IVA",
-            formatCurrency(
-              response.total_tax,
-              response.company_symbol,
-              response.company_position,
-            ),
-          ],
-          [
-            "Retenção",
-            formatCurrency(
-              response.retention_value,
-              response.company_symbol,
-              response.company_position,
-            ),
-          ],
-          [
-            "TOTAL",
-            formatCurrency(
-              response.final_total,
-              response.company_symbol,
-              response.company_position,
-            ),
-          ],
-        ];
-
-        doc.autoTable({
-          startY: doc.lastAutoTable.finalY + 10,
-          head: [["Descrição", "Valor"]],
-          body: resumo,
-          theme: "grid",
-          styles: { fontSize: 10 },
-          headStyles: { fillColor: [40, 40, 40], textColor: 255 },
-        });
-
-        // =========================
-        // OBSERVAÇÕES
-        // =========================
-        let y = doc.lastAutoTable.finalY + 10;
-
-        if (y > 270) {
-          doc.addPage();
-          y = 20;
-        }
-
-        doc.setFont("helvetica", "bold");
-        doc.text("Observações:", 10, y);
-
-        doc.setFont("helvetica", "normal");
-        doc.text(
-          doc.splitTextToSize(response.observation || "Sem observações", 180),
-          10,
-          y + 6,
-        );
-
-        // =========================
-        // DOWNLOAD
-        // =========================
-        doc.save(`Fatura_${response.company_name}_${response.codigo}.pdf`);
       });
     },
     error: function () {

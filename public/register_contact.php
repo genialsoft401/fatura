@@ -170,7 +170,7 @@ require_once '../app/views/layout_creation.php';
                                         <div class="col-12">
                                             <label for="name"
                                                 class="form-label text-muted small fw-bold required"><?= t('Nome da Empresa') ?></label>
-                                            <input type="text" class="form-control form-control-lg" id="name" name="name"
+                                            <input type="text" class="form-control form-control-lg" id="companyName" name="name"
                                                 placeholder="Nome comercial completo" required>
                                         </div>
 
@@ -481,29 +481,44 @@ require_once '../app/views/layout_creation.php';
                         return false;
                     } else {
                         document.getElementById('contributor').addEventListener('blur', function() {
-                            const registration_number = this.value;
 
-                            if (nif) {
+                            const field = this;
+                            const registration_number = field.value.trim();
+
+                            if (registration_number !== '') {
+
                                 fetch('index/ajax/check_contribuitor.php', {
                                         method: 'POST',
                                         headers: {
                                             'Content-Type': 'application/json'
                                         },
                                         body: JSON.stringify({
-                                            registration_number
+                                            registration_number: registration_number
                                         })
                                     })
                                     .then(response => response.json())
                                     .then(data => {
+
                                         if (data.exists) {
+
                                             showError("Este NIF já existe. Por favor, insira outro.");
+
                                             field.classList.add("is-invalid");
+
+                                            field.value = '';
+
                                             field.focus();
-                                            return false;
-                                            this.value = '';
+
+                                        } else {
+
+                                            field.classList.remove("is-invalid");
+
                                         }
+
                                     })
-                                    .catch(error => console.error('Erro:', error));
+                                    .catch(error => {
+                                        console.error('Erro:', error);
+                                    });
                             }
                         });
                     }

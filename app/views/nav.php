@@ -262,4 +262,42 @@
 
     });
 
+    function trocarEmpresa(empresaId, name, registration, email) {
+        fetch('assets/ajax/change_company.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `company_id=${empresaId}&name_company=${encodeURIComponent(name)}&registration_number=${encodeURIComponent(registration)}&email_company=${encodeURIComponent(email)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById("empresaDropdown").innerText = name;
+                    location.reload();
+                } else {
+                    alert('Erro ao trocar de empresa');
+                }
+            })
+            .catch(error => console.error('Erro ao trocar de empresa:', error));
+    }
+
+    function carregarEmpresas() {
+        fetch('assets/ajax/get_companies.php')
+            .then(response => response.json())
+            .then(data => {
+                let dropdown = document.getElementById("empresaDropdownMenu");
+                dropdown.innerHTML = ''; // Limpa as opções existentes
+
+                data.forEach(empresa => {
+                    let li = document.createElement("li");
+                    li.innerHTML = `<a class="dropdown-item" href="#" onclick="trocarEmpresa(${empresa.id}, '${empresa.name}', '${empresa.registration_number}', '${empresa.email}')">
+                                ${empresa.name}
+                            </a>`;
+                    dropdown.appendChild(li);
+                });
+            })
+            .catch(error => console.error('Erro ao carregar empresas:', error));
+    }
+    carregarEmpresas();
 </script>

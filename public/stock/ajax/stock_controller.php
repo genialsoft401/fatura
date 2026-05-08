@@ -102,61 +102,147 @@ function atualizarEstoque($pdo)
 
 function listarEstoques($pdo)
 {
-    $company_id = $_SESSION['user']['company_id'] ?? null;
-    if (!$company_id) {
-        echo json_encode(['success' => false, 'message' => 'Empresa não identificada']);
-        exit;
-    }
 
-   $stmt = $pdo->prepare("SELECT id, name, description, color, icon, address,address_number, city, state, updated_at, updated_by FROM stocks WHERE company_id = :company_id ORDER BY created_at DESC");
+    try {
 
-    $stmt->execute(['company_id' => $company_id]);
-    $estoques = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $company_id = $_SESSION['user']['company_id'] ?? null;
 
-    foreach ($estoques as &$estoque) {
-        $stmtItens = $pdo->prepare("SELECT code, name, quantity, min_quantity, quantity*unit_price as total, c.currency, c.symbol, c.`position` FROM stock_items si
-            JOIN currencies c ON c.iso_code = si.currency
-            WHERE stock_id = ?");
-        $stmtItens->execute([$estoque['id']]);
-        $dados = $stmtItens->fetchAll(PDO::FETCH_ASSOC);
-        
-        $rua = $estoque['address'] ?? '';
-        $numero = $estoque['address_number'] ?? '';
-        $cidade = $estoque['city'] ?? '';
-        $estado = $estoque['state'] ?? '';
-        $estoque['endereco_resumido'] = trim("$rua, $numero , $cidade - $estado");
-
-        $estoque['grafico'] = [
-            'labels' => array_column($dados, 'name'),
-            'values' => array_map('intval', array_column($dados, 'quantity')),
-        ];
-
-        $estoque['cor'] = $estoque['color'] ?: gerarCorAleatoria($estoque['id']);
-        $estoque['total_itens'] = count($dados);
-        $estoque['valor_total'] = round(array_sum(array_column($dados, 'total')), 2);
-
-        // Alertas de stock mínimo
-        $lowItems = [];
-        foreach ($dados as $it) {
-            $min = isset($it['min_quantity']) ? (int)$it['min_quantity'] : 1;
-            $qty = (int)($it['quantity'] ?? 0);
-            if ($min > 0 && $qty <= $min) {
-                $label = trim(($it['code'] ? ($it['code'] . ' - ') : '') . ($it['name'] ?? ''));
-                $lowItems[] = [
-                    'code' => $it['code'] ?? null,
-                    'name' => $it['name'] ?? null,
-                    'quantity' => $qty,
-                    'min_quantity' => $min,
-                    'label' => $label,
-                ];
-            }
+        if (!$company_id) {
+            http_response_code(401);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Empresa não identificada'
+            ]);
+            return;
         }
-        $estoque['low_stock_count'] = count($lowItems);
-        $estoque['low_stock_items'] = $lowItems;
-        
-    }
 
-    echo json_encode($estoques);
+        // =========================
+        // QUERY PRINCIPAL
+        // =========================
+        $stmt = $pdo->prepare("
+            SELECT 
+                s.id,
+                s.name,
+                s.description,
+                s.icon,
+                s.address,
+                s.address_number,
+                s.city,
+                s.state,
+                s.country,
+                s.location_detail,
+                s.color,
+
+                COUNT(DISTINCT si.item_id) AS total_items,
+                COALESCE(SUM(si.quantity), 0) AS total_quantity,
+                COALESCE(SUM(i.unit_price * si.quantity), 0) AS total_stock_value,
+
+                COUNT(DISTINCT CASE 
+                    WHEN si.quantity <= si.min_quantity THEN si.item_id 
+                END) AS low_stock_items
+
+            FROM stocks s
+
+            LEFT JOIN stock_items si 
+                ON si.stock_id = s.id
+
+            LEFT JOIN items i 
+                ON i.id = si.item_id
+                AND i.company_id = s.company_id
+
+            WHERE s.company_id = :company_id
+
+            GROUP BY s.id
+        ");
+
+        $stmt->execute(['company_id' => $company_id]);
+        $estoques = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // =========================
+        // BUSCAR TODOS ITENS DE UMA VEZ (🔥 evita N+1)
+        // =========================
+        $stmtItens = $pdo->prepare("
+            SELECT 
+                si.stock_id,
+                i.id,
+                i.code,
+                i.name,
+                si.quantity,
+                si.min_quantity,
+                (si.quantity * i.unit_price) as total
+            FROM stock_items si
+            JOIN items i ON i.id = si.item_id
+            WHERE i.company_id = ?
+            AND i.item_type = 'product'
+        ");
+
+        $stmtItens->execute([$company_id]);
+        $allItems = $stmtItens->fetchAll(PDO::FETCH_ASSOC);
+
+        // Agrupar por stock_id
+        $itemsByStock = [];
+        foreach ($allItems as $item) {
+            $itemsByStock[$item['stock_id']][] = $item;
+        }
+
+        // =========================
+        // PROCESSAMENTO FINAL
+        // =========================
+        foreach ($estoques as &$estoque) {
+
+            $dados = $itemsByStock[$estoque['id']] ?? [];
+
+            // localização formatada
+            $estoque['location_full'] = trim(sprintf(
+                "%s, %s, %s - %s",
+                $estoque['address'] ?? '',
+                $estoque['address_number'] ?? '',
+                $estoque['city'] ?? '',
+                $estoque['state'] ?? ''
+            ), ' ,');
+
+            // gráfico
+            $estoque['grafico'] = [
+                'labels' => array_column($dados, 'name'),
+                'values' => array_map('intval', array_column($dados, 'quantity')),
+            ];
+
+            // cor
+            $estoque['cor'] = $estoque['color'] ?: gerarCorAleatoria($estoque['id']);
+
+            // =========================
+            // LOW STOCK DETALHADO
+            // =========================
+            $lowItems = array_filter($dados, function ($it) {
+                return (int)$it['quantity'] <= (int)$it['min_quantity'];
+            });
+
+            $estoque['low_stock_details'] = array_values(array_map(function ($it) {
+                return [
+                    'code' => $it['code'],
+                    'name' => $it['name'],
+                    'quantity' => (int)$it['quantity'],
+                    'min_quantity' => (int)$it['min_quantity'],
+                    'label' => trim(($it['code'] ? $it['code'] . ' - ' : '') . $it['name']),
+                ];
+            }, $lowItems));
+        }
+
+        echo json_encode([
+            'success' => true,
+            'total' => count($estoques),
+            'data' => $estoques
+        ]);
+    } catch (Throwable $e) {
+
+        http_response_code(500);
+
+        echo json_encode([
+            'success' => false,
+            'message' => 'Erro ao listar estoques',
+            'error' => $e->getMessage() // remove em produção
+        ]);
+    }
 }
 
 function listarEstoquesParaTransferencia($pdo)
@@ -230,10 +316,33 @@ function criarEstoque($pdo)
     )");
 
     $success = $stmt->execute([
-        $company_id, $name, $description, $color, $icon, $location_type, $location_detail,
-        $display_name, $address, $address_number, $neighborhood, $city, $county, $state,
-        $state_district, $region, $country, $continent, $iso_region_code, $zip_code,
-        $latitude, $longitude, $osm_type, $osm_id, $boundingbox, $place_class, $place_type
+        $company_id,
+        $name,
+        $description,
+        $color,
+        $icon,
+        $location_type,
+        $location_detail,
+        $display_name,
+        $address,
+        $address_number,
+        $neighborhood,
+        $city,
+        $county,
+        $state,
+        $state_district,
+        $region,
+        $country,
+        $continent,
+        $iso_region_code,
+        $zip_code,
+        $latitude,
+        $longitude,
+        $osm_type,
+        $osm_id,
+        $boundingbox,
+        $place_class,
+        $place_type
     ]);
 
     echo json_encode(['success' => $success]);
@@ -291,8 +400,15 @@ function gerarCorAleatoria($semente = null)
     }
 
     $cores = [
-        '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e',
-        '#e74a3b', '#858796', '#20c997', '#6f42c1', '#fd7e14',
+        '#4e73df',
+        '#1cc88a',
+        '#36b9cc',
+        '#f6c23e',
+        '#e74a3b',
+        '#858796',
+        '#20c997',
+        '#6f42c1',
+        '#fd7e14',
     ];
 
     return $cores[array_rand($cores)];

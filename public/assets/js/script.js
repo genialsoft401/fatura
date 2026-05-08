@@ -48,36 +48,135 @@ $(document).ready(function () {
   // =========================
   // SAVE ITEM
   // =========================
-  $("#saveItem").click(function () {
+  const itemModal = $("#itemModal");
+  const itemForm = $("#itemForm");
+
+  // =========================
+  // SALVAR / EDITAR ITEM
+  // =========================
+  $("#saveItem").on("click", async function (e) {
+    e.preventDefault();
+
     if (!validateForm()) return;
 
-    let formData = $("#itemForm").serialize();
+    const form = itemForm[0];
+    const formData = new FormData(form);
 
-    $.ajax({
-      url: "items/ajax/save_item.php",
-      type: "POST",
-      data: formData,
-      dataType: "json",
-      success: function (response) {
-        Swal.fire(
-          response.status || "Info",
-          response.message || "",
-          response.type || "info",
-        );
+    // =========================
+    // VERIFICA SE É EDIÇÃO
+    // =========================
+    const itemId =
+      $("#item_id").val() || $("#product_item").val() || $("#id").val();
 
-        if (response.type === "success") {
-          $("#itemModal").modal("hide");
-          $("#itemForm")[0].reset();
+    // adiciona ID ao formData se existir
+    if (itemId) {
+      formData.append("id", itemId);
+    }
+
+    // =========================
+    // URL
+    // =========================
+    const url = itemId
+      ? "items/ajax/edit_item.php"
+      : "items/ajax/save_item.php";
+
+    // =========================
+    // LOADING BUTTON
+    // =========================
+    const btn = $(this);
+
+    const originalText = btn.html();
+
+    btn.prop("disabled", true);
+
+    btn.html(`
+    <span class="spinner-border spinner-border-sm me-1"></span>
+    Salvando...
+  `);
+
+    try {
+      const response = await $.ajax({
+        url: url,
+        type: "POST",
+        data: formData,
+        processData: false,
+        contentType: false,
+        dataType: "json",
+      });
+
+      Swal.fire({
+        title: response.status || "Info",
+        text: response.message || "",
+        icon: response.type || "info",
+        timer: 2000,
+        showConfirmButton: false,
+      });
+
+      // =========================
+      // SUCCESS
+      // =========================
+      if (response.type === "success") {
+        // fecha modal
+        itemModal.modal("hide");
+
+        // reset formulário
+        form.reset();
+
+        // limpa IDs
+        $("#item_id").val("");
+        $("#product_item").val("");
+        $("#id").val("");
+
+        // reset selects
+        itemForm.find("select").val("").trigger("change");
+
+        // reset botão
+        btn.text("Salvar");
+
+        // reload lista
+        if (typeof loadItems === "function") {
+          loadItems();
         }
-      },
-      error: function () {
-        Swal.fire(
-          "Erro!",
-          "Ocorreu um erro ao salvar o produto/serviço.",
-          "error",
-        );
-      },
-    });
+      }
+    } catch (xhr) {
+      console.error("STATUS:", xhr.status);
+      console.error("ERROR:", xhr.statusText);
+      console.error("RESPONSE:", xhr.responseText);
+
+      Swal.fire({
+        title: "Erro",
+        text: "Erro ao salvar item.",
+        icon: "error",
+      });
+    } finally {
+      btn.prop("disabled", false);
+      btn.html(originalText);
+    }
+  });
+
+  // =========================
+  // EVENTO AO FECHAR MODAL
+  // =========================
+  itemModal.on("hidden.bs.modal", function () {
+    // reset form
+    itemForm[0].reset();
+
+    // limpar IDs
+    $("#item_id").val("");
+    $("#product_item").val("");
+    $("#id").val("");
+
+    // limpar selects
+    itemForm.find("select").val("").trigger("change");
+
+    // limpar textareas
+    itemForm.find("textarea").val("");
+
+    // reset botão
+    $("#saveItem").html("Salvar");
+
+    // remove estados de validação
+    itemForm.find(".is-invalid, .is-valid").removeClass("is-invalid is-valid");
   });
 
   // =========================

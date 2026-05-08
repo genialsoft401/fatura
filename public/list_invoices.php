@@ -225,12 +225,26 @@ require_once '../app/views/layout_creation.php';
 
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="dropdown">
-                    <button class="btn btn-success rounded-pill dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button
+                        class="btn btn-success rounded-pill dropdown-toggle"
+                        type="button"
+                        id="exportDropdown"
+                        data-bs-toggle="dropdown"
+                        aria-expanded="false">
                         Exportar Faturas
                     </button>
+
                     <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                        <li><a class="dropdown-item" href="#" onclick="exportFile('excel')">Exportar para Excel</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="exportFile('csv')">Exportar para CSV</a></li>
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('excel')">
+                                Exportar para Excel
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('csv')">
+                                Exportar para CSV
+                            </a>
+                        </li>
                     </ul>
                 </div>
 

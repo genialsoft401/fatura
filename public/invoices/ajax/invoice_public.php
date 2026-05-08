@@ -148,6 +148,7 @@ SELECT  i.*,
         comp.name AS company_name,   comp.address AS company_address,
         comp.city AS company_city,   comp.country AS company_country,
         comp.registration_number,    comp.email   AS company_email,
+        comp.website,
         comp.phone AS company_phone, comp.logo_url,
         comp.vat_regime, comp.goods_services, comp.bank_details, comp.bank_name, comp.iban,
         c.name    AS client_name,    c.address  AS client_address,
@@ -170,7 +171,7 @@ if (!$inv) {
 
 // ---------- itens ----------
 $stmt = $pdo->prepare("
-SELECT it.code, it.description, ii.quantity, ii.unit_price,
+SELECT it.code, it.name, it.description, ii.quantity, ii.unit_price,
        ii.tax, ii.discount
 FROM   invoice_items ii
 JOIN   items it ON it.id = ii.item_id
@@ -239,6 +240,7 @@ if ($paid_total >= $inv['final_total']) {  // quitada
   <title>Fatura <?= htmlspecialchars($inv['codigo']) ?></title>
   <link rel="stylesheet" href="invoices/invoice.css">
   <link rel="stylesheet" href="invoices/invoice_footer.css">
+  <!-- <meta http-equiv="refresh" content="2"> -->
 
 </head>
 
@@ -250,36 +252,30 @@ if ($paid_total >= $inv['final_total']) {  // quitada
 
       <!-- ESQUERDA: logo + dados empresa -->
       <div class="inv-left d-flex flex-column align-items-start">
-        <div id="invoice_logoCompanies" class="me-3">
-          <img src="/assets/img/companies/<?= htmlspecialchars($inv['logo_url']) ?>" class="logo" alt="Logo">
-        </div>
-
         <div id="company-info">
           <!-- PHP ancora o conteúdo aqui -->
-          <h6 class="fw-bold mb-1"><?= htmlspecialchars($inv['company_name']) ?></h6>
-          <p class="mb-0"><?= nl2br(htmlspecialchars($inv['company_address'])) ?><br>
-            <?= htmlspecialchars("{$inv['company_city']} - {$inv['company_country']}") ?></p>
+          <h6 class="fw-bold fs-5 mb-1 tag-title"><?= htmlspecialchars($inv['company_name']) ?></h6>
+          <p class="mb-0">
+            <?= nl2br(htmlspecialchars(
+              $inv['company_address'] . ', ' .
+                $inv['company_city'] . ' - ' .
+                $inv['company_country']
+            )) ?>
+            <br>
+          </p> <?= htmlspecialchars("") ?></p>
           <p class="mb-0">Tel: <?= htmlspecialchars($inv['company_phone']) ?></p>
           <p class="mb-0">E-mail: <?= htmlspecialchars($inv['company_email']) ?></p>
+          <p class="mb-0">Website: <?= htmlspecialchars($inv['website']) ?></p>
           <p class="mb-0">Contribuinte: <?= htmlspecialchars($inv['registration_number']) ?></p>
         </div>
       </div>
 
       <!-- DIREITA: QR + dados cliente -->
       <div class="inv-right d-flex flex-column align-items-start justify-content-end">
-        <div id="invoice-qr" class="mb-1">
-          <img src="<?= $qrSrc ?>" alt="QR" style="width:95px;height:95px">
-
+        <div id="invoice_logoCompanies" class="me-3" style="margin-left: 120px;">
+          <img src="./assets/img/companies/<?= htmlspecialchars($inv['logo_url']) ?>" alt="Logo">
         </div>
 
-        <div id="client-info" class="text-start">
-          <small>Exmo.(s) Sr.(s)</small>
-          <h6 class="fw-bold mb-0"><?= htmlspecialchars($inv['client_name']) ?></h6>
-          <p class="mb-0">
-            <?= nl2br(htmlspecialchars($inv['client_address'])) ?><br>
-            <?= htmlspecialchars("{$inv['client_city']} - {$inv['client_country']}") ?>
-          </p>
-        </div>
       </div>
 
     </div><!-- /inv-header -->
@@ -293,50 +289,46 @@ if ($paid_total >= $inv['final_total']) {  // quitada
       ->format('Y-m-d'));
     ?>
     <!-- ===== META ===== -->
-    <section class="inv-meta pt-2">
+    <section class="inv-meta pt-2 mt-5">
 
       <div class="d-flex justify-content-between">
         <span class="d-block">Original</span>
-        <?php if ($paid_total > 0): ?>
-          <span class="badge <?= $saldo > 0 ? 'parcial' : 'pago' ?>">
-            <?= $saldo > 0 ? 'Pago parcial' : 'Pago' ?>
-          </span>
-        <?php endif; ?>
+
       </div>
 
-      <span class="d-block title-line">
-        Factura n.º <?= date('Y', strtotime($inv['issue_date'])) ?>/<?= $inv['id'] ?>
+      <span class="d-block fs-6 title-line tag-title">
+        Factura n.º <?= htmlspecialchars($inv['status'] != 1 ? $inv['reference'] :  " ") ?>
       </span>
 
       <!-- Bloco flex com 2 colunas -->
-      <div class="meta-row">
+      <div class="meta-row lh-1">
 
         <!-- ===== COLUNA ESQUERDA – DATAS & REF ===== -->
-        <div class="meta-mini">
+        <div class="meta-mini mt-2">
 
-          <div class="head">
-            <span>Data de emissão</span><span>Contribuinte</span>
+          <div class="vals">
+            <span class="small">Cliente:</span><span class="small opacity-75" style="margin-left: -50px !important; color: black;"><?= htmlspecialchars($inv['client_name']) ?></span>
           </div>
           <div class="vals">
-            <span><?= $issueBr ?></span><span><?= $inv['client_contributor'] ?></span>
+            <span class="mb-0 small">Contribuinte:</span><span class="small" style="margin-left: -50px !important;"><?= htmlspecialchars($inv['registration_number']) ?></span>
           </div>
 
-          <div class="head top">
-            <span>Vencimento</span><span>V/ Ref.</span>
-          </div>
           <div class="vals">
-            <span><?= $dueBr ?></span><span><?= $inv['reference'] ?></span>
+            <span class="small">Endereço:</span><span class="small" class="lh-1" style="text-wrap: wrap; margin-left: -50px !important; width: 200px !important; overflow: hidden !important;"><?= nl2br(htmlspecialchars($inv['client_address'])) ?>, <?= htmlspecialchars("{$inv['client_city']} - {$inv['client_country']}") ?></span>
           </div>
 
         </div>
 
         <!-- ===== COLUNA DIREITA – OBSERVAÇÕES ===== -->
-        <div class="meta-obs">
-          <div class="head">
-            <span>Observações</span>
+        <div class="meta-mini mt-2">
+          <div class="vals">
+            <span class="small" style="margin-left: 55px">Data de emissão:</span><span class="small" style="margin-left: 50px !important;"><?= $issueBr ?></span>
           </div>
           <div class="vals">
-            <span><?= $inv['observation'] ? htmlspecialchars($inv['observation']) : '-' ?></span>
+            <span class="small" style="margin-left: 55px">Vencimento:</span><span class="small" style="margin-left: 50px !important;"><?= $dueBr ?></span>
+          </div>
+          <div class="vals">
+            <span class="small" style="margin-left: 55px">Observações:</span><span class="small" style="text-wrap: wrap; margin-left: 87px !important; width: 200px !important; overflow: hidden !important;" class="lh-1"><?= $inv['observation'] ? htmlspecialchars($inv['observation']) : '-' ?></span>
           </div>
         </div>
 
@@ -345,17 +337,17 @@ if ($paid_total >= $inv['final_total']) {  // quitada
 
 
     <!-- ===== ITENS (sem <table>) ===== -->
-    <div class="items-grid mt-2 title-line pb-5">
+    <div class="items-grid mt-4 title-line pb-5 lh-1" style="border-bottom: 2.5px solid #8b8b8b !important; border-top: 2.5px solid #8b8b8b !important; border-bottom: 2.5px solid #8b8b8b !important">
 
       <!-- cabeçalho -->
       <div class="items-row items-head">
-        <span>Código</span>
-        <span>Descrição</span>
-        <span>Preço&nbsp;Uni.</span>
-        <span>Qtd.</span>
-        <span>Taxa/IVA&nbsp;%</span>
-        <span>Desc.&nbsp;%</span>
-        <span>Total</span>
+        <span style="margin-left: -10px; opacity: .6;" class="fw-bold tag-title small">Código</span>
+        <span style="margin-left: -65px !important; font-weight: bold; opacity: .6;" class="fw-bold mt-0 tag-title small">Descrição</span>
+        <span class="fw-bold tag-title small" style="margin-left: 72px; width: 100px; opacity: .6;">Preço&nbsp;Uni.</span>
+        <span class="fw-bold tag-title small" style="margin-left: 72px; opacity: .6;">Qtd.</span>
+        <span class="fw-bold tag-title small" style="margin-left: 56px; opacity: .6;">Taxa/IVA&nbsp;</span>
+        <span class="fw-bold tag-title small" style="margin-left: 35px; opacity: .6;">Desc.&nbsp;</span>
+        <span style="float: right !important; text-align: right !important; opacity: .6;" class="fw-bold tag-title small">Total</span>
       </div>
 
       <!-- linhas dinâmicas -->
@@ -364,16 +356,16 @@ if ($paid_total >= $inv['final_total']) {  // quitada
         $discount = $base * ($it['discount'] / 100);
         $tax = ($base - $discount) * ($it['tax'] / 100);
         $total = $base - $discount + $tax; ?>
-        <div class="items-row">
-          <span><?= htmlspecialchars($it['code']) ?></span>
-          <span><?= htmlspecialchars($it['description']) ?></span>
-          <span class="right">
+        <div class="items-row mb-3">
+          <span class="fw-light small lh-1 mt-1" style="width: 90px !important;"><?= htmlspecialchars($it['code']) ?></span>
+          <span class="fw-light small lh-1 mt-1" style="width: 250px !important; margin-left: 50px !important; text-wrap: wrap !important;"><?= htmlspecialchars($it['name'] ? $it['name'] : $it['description']) ?></span>
+          <span class="fw-light small lh-1 mt-1" style="margin-left: 26px;">
             <?= formatCurrency($it['unit_price'], $inv['moneySymbol'], $inv['moneyPos']) ?>
           </span>
-          <span class="center"><?= $it['quantity'] ?></span>
-          <span class="center"><?= $it['tax'] ?>%</span>
-          <span class="center"><?= $it['discount'] ?>%</span>
-          <span class="right">
+          <span class="center fw-light lh-sm small" style="margin-left: -38px;"><?= $it['quantity'] ?></span>
+          <span class="center fw-light lh-sm small" style="margin-left: -70px;"><?= $it['tax'] ?>%</span>
+          <span class="center fw-light lh-sm small" style="margin-left: -120px;"><?= $it['discount'] ?>%</span>
+          <span class="right fw-light lh-sm small" style="margin-left: -66px; width: 100px;">
             <?= formatCurrency($total, $inv['moneySymbol'], $inv['moneyPos']) ?>
           </span>
         </div>
@@ -385,152 +377,164 @@ if ($paid_total >= $inv['final_total']) {  // quitada
     <div class="totals-wrap">
 
       <!-- ===== ESQUERDA – Impostos/IVA ===== -->
-      <div class="tax-grid">
+      <div style="width: 384px !important;">
 
-        <!-- cabeçalho -->
-        <div class="tax-head">
-          <span>Imposto/IVA</span>
-          <span class="right">Incidência</span>
-          <span class="right">Valor</span>
-        </div>
+        <div class="sum-head tag-title small" style="opacity: .6;">Dados fiscais e bancários</div>
 
-        <!-- linhas dinâmicas -->
-        <?php foreach ($taxes as $tx): ?>
-          <div class="tax-row">
-            <span><?= $tx['tax_rate'] ? $tx['tax_rate'] . '%' : 'Isento (0%)' ?></span>
-            <span class="right">
-              <?= formatCurrency($tx['tax_base'], $inv['moneySymbol'], $inv['moneyPos']) ?>
-            </span>
-            <span class="right">
-              <?= formatCurrency($tx['tax_value'], $inv['moneySymbol'], $inv['moneyPos']) ?>
-            </span>
-          </div>
-        <?php endforeach; ?>
+        <div class="lh-1">
 
-        <!-- retenção -->
-        <div class="tax-row">
-          <span>Retenção (<?= $inv['retention'] ?? '0' ?>%)</span>
-          <span></span>
-          <span class="right">
-            <?= formatCurrency($inv['retention_value'], $inv['moneySymbol'], $inv['moneyPos']) ?>
-          </span>
-        </div>
-
-      </div><!-- /.tax-grid -->
-
-
-      <!-- ===== DIREITA – Sumário ===== -->
-      <div class="sum-grid">
-
-        <div class="sum-head">Sumário</div>
-
-        <div class="sum-row">
-          <span>Total líquido:</span>
-          <span class="right"><?= formatCurrency($inv['total_sum'], $inv['moneySymbol'], $inv['moneyPos']) ?></span>
-        </div>
-
-        <div class="sum-row">
-          <span>Desconto:</span>
-          <span class="right"><?= formatCurrency($inv['total_discount'], $inv['moneySymbol'], $inv['moneyPos']) ?></span>
-        </div>
-
-        <div class="sum-row">
-          <span>Sem Imposto/IVA c Desc.:</span>
-          <span class="right">
-            <?= formatCurrency($inv['total_sum'] - $inv['total_discount'], $inv['moneySymbol'], $inv['moneyPos']) ?>
-          </span>
-        </div>
-
-        <div class="sum-row">
-          <span>Imposto/IVA:</span>
-          <span class="right"><?= formatCurrency($inv['total_tax'], $inv['moneySymbol'], $inv['moneyPos']) ?></span>
-        </div>
-
-        <div class="sum-row">
-          <span>Retenção:</span>
-          <span class="right"><?= formatCurrency($inv['retention_value'], $inv['moneySymbol'], $inv['moneyPos']) ?></span>
-        </div>
-
-        <!-- separador grosso -->
-        <div class="sum-row sep"></div>
-
-        <div class="sum-row bold">
-          <span>Total:</span>
-          <span class="right"><?= formatCurrency($inv['final_total'], $inv['moneySymbol'], $inv['moneyPos']) ?></span>
-        </div>
-
-        <?php $totalPagar = (float)$inv['final_total'] - (float)$inv['retention_value']; ?>
-        <div class="sum-row bold">
-          <span>Total a pagar:</span>
-          <span class="right">
-            <?= formatCurrency($totalPagar, $inv['moneySymbol'], $inv['moneyPos']) ?>
-          </span>
-        </div>
-        <div class="sum-row" style="margin-top:2px;">
-          <span style="grid-column:1 / -1; font-size:.72rem;">
-            <?= htmlspecialchars(moneyToWords($totalPagar, $inv['currency'] ?? 'AOA')) ?>
-          </span>
-        </div>
-
-        <!-- barra inferior grossa -->
-        <div class="sum-bottom"></div>
-
-        <!-- …antes do separador grosso -->
-        <?php if ($paid_total > 0): ?>
-          <div class="sum-row">
-            <span>Pago:</span>
-            <span class="right">
-              <?= formatCurrency($paid_total, $inv['moneySymbol'], $inv['moneyPos']) ?>
+          <div class="sum-row mt-1">
+            <span class="small">Regime de IVA:</span>
+            <span class="small" style="margin-left: -90px; width: 250px !important;"><?= match ($inv["vat_regime"]) {
+                                                                                        "geral" => "Regime Geral",
+                                                                                        "simplificado" => "Regime Simplificado",
+                                                                                        default => ""
+                                                                                      } ?>
             </span>
           </div>
 
-          <?php if ($saldo > 0): // só mostra saldo se ainda houver 
-          ?>
+          <div class="sum-row mt-1">
+            <span class="small">Bens e serviços:</span>
+            <span class="small" style="margin-left: -90px; width: 250px !important;">Os bens e serviços foram colocados à disposição do adquirente na data do documento.</span>
+          </div>
+
+          <div class="sum-row mt-1">
+            <span class="small">Dados bancários:</span>
+            <span class="small" style="margin-left: -90px; width: 250px !important;"><?= $inv["iban"] ?>
+            </span>
+          </div>
+
+          <!-- barra inferior grossa -->
+          <div class="mt-1" style="border-bottom: 1.5px solid #8b8b8b !important;"></div>
+
+          <!-- …antes do separador grosso -->
+          <!-- <?php if ($paid_total > 0): ?>
             <div class="sum-row">
-              <span>Saldo:</span>
+              <span>Pago:</span>
               <span class="right">
-                <?= formatCurrency($saldo, $inv['moneySymbol'], $inv['moneyPos']) ?>
+                <?= formatCurrency($paid_total, $inv['moneySymbol'], $inv['moneyPos']) ?>
               </span>
             </div>
-          <?php endif; ?>
-        <?php endif; ?>
 
+            <?php if ($saldo > 0): // só mostra saldo se ainda houver 
+            ?>
+              <div class="sum-row">
+                <span>Saldo:</span>
+                <span class="right">
+                  <?= formatCurrency($saldo, $inv['moneySymbol'], $inv['moneyPos']) ?>
+                </span>
+              </div>
+            <?php endif; ?>
+          <?php endif; ?> -->
+
+        </div>
+
+      </div><!-- /.sum-grid -->
+
+      <!-- ===== DIREITA – Sumário ===== -->
+      <div style="width: 270px !important;">
+        <?php $totalPagar = (float)$inv['final_total'] - (float)$inv['retention_value']; ?>
+        <div class="sum-head tag-title small" style="opacity: .6;">Sumário</div>
+
+        <div class="lh-1">
+
+          <div class="sum-row mt-1">
+            <span class="small">Total ílíquido:</span>
+            <span class="right small"> <?= formatCurrency($totalPagar, $inv['moneySymbol'], $inv['moneyPos']) ?></span>
+          </div>
+
+          <div class="sum-row">
+            <span class="small">Desconto:</span>
+            <span class="right small"><?= formatCurrency($inv['total_discount'], $inv['moneySymbol'], $inv['moneyPos']) ?></span>
+          </div>
+
+          <div class="sum-row">
+            <span class="small">Sem Imposto/IVA c Desc.:</span>
+            <span class="right small">
+              <?= formatCurrency($inv['total_sum'] - $inv['total_discount'], $inv['moneySymbol'], $inv['moneyPos']) ?>
+            </span>
+          </div>
+
+          <div class="sum-row">
+            <span class="small">Imposto/IVA:</span>
+            <span class="right small"><?= formatCurrency($inv['total_tax'], $inv['moneySymbol'], $inv['moneyPos']) ?></span>
+          </div>
+
+          <div class="sum-row">
+            <span class="small">Retenção:</span>
+            <span class="right small"><?= formatCurrency($inv['retention_value'], $inv['moneySymbol'], $inv['moneyPos']) ?></span>
+          </div>
+
+          <!-- separador grosso -->
+          <div class="mt-1" style="border-bottom: 2.5px solid #8b8b8b !important;"></div>
+
+          <div class="sum-row bold mt-1 tag-title">
+            <span class="fs-6">Total:</span>
+            <span class="right fs-6">
+              <?= formatCurrency($totalPagar, $inv['moneySymbol'], $inv['moneyPos']) ?>
+            </span>
+          </div>
+          <!-- <div class="sum-row" style="margin-top:2px;">
+            <span style="grid-column:1 / -1; font-size:.72rem;">
+              <?= htmlspecialchars(moneyToWords($totalPagar, $inv['currency'] ?? 'AOA')) ?>
+            </span>
+          </div> -->
+
+          <!-- barra inferior grossa -->
+          <div class="sum-bottom mt-1" style="border-bottom: 2.5px solid #8b8b8b !important;"></div>
+
+          <!-- …antes do separador grosso -->
+          <!-- <?php if ($paid_total > 0): ?>
+            <div class="sum-row">
+              <span>Pago:</span>
+              <span class="right">
+                <?= formatCurrency($paid_total, $inv['moneySymbol'], $inv['moneyPos']) ?>
+              </span>
+            </div>
+
+            <?php if ($saldo > 0): // só mostra saldo se ainda houver 
+            ?>
+              <div class="sum-row">
+                <span>Saldo:</span>
+                <span class="right">
+                  <?= formatCurrency($saldo, $inv['moneySymbol'], $inv['moneyPos']) ?>
+                </span>
+              </div>
+            <?php endif; ?>
+          <?php endif; ?> -->
+
+        </div>
 
       </div><!-- /.sum-grid -->
 
     </div><!-- /.totals-wrap -->
 
     <!-- ===== REGIME IVA / BENS E SERVIÇOS / DADOS BANCÁRIOS ===== -->
-    <div class="tax-notes">
-      <div class="tax-notes-row">
-        <span class="lbl">Regime de IVA</span>
-        <span class="val">-</span>
-      </div>
-      <div class="tax-notes-row">
-        <span class="lbl">Bens e serviços</span>
-        <span class="val">Os bens e serviços foram colocados à disposição do adquirente na data do documento.</span>
-      </div>
-      <div class="tax-notes-row">
-        <span class="lbl">Dados bancários</span>
-        <span class="val">-</span>
-      </div>
-    </div>
+
 
     <!-- ===== RODAPÉ (dados da empresa emissora) ===== -->
     <footer class="inv-footer">
-      <div class="inv-footer-line">
-        <span class="inv-footer-name"><?= htmlspecialchars($inv['company_name']) ?></span>
-        <span class="inv-footer-sep">|</span>
-        <span><?= htmlspecialchars(trim((string)$inv['company_address'])) ?></span>
-        <span class="inv-footer-sep">|</span>
-        <span><?= htmlspecialchars("{$inv['company_city']} - {$inv['company_country']}") ?></span>
-        <span class="inv-footer-sep">|</span>
-        <span>Tel: <?= htmlspecialchars($inv['company_phone']) ?></span>
+      <div class="d-flex justify-content-between align-items-end inv-footer"
+        style="font-size: 8pt; margin-top: 350px !important; border-bottom: 1px solid none; padding-bottom: 8px;">
+
+        <!-- ESQUERDA: DADOS BANCÁRIOS -->
+
+        <div class="d-flex gap-3"></div>
+
+
+        <!-- DIREITA: QR CODE -->
+        <div id="invoice-qr">
+          <img src="<?= $qrSrc ?>"
+            alt="QR"
+            style="width:75px;height:75px;">
+        </div>
+
       </div>
 
-      <div class="inv-footer-line">
-        <span>Processado por programa validado n.º XXXXXXXXXX | BXpert</span>
+      <div class="inv-footer" style="font-size: 8pt; margin-top: -4px; border: 0px solid none !important;">
+        <span id="address" class="opacity-50">Processado por programa validado n.º XXXXXXXXXX | BXpert</span>
       </div>
+      <br><br>
     </footer>
 
     <!-- numeração de página no PDF (Dompdf) -->

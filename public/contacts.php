@@ -301,7 +301,7 @@ require_once '../app/views/layout_creation.php';
     }
 
     /* ===== TITULO ===== */
-    .section-title {
+    .section-title-modal {
         font-weight: 600;
         margin-bottom: 12px;
         display: flex;
@@ -311,7 +311,7 @@ require_once '../app/views/layout_creation.php';
         margin-left: -10px;
     }
 
-    .section-title i {
+    .section-title-modal i {
         background: #eef2ff;
         color: #6a5cff;
         padding: 8px;
@@ -492,7 +492,7 @@ require_once '../app/views/layout_creation.php';
 
                                 <!-- Empresa -->
                                 <div class="card-clean mb-3">
-                                    <div class="section-title">
+                                    <div class="section-title-modal">
                                         <i class="bi bi-building"></i>
                                         Empresa
                                     </div>
@@ -520,7 +520,7 @@ require_once '../app/views/layout_creation.php';
 
                                 <!-- Contatos -->
                                 <div class="card-clean mb-3">
-                                    <div class="section-title">
+                                    <div class="section-title-modal">
                                         <i class="bi bi-telephone"></i>
                                         Contatos
                                     </div>
@@ -540,7 +540,7 @@ require_once '../app/views/layout_creation.php';
 
                                 <!-- Localização -->
                                 <div class="card-clean">
-                                    <div class="section-title">
+                                    <div class="section-title-modal">
                                         <i class="bi bi-geo-alt"></i>
                                         Localização
                                     </div>
@@ -563,7 +563,7 @@ require_once '../app/views/layout_creation.php';
 
                                 <!-- Contato principal -->
                                 <div class="card-clean mb-3">
-                                    <div class="section-title">
+                                    <div class="section-title-modal">
                                         <i class="bi bi-person"></i>
                                         Contato Principal
                                     </div>
@@ -581,7 +581,7 @@ require_once '../app/views/layout_creation.php';
 
                                 <!-- Configurações -->
                                 <div class="card-clean">
-                                    <div class="section-title">
+                                    <div class="section-title-modal">
                                         <i class="bi bi-gear"></i>
                                         Configurações
                                     </div>

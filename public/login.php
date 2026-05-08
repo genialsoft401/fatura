@@ -133,6 +133,6 @@ require_once '../app/views/head.php';
     });
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsencrypt/3.3.2/jsencrypt.min.js"></script>
+<script src="./assets/js/jsencrypt.min.js"></script>
 <script src="login/login.js"></script>
 <?php require_once '../app/views/footer.php'; ?>

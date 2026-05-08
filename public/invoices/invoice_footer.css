@@ -8,16 +8,15 @@
   display:grid;
   grid-template-columns:140px 1fr;
   gap:10px;
-  padding:3px 0;
+  padding:0px 0;
   border-bottom:1px solid #000;
 }
 .tax-notes-row .lbl{font-weight:700;}
 .tax-notes-row .val{font-weight:400;}
-
 .inv-footer{
   /* Na tela: não fixa no viewport (evita aparecer fora do container da fatura) */
   position:relative;
-  margin-top:10px;
+  margin-top: -100px;
   padding:0;
   font-size:.70rem;
   color:#111;

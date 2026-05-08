@@ -275,7 +275,7 @@ require_once '../app/views/layout_creation.php';
         font-weight: 500;
     }
 
-    #dt-search-0{
+    #dt-search-0 {
         display: none !important;
     }
 </style>
@@ -294,35 +294,38 @@ require_once '../app/views/layout_creation.php';
                 </div>
             </div>
 
-            <table id="itemsTable" class="table nowrap w-100">
-                <div class="row g-2 mb-3 align-items-center">
+            <div class="row g-2 mb-3 align-items-center">
 
-                    <!-- FILTRO -->
-                    <div class="col-md-8">
-                        <div class="p-3 bg-light rounded-3 d-flex justify-content-between align-items-center">
-                            <div>
-                                <small class="text-muted">Total de Itens</small>
-                                <h4 class="mb-0 fw-bold" id="items-count"></h4>
-                            </div>
-                            <!-- <i class="bi bi-box-seam fs-3 text-primary"></i> -->
+                <!-- FILTRO -->
+                <div class="col-md-8">
+                    <div class="pt-4 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                        <div>
+                            <button id="deleteSelected" class="btn btn-danger rounded-pill d-flex align-items-center gap-2"><i class="bi bi-trash align-middle fs-6"></i>Eliminar selecionados</button>
                         </div>
+                        <!-- <i class="bi bi-box-seam fs-3 text-primary"></i> -->
                     </div>
-
-                    <!-- SEARCH -->
-                    <div class="col-md-4">
-                        <div class="position-relative">
-                            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                            <input
-                                type="text"
-                                id="searchInput"
-                                class="form-control ps-5"
-                                placeholder="Pesquisar produtos ou serviços...">
-                        </div>
-                    </div>
-
                 </div>
+
+                <!-- SEARCH -->
+                <div class="col-md-4">
+                    <div class="position-relative">
+                        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                        <input
+                            type="text"
+                            id="searchInput"
+                            class="form-control ps-5"
+                            placeholder="Pesquisar produtos ou serviços...">
+                    </div>
+                </div>
+
+            </div>
+
+            <table id="itemsTable" class="table nowrap w-100">
                 <thead>
                     <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll" class="p-4">
+                        </th>
                         <th>#</th>
                         <th>Código</th>
                         <th>Nome</th>

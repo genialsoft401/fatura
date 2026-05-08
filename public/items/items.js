@@ -1,4 +1,8 @@
 $(document).ready(function () {
+  const modalEl = document.getElementById("itemModal");
+  const modalTitle = modalEl.querySelector(".modal-title");
+
+  const defaultTitle = "Adicionar Novo Produto/Serviço";
   let table;
 
   $.ajax({
@@ -19,113 +23,128 @@ $(document).ready(function () {
   });
 
   function renderTable(data) {
-    let tbody = $("#itemsTable tbody");
-    tbody.empty();
+    const $table = $("#itemsTable");
+    const $tbody = $table.find("tbody");
 
-    // destrói DataTable corretamente (mais seguro)
-    if ($.fn.DataTable.isDataTable("#itemsTable")) {
-      $("#itemsTable").DataTable().clear().destroy();
+    // destruir DataTable antes de mexer no DOM
+    if ($.fn.DataTable.isDataTable($table)) {
+      $table.DataTable().clear().destroy();
     }
 
-    if (!data.length) {
-      tbody.append(`
-        <tr>
-          <td colspan="7" class="text-center text-muted py-4">
-            Nenhum produto ou serviço encontrado
-          </td>
-        </tr>
-      `);
+    $tbody.empty();
+
+    // =========================
+    // SEM DADOS
+    // =========================
+    if (!data || !data.length) {
+      $tbody.append(`
+      <tr>
+        <td class="text-center text-muted py-4">
+          Nenhum produto ou serviço encontrado
+        </td>
+      </tr>
+    `);
       return;
     }
 
+    // =========================
+    // BUILD ROWS (mais performático)
+    // =========================
+    let rowsHtml = "";
+
     data.forEach((row) => {
-      let rowData = encodeURIComponent(JSON.stringify(row));
+      const rowData = encodeURIComponent(JSON.stringify(row));
 
-      const description = row.name != null ? row.name : row.description;
+      const description = row.name || row.description || "-";
 
-      const price =
-        (row.sale_price !== null && row.sale_price !== ""
-          ? row.sale_price
-          : null) ??
-        (row.cost_price !== null && row.cost_price !== ""
-          ? row.cost_price
-          : null) ??
-        row.unit_price ??
-        0;
-      const tax = row.tax ?? 0;
+      const price = row.unit_price || row.cost_price;
 
-      const retention = row.retention_applicable ? "Sim" : "Não";
+      const tax = row.tax || 0;
 
-      tbody.append(`
-    <tr data-id="${row.id}">
+      rowsHtml += `
+      <tr data-id="${row.id}">
+        
+        <!-- CHECKBOX -->
+        <td>
+          <input type="checkbox" class="item-checkbox" value="${row.id}">
+        </td>
 
-      <!-- ICON -->
-      <td>
-        <i class="${
-          row.item_type === "service"
-            ? "bi bi-tag fw-bold fs-5"
-            : "bi bi-box-seam fw-bold fs-5"
-        }"></i>
-      </td>
+        <!-- ICON -->
+        <td>
+          <i class="${
+            row.item_type === "service"
+              ? "bi bi-tag fw-bold fs-5"
+              : "bi bi-box-seam fw-bold fs-5"
+          }"></i>
+        </td>
 
-      <!-- CODE -->
-      <td>${row.code || "-"}</td>
+        <!-- CODE -->
+        <td>${row.code || "-"}</td>
 
-      <!-- DESCRIPTION -->
-      <td class="text-truncate-custom" title="${description}">
-        ${description}
-      </td>
+        <!-- NAME -->
+        <td class="text-truncate-custom" title="${description}">
+          ${description}
+        </td>
 
-      <!-- DESCRIPTION -->
-      <td class="text-truncate-custom" title="${row.description}">
-        ${row.description}
-      </td>
+        <!-- DESCRIPTION -->
+        <td class="text-truncate-custom" title="${row.description || ""}">
+          ${row.description || "-"}
+        </td>
 
-      <!-- PRICE -->
-      <td class="text-success fw-bold">
-        ${formatCurrency(row.unit_price, row.currency, row.position)}
-      </td>
+        <!-- PRICE -->
+        <td class="text-success fw-bold">
+          ${formatCurrency(price, row.currency, row.position)}
+        </td>
 
-      <!-- TAX -->
-      <td>
-        ${row.vat_applicable ? `${tax}%` : "Isento"}
-      </td>
+        <!-- TAX -->
+        <td>
+          ${`${tax}%`}
+        </td>
 
-      <!-- PVP -->
-      <td class="text-primary fw-bold">
-        ${formatCurrency(row.pvp ?? 0, row.currency, row.position)}
-      </td>
+        <!-- PVP -->
+        <td class="text-primary fw-bold">
+          ${formatCurrency(row.pvp ?? 0, row.currency, row.position)}
+        </td>
 
-      <!-- ACTIONS -->
-      <td>
-        <div class="d-flex justify-content-center gap-2">
+        <!-- ACTIONS -->
+        <td>
+          <div class="d-flex justify-content-center gap-2">
 
-          <button class="btn btn-sm text-dark edit-btn"
-            data-row="${rowData}"
-            data-bs-toggle="tooltip"
-            title="Editar">
-            <i class="bi bi-pencil fs-6"></i>
-          </button>
+            <button class="btn btn-sm text-dark edit-btn"
+              data-row="${rowData}"
+              data-bs-toggle="tooltip"
+              title="Editar">
+              <i class="bi bi-pencil fs-6"></i>
+            </button>
 
-          <button class="btn btn-sm text-danger delete-btn"
-            data-id="${row.id}"
-            data-bs-toggle="tooltip"
-            title="Excluir">
-            <i class="bi bi-trash fs-6"></i>
-          </button>
+            <button class="btn btn-sm text-danger delete-btn"
+              data-id="${row.id}"
+              data-bs-toggle="tooltip"
+              title="Excluir">
+              <i class="bi bi-trash fs-6"></i>
+            </button>
 
-        </div>
-      </td>
+          </div>
+        </td>
 
-    </tr>
-  `);
+      </tr>
+    `;
     });
-    // reinicializa DataTable após render
-    table = $("#itemsTable").DataTable({
+
+    $tbody.html(rowsHtml);
+
+    // =========================
+    // REINICIAR DATATABLE
+    // =========================
+    $table.DataTable({
       pageLength: 25,
       lengthMenu: [10, 25, 50, 100],
+      destroy: true,
+      autoWidth: false,
 
-      destroy: true, // evita conflitos futuros
+      columnDefs: [
+        { orderable: false, targets: [0, 1, 8] }, // checkbox, icon, actions
+      ],
 
       language: {
         search: "",
@@ -144,12 +163,183 @@ $(document).ready(function () {
       },
     });
 
-    // tooltips (evita duplicação)
-    setTimeout(() => {
-      $('[data-bs-toggle="tooltip"]').tooltip("dispose"); // limpa antigos
-      $('[data-bs-toggle="tooltip"]').tooltip(); // recria
-    }, 150);
+    // =========================
+    // TOOLTIP (fix duplicação)
+    // =========================
+    $('[data-bs-toggle="tooltip"]').tooltip("dispose");
+    $('[data-bs-toggle="tooltip"]').tooltip();
   }
+
+  $("#itemsTable").on("click", ".delete-btn", function () {
+    const itemId = $(this).data("id");
+    const $row = $(this).closest("tr");
+
+    deleteWithUndo(itemId, $row);
+  });
+
+  function deleteWithUndo(itemId, $row) {
+    let timeout;
+    let cancelled = false;
+
+    Swal.fire({
+      toast: true,
+      position: "top-end",
+      showConfirmButton: false,
+      timer: 5000,
+      html: `
+      <div class="d-flex align-items-center gap-2">
+        <span>Item removido</span>
+        <button id="undoBtn" class="btn btn-sm btn-light">
+          Desfazer
+        </button>
+      </div>
+    `,
+      didOpen: () => {
+        const undoBtn = document.getElementById("undoBtn");
+
+        undoBtn.addEventListener("click", () => {
+          cancelled = true;
+          clearTimeout(timeout);
+
+          $row.fadeIn(200);
+
+          Swal.fire({
+            toast: true,
+            icon: "info",
+            position: "top-end",
+            title: "Ação cancelada",
+            showConfirmButton: false,
+            timer: 2000,
+          });
+        });
+      },
+    });
+
+    // só executa DELETE depois do tempo
+    timeout = setTimeout(() => {
+      if (cancelled) return;
+
+      $.ajax({
+        url: "items/ajax/delete_item.php",
+        method: "POST",
+        data: { id: itemId },
+        dataType: "json",
+      })
+
+        .done(function (res) {
+          if (!res.success) {
+            // rollback visual se falhar no backend
+            $row.fadeIn(200);
+
+            Swal.fire({
+              icon: "warning",
+              title: "Não eliminado",
+              text: res.message || "Não foi possível eliminar o item",
+            });
+          }
+        })
+
+        .fail(function (xhr) {
+          $row.fadeIn(200);
+
+          let msg = "Erro ao eliminar item";
+
+          try {
+            msg = JSON.parse(xhr.responseText)?.message || msg;
+          } catch (e) {}
+
+          Swal.fire({
+            icon: "error",
+            title: "Erro",
+            text: msg,
+          });
+        });
+    }, 5000);
+  }
+
+  // selecionar todos
+  $("#selectAll").on("change", function () {
+    $(".item-checkbox").prop("checked", $(this).is(":checked"));
+  });
+
+  $("#deleteSelected").on("click", function () {
+    const selected = $(".item-checkbox:checked")
+      .map(function () {
+        return $(this).val();
+      })
+      .get();
+
+    if (selected.length === 0) {
+      return Swal.fire("Atenção", "Selecione pelo menos um item.", "warning");
+    }
+
+    Swal.fire({
+      title: `Eliminar ${selected.length} item(s)?`,
+      text: "Esta ação não pode ser desfeita!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      confirmButtonText: "Sim, eliminar",
+      cancelButtonText: "Cancelar",
+    }).then((result) => {
+      if (!result.isConfirmed) return;
+
+      Swal.fire({
+        title: "A eliminar...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading(),
+      });
+
+      $.ajax({
+        url: "items/ajax/delete_items_bulk.php",
+        method: "POST",
+        data: { ids: selected },
+        dataType: "json",
+      })
+
+        .done(function (res) {
+          if (res.success) {
+            selected.forEach((id) => {
+              $(`.item-checkbox[value="${id}"]`)
+                .closest("tr")
+                .fadeOut(200, function () {
+                  $(this).remove();
+                });
+            });
+
+            Swal.fire({
+              toast: true,
+              position: "top-end",
+              icon: "success",
+              title: res.message || `${selected.length} item(s) eliminados`,
+              showConfirmButton: false,
+              timer: 2500,
+            });
+          } else {
+            Swal.fire({
+              icon: "warning",
+              title: "Atenção",
+              text: res.error || "Não foi possível eliminar os itens.",
+            });
+          }
+        })
+
+        .fail(function (xhr) {
+          let msg = "Erro inesperado.";
+
+          try {
+            const res = JSON.parse(xhr.responseText);
+            msg = res.error || msg;
+          } catch (e) {}
+
+          Swal.fire({
+            icon: "error",
+            title: "Erro",
+            text: msg,
+          });
+        });
+    });
+  });
 
   // Função simples de pesquisa (Filtro)
   // Adicione um input com id="searchInput" no seu HTML se quiser usar
@@ -160,8 +350,6 @@ $(document).ready(function () {
     });
   });
 
-
- 
   $("#itemsTable").on("click", ".edit-btn", function () {
     const rawData = $(this).data("row");
 
@@ -170,87 +358,130 @@ $(document).ready(function () {
       return;
     }
 
-    const row = JSON.parse(decodeURIComponent(rawData));
-    const form = document.getElementById("editItemForm");
+    let row;
 
+    try {
+      row = JSON.parse(decodeURIComponent(rawData));
+    } catch (e) {
+      console.error("Erro ao parse JSON:", e, rawData);
+      return;
+    }
+
+    const form = document.getElementById("itemForm");
     if (!form) return;
+
+    console.log("EDIT ROW:", row);
 
     // =========================
     // ID
     // =========================
-    form.id.value = row.id ?? "";
-
-    // =========================
-    // CÓDIGO (hidden + display)
-    // =========================
-    if (form.codigo) form.codigo.value = row.code ?? "";
-
-    const codigoDisplay = document.getElementById("codigo_display");
-    if (codigoDisplay) codigoDisplay.value = row.code ?? "";
+    if (!form.product_id) {
+      const hidden = document.createElement("input");
+      hidden.type = "hidden";
+      hidden.name = "product_id";
+      form.appendChild(hidden);
+    }
+    form.product_id.value = row.id ?? "";
 
     // =========================
     // IDENTIFICAÇÃO
     // =========================
-    if (form.name) form.name.value = row.name ?? "";
-    if (form.descricao) form.descricao.value = row.description ?? "";
+    form.codigo.value = row.code ?? "";
+    form.name.value = row.name ?? "";
+    form.descricao.value = row.description ?? "";
 
     // =========================
     // CLASSIFICAÇÃO
     // =========================
-    $(form.querySelector("[name='item_type']"))
-      .val(row.item_type ?? "product")
-      .trigger("change");
-
-    $(form.querySelector("[name='unit_measure']"))
-      .val(row.unit_measure ?? "unit")
-      .trigger("change");
-
-    $(form.querySelector("[name='currency']"))
-      .val(row.currency ?? "AOA")
-      .trigger("change");
+    $("[name='item_type']", form).val(row.item_type ?? "product");
+    $("[name='subcategory']", form).val(row.subcategory ?? "");
+    $("[name='unit_measure']", form).val(row.unit_measure ?? "unit");
+    $("[name='currency']", form).val(row.currency ?? "AOA");
 
     // =========================
     // STOCK
     // =========================
-    $(form.querySelector("[name='stock_id']"))
-      .val(row.stock_id ?? "")
-      .trigger("change");
+    $("[name='stock_id']", form).val(row.stock_id ?? "");
 
-    if (form.quantidade) form.quantidade.value = row.quantity ?? 0;
-    if (form.min_stock) form.min_stock.value = row.min_quantity ?? 1;
+    form.quantidade.value = row.quantity ?? 0;
+    form.min_stock.value = row.min_quantity ?? 1;
 
     // =========================
     // PREÇOS
     // =========================
-    if (form.unit_price) form.unit_price.value = row.unit_price ?? 0;
-    if (form.cost_price) form.cost_price.value = row.cost_price ?? 0;
-    if (form.sale_price) form.sale_price.value = row.sale_price ?? 0;
-    if (form.pvp) form.pvp.value = row.pvp ?? 0;
+    form.unit_price.value = row.unit_price ?? 0;
+    form.cost_price.value = row.cost_price ?? 0;
+    form.sale_price.value = row.sale_price ?? 0;
+    form.pvp.value = row.pvp ?? 0;
 
     // =========================
     // FISCAL
     // =========================
-    if (form.tax) form.tax.value = row.tax ?? "";
+    form.tax.value = row.tax ?? "";
 
-    $(form.querySelector("[name='retention']"))
-      .val(row.retention ?? 0)
-      .trigger("change");
-
-    $(form.querySelector("[name='tax']"))
-      .val(row.tax ?? 0)
-      .trigger("change");
+    $("[name='retention']", form).val(row.retention ?? 0);
 
     // =========================
     // COMPANY
     // =========================
-    if (form.id_company) form.id_company.value = row.company_id ?? "";
+    form.id_company.value = row.company_id ?? "";
+
+    // =========================
+    // FORÇA SINCRONIZAÇÃO DA UI
+    // =========================
 
     // =========================
     // MODAL
     // =========================
-    $("#editItemModal").modal("show");
+    const modal = new bootstrap.Modal(modalEl);
+
+    modalTitle.innerHTML = "Editar Produto/Serviço";
+
+    modal.show();
+
+    const isProduct = row.item_type === "product";
+
+    setTimeout(() => {
+      !isProduct ? $("#depot").removeClass("active") : $("#depot").addClass("active");
+    }, 200);
   });
 
+  function resetItemForm() {
+    const form = document.getElementById("itemForm");
+    if (!form) return;
+
+    // limpar inputs
+    form.reset();
+
+    // limpar ID (CRÍTICO)
+    const idField = form.querySelector("[name='product_id']");
+    if (idField) idField.remove();
+
+    // limpar selects jQuery (caso uses select2/bootstrap selects)
+    $("[name='item_type']", form).val("product").trigger("change");
+    $("[name='subcategory']", form).val("").trigger("change");
+    $("[name='stock_id']", form).val("").trigger("change");
+    $("[name='currency']", form).val("AOA").trigger("change");
+
+    // limpar campos manuais
+    const tax = form.querySelector("#tax");
+    if (tax) tax.value = "";
+
+    const retention = form.querySelector("#retention_tax");
+    if (retention) retention.value = "0";
+
+    // restaurar título
+    modalTitle.innerHTML = defaultTitle;
+
+    // se tiver syncUI global
+    if (typeof syncUI === "function") {
+      syncUI();
+    }
+  }
+
+  modalEl.addEventListener("hidden.bs.modal", () => {
+    resetItemForm();
+  });
 
   $("#saveEdit").on("click", function () {
     const form = $("#editItemForm");
@@ -287,58 +518,11 @@ $(document).ready(function () {
     });
   });
 
-  // EXCLUIR ITEM
-  $("#itemsTable").on("click", ".delete-btn", function () {
-    let itemId = $(this).data("id");
+  $(document).on("change", ".item-checkbox", function () {
+    const selectedItems = $(".item-checkbox:checked");
 
-    Swal.fire({
-      title: "Tem certeza?",
-      text: "Esta ação não pode ser desfeita!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Sim, deletar!",
-      cancelButtonText: "Cancelar",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        $.ajax({
-          url: "items/ajax/delete_item.php",
-          method: "POST",
-          data: { id: itemId },
-          dataType: "json",
-          success: function (response) {
-            if (response.success) {
-              // Remove a linha visualmente ou recarrega tudo
-              $(`button[data-id="${itemId}"]`).closest("tr").remove();
-
-              Swal.fire({
-                toast: true,
-                position: "top-end",
-                icon: "success",
-                title: "Produto/Serviço excluído com sucesso!",
-                showConfirmButton: false,
-                timer: 3000,
-              });
-            } else {
-              Swal.fire({
-                icon: "error",
-                title: "Erro!",
-                text: "Erro ao excluir o produto/serviço.",
-                confirmButtonColor: "#d33",
-              });
-            }
-          },
-          error: function () {
-            Swal.fire({
-              icon: "error",
-              title: "Erro!",
-              text: "Erro na requisição!",
-              confirmButtonColor: "#d33",
-            });
-          },
-        });
-      }
-    });
+    $("#deleteSelected").html(`
+    <i class="bi bi-trash"></i> Eliminar ${selectedItems.length > 0 ? selectedItems.length + " item(s)" : ""}
+  `);
   });
 });

@@ -19,7 +19,8 @@ $(document).ready(function () {
   // Carregar países ao iniciar a página
   selectCountry();
 
-  $("#name").remove();
+
+  console.log($("#contact-form #name"))
 
   // Quando um contato é selecionado, carrega os dados no formulário
   $("#contact-select").on("change", function () {
@@ -33,7 +34,7 @@ $(document).ready(function () {
         dataType: "json",
         success: function (contato) {
           $("#contact_id").val(contato.id);
-          $("#name").val(contato.name).prop("disabled", true);
+          $("#contact_name").val(contato.name).prop("disabled", true);
           $("#email").val(contato.email).prop("disabled", true);
           $("#contributor").val(contato.contributor).prop("disabled", true);
           $("#po_box").val(contato.po_box).prop("disabled", true);

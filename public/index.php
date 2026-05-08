@@ -179,7 +179,7 @@ require_once '../app/views/layout_creation.php';
     }
 
     .card-item {
-        width: 18.1rem !important;
+        width: 20.1rem !important;
     }
 
     #trimestreSelect {
@@ -295,6 +295,23 @@ require_once '../app/views/layout_creation.php';
             text-align: center;
         }
     }
+
+    .dashboard-carousel .item {
+        padding: 5px;
+    }
+
+    .dashboard-carousel .card {
+        height: 100%;
+    }
+
+    /* 🔥 importante para mostrar metade do próximo */
+    .owl-stage {
+        display: flex;
+    }
+
+    .owl-item {
+        transition: all 0.3s ease;
+    }
 </style>
 
 <body>
@@ -304,11 +321,18 @@ require_once '../app/views/layout_creation.php';
             <div class="container-fluid px-lg-5 px-2">
                 <div class="row g-4 mt-5">
                     <div class="col-12">
-                        <div class="d-flex col-12 col-sm-12">
+                        <div class="d-flex justify-content-between col-12 col-sm-12">
                             <div class="tags">
                                 <a href="#" data-tag="sell" class="tag-link active btn">Vendas</a>
                                 <a href="#" data-tag="stock" class="tag-link btn">Stock</a>
                                 <a href="#" data-tag="rh" class="tag-link btn">Recursos Humanos</a>
+                            </div>
+                            <div class="mb-3">
+                                <select style="width: 160px !important;" name="export" id="exportData" class="form-select">
+                                    <option value="" selected>Exportar</option>
+                                    <option value="sell">Relatório de Vendas</option>
+                                    <option value="saft">Ficheiro SAFT</option>
+                                </select>
                             </div>
                         </div>
                     </div>
@@ -318,9 +342,9 @@ require_once '../app/views/layout_creation.php';
                         <!-- Sessao Gestao de Vendas -->
                         <div class="col-12 tag-content active" data-tag-content="sell">
                             <!-- ================== CARDS ================== -->
-                            <div class="cards d-flex flex-md-wrap gap-3 mb-4">
+                            <div class="owl-carousel dashboard-carousel mb-4">
 
-                                <div class="card-item">
+                                <div class="item">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex justify-content-between">
                                             <div class="icon-box"><i class="bi bi-coin text-primary"></i></div>
@@ -333,7 +357,7 @@ require_once '../app/views/layout_creation.php';
                                     </div>
                                 </div>
 
-                                <div class="card-item">
+                                <div class="item">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="month_average">€32.666</h4>
@@ -344,7 +368,7 @@ require_once '../app/views/layout_creation.php';
                                     </div>
                                 </div>
 
-                                <div class="card-item">
+                                <div class="item">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="month_sell">€32.666</h4>
@@ -355,7 +379,7 @@ require_once '../app/views/layout_creation.php';
                                     </div>
                                 </div>
 
-                                <div class="card-item">
+                                <div class="item">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-people text-primary"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="total_customer">64</h4>
@@ -366,13 +390,13 @@ require_once '../app/views/layout_creation.php';
                                     </div>
                                 </div>
 
-                                <div class="card-item">
+                                <div class="item">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-file-earmark-text text-primary"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="total_docs">157</h4>
                                         <div class="d-flex justify-content-between">
                                             <span class="small-text">Documentos emitidos</span>
-                                            <span id="total_doc_dif" class="small"><i class="bi bi-arrow-up-right"></i> 0</span>
+                                            <span id="total_doc_dif" class="small"><i class="bi bi-arrow-up-right"></i>0</span>
                                         </div>
                                     </div>
                                 </div>
@@ -442,8 +466,7 @@ require_once '../app/views/layout_creation.php';
                         <!-- Sessao Gestao de RH -->
                         <div class="col-12 tag-content" data-tag-content="rh">
                             <!-- CARDS -->
-                            <div class="row g-3 g-3">
-
+                            <div class="d-flex gap-3 flex-wrap flex-lg-nowrap">
                                 <!-- CARD 1 -->
                                 <div class="col-12 col-md-3">
                                     <div class="card card-custom p-3 p-3">
@@ -539,8 +562,7 @@ require_once '../app/views/layout_creation.php';
                         <!-- Sessao Gestao de Stock -->
                         <div class="col-12 tag-content" data-tag-content="stock">
                             <!-- CARDS -->
-                            <div class="row g-3 g-3">
-
+                            <div class="d-flex gap-3 flex-wrap flex-lg-nowrap">
                                 <div class="col-12 col-md-3">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
@@ -816,10 +838,40 @@ require_once '../app/views/footer.php';
                 console.error("AJAX ERROR invoices:", xhr.responseText);
             }
         });
+
+
+
+        $(document).ready(function() {
+
+            $('.dashboard-carousel').owlCarousel({
+                loop: true,
+                margin: 4,
+                nav: false,
+                dots: false,
+                autoplay: true,
+                autoplayTimeout: 3000,
+                autoplayHoverPause: true,
+                smartSpeed: 800,
+
+                responsive: {
+                    0: {
+                        items: 1.2
+                    },
+                    600: {
+                        items: 2.2
+                    },
+                    1000: {
+                        items: 3.2
+                    }
+                }
+            });
+
+        });
+
     }
 
     /* =============================
-       🔹 KPI DATA
+    🔹 KPI DATA
     ============================= */
     function getInsightsNumber() {
         if (!company_id || !user_id) return;
@@ -869,7 +921,7 @@ require_once '../app/views/footer.php';
     }
 
     /* =============================
-       🔹 CHART
+    🔹 CHART
     ============================= */
     function renderGraphics(apiData) {
         const evolucao = apiData?.evolucao || [];
@@ -972,7 +1024,7 @@ require_once '../app/views/footer.php';
 
 
     /* =============================
-       🔹 TOP CLIENTS
+    🔹 TOP CLIENTS
     ============================= */
     function renderTopClients(apiData) {
         const el = document.getElementById("topClients");
@@ -981,20 +1033,20 @@ require_once '../app/views/footer.php';
         const list = apiData?.top_clients || [];
 
         el.innerHTML = list.map(c => `
-        <div class="hover-row d-flex justify-content-between p-2 rounded">
-            <div>
-                <strong>${c.cliente ?? ''}</strong><br>
-                <small class="text-muted">${c.total_faturas || 0} facturas</small>
-            </div>
-            <span class="text-success fw-semibold">
-                ${formatCurrency(c.total_faturado)}
-            </span>
-        </div>
-    `).join('');
+<div class="hover-row d-flex justify-content-between p-2 rounded">
+    <div>
+        <strong>${c.cliente ?? ''}</strong><br>
+        <small class="text-muted">${c.total_faturas || 0} facturas</small>
+    </div>
+    <span class="text-success fw-semibold">
+        ${formatCurrency(c.total_faturado)}
+    </span>
+</div>
+`).join('');
     }
 
     /* =============================
-       🔹 RH MODULE
+    🔹 RH MODULE
     ============================= */
     function loadRHData() {
 
@@ -1038,39 +1090,39 @@ require_once '../app/views/footer.php';
                     const badgeText = v.status === 'pendente' ? 'Pendente' : 'Aprovadas';
 
                     return `
-                    <div class="list-item d-flex justify-content-between align-items-center mb-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="avatar bg-primary-subtle text-primary">
-                                ${getInitials(v.name)}
-                            </div>
-                            <div>
-                                <div class="fw-medium">${v.name}</div>
-                                <small class="text-muted">
-                                    ${formatDateRange(v.start_date, v.end_date)}
-                                </small>
-                                </div>
-                                </div>
-                                <span class="badge ${badgeClass}">${badgeText}</span>
-                    </div>`;
+<div class="list-item d-flex justify-content-between align-items-center mb-2">
+    <div class="d-flex align-items-center gap-2">
+        <div class="avatar bg-primary-subtle text-primary">
+            ${getInitials(v.name)}
+        </div>
+        <div>
+            <div class="fw-medium">${v.name}</div>
+            <small class="text-muted">
+                ${formatDateRange(v.start_date, v.end_date)}
+            </small>
+        </div>
+    </div>
+    <span class="badge ${badgeClass}">${badgeText}</span>
+</div>`;
                 }).join('');
 
                 $("#rh_vacations_list").html(vacHtml);
 
                 /* Absences */
                 const absHtml = (data.top_absences || []).map(a => `
-                <div class="list-item d-flex justify-content-between align-items-center mb-2">
-                <div class="d-flex align-items-center gap-2">
-                <div class="avatar bg-danger-subtle text-danger">
-                ${getInitials(a.name)}
-                </div>
-                <div>
-                <div class="fw-medium">${a.name}</div>
-                <small class="text-muted">${a.tipo_falta}</small>
-                </div>
-                </div>
-                <span class="fw-bold">${a.total_absences} faltas</span>
-                </div>
-                `).join('');
+<div class="list-item d-flex justify-content-between align-items-center mb-2">
+    <div class="d-flex align-items-center gap-2">
+        <div class="avatar bg-danger-subtle text-danger">
+            ${getInitials(a.name)}
+        </div>
+        <div>
+            <div class="fw-medium">${a.name}</div>
+            <small class="text-muted">${a.tipo_falta}</small>
+        </div>
+    </div>
+    <span class="fw-bold">${a.total_absences} faltas</span>
+</div>
+`).join('');
 
                 $("#rh_absences_list").html(absHtml);
             },
@@ -1081,7 +1133,7 @@ require_once '../app/views/footer.php';
     }
 
     /* ==========================================
-          STOCK DASHBOARD
+    STOCK DASHBOARD
     ========================================== */
 
     function loadStockDashboard() {
@@ -1110,7 +1162,7 @@ require_once '../app/views/footer.php';
                 console.log(data)
 
                 /* =========================
-                   🔹 KPIs
+                🔹 KPIs
                 ========================= */
                 document.getElementById("kpi-depots").textContent = kpis.depots ?? 0;
                 document.getElementById("kpi-products").textContent = kpis.products ?? 0;
@@ -1125,14 +1177,14 @@ require_once '../app/views/footer.php';
                     const el = document.getElementById(id);
                     if (!el) return;
 
-                    el.innerHTML = value > 0 ? `<i class="bi bi-arrow-up-right"></i>${(id === 'kpi-depots-growth' || id === 'kpi-products-growth')  ? '+' : ''}${value}${(id === 'kpi-depots-growth' || id === 'kpi-products-growth') ? '' : '%'}` : `<i class="bi bi-arrow-down-right"></i>${value}%`;
+                    el.innerHTML = value > 0 ? `<i class="bi bi-arrow-up-right"></i>${(id === 'kpi-depots-growth' || id === 'kpi-products-growth') ? '+' : ''}${value}${(id === 'kpi-depots-growth' || id === 'kpi-products-growth') ? '' : '%'}` : `<i class="bi bi-arrow-down-right"></i>${value}%`;
                     el.className = value > 0 ? "text-success" : "text-danger";
 
                 }
 
 
                 /* =========================
-                   🔹 DEPÓSITOS
+                🔹 DEPÓSITOS
                 ========================= */
                 const depositsContainer = document.getElementById("depots_list");
 
@@ -1141,32 +1193,32 @@ require_once '../app/views/footer.php';
 
                     (data.depots || []).forEach(dep => {
                         html += `
-                    <div class="col-12 col-sm-4">
-                        <div class="p-3 border rounded-3 depo-item">
-                            <h6 class="fw-semibold">${dep.name}</h6>
-                            <small class="text-muted">${dep.city ?? ''}</small>
+<div class="col-12 col-sm-4">
+    <div class="p-3 border rounded-3 depo-item">
+        <h6 class="fw-semibold">${dep.name}</h6>
+        <small class="text-muted">${dep.city ?? ''}</small>
 
-                            <div class="d-flex justify-content-between mt-2">
-                                <small class="text-muted">${dep.total_items || 0} itens</small>
-                                <span class="fw-bold text-success">
-                                    ${formatCurrency(dep.total_value)}
-                                </span>
-                            </div>
+        <div class="d-flex justify-content-between mt-2">
+            <small class="text-muted">${dep.total_items || 0} itens</small>
+            <span class="fw-bold text-success">
+                ${formatCurrency(dep.total_value)}
+            </span>
+        </div>
 
-                           <a href="stock-depot.php?depot_id=${dep.id}" class="stretched-link">
-                            <small class="text-primary d-block mt-2">
-                                Ver detalhes <i class="bi bi-chevron-right"></i>
-                            </small>
-                            </a>
-                        </div>
-                    </div>`;
+        <a href="stock-depot.php?depot_id=${dep.id}" class="stretched-link">
+            <small class="text-primary d-block mt-2">
+                Ver detalhes <i class="bi bi-chevron-right"></i>
+            </small>
+        </a>
+    </div>
+</div>`;
                     });
 
                     depositsContainer.innerHTML = html || `<small class="text-muted">Sem depósitos</small>`;
                 }
 
                 /* =========================
-                   🔹 STOCK BAIXO
+                🔹 STOCK BAIXO
                 ========================= */
                 const lowStockContainer = document.getElementById("low_stock_list");
 
@@ -1175,24 +1227,24 @@ require_once '../app/views/footer.php';
 
                     (data.low_stock || []).forEach(item => {
                         html += `
-                    <div class="list-item">
-                        <div>
-                            <div class="fw-medium">${item.name}</div>
-                            <small class="text-muted">
-                                ${item.quantity}/${item.min_quantity}
-                            </small>
-                        </div>
-                        <button class="btn btn-sm text-primary">
-                            <i class="bi bi-plus"></i> Lista
-                        </button>
-                    </div>`;
+<div class="list-item">
+    <div>
+        <div class="fw-medium">${item.name}</div>
+        <small class="text-muted">
+            ${item.quantity}/${item.min_quantity}
+        </small>
+    </div>
+    <button class="btn btn-sm text-primary">
+        <i class="bi bi-plus"></i> Lista
+    </button>
+</div>`;
                     });
 
                     lowStockContainer.innerHTML = html || `<small class="text-muted">Sem alertas</small>`;
                 }
 
                 /* =========================
-                   🔹 COMPRAS (SUGESTÃO)
+                🔹 COMPRAS (SUGESTÃO)
                 ========================= */
                 const purchaseContainer = document.getElementById("purchase_list");
 
@@ -1201,15 +1253,15 @@ require_once '../app/views/footer.php';
 
                     (data.purchases || []).forEach(p => {
                         html += `
-                    <div class="list-item">
-                        <div>
-                            <div class="fw-medium">${p.name}</div>
-                            <small class="text-muted">
-                                Sugerido: ${p.suggested_qty}
-                            </small>
-                        </div>
-                        <small class="text-muted">Auto</small>
-                    </div>`;
+<div class="list-item">
+    <div>
+        <div class="fw-medium">${p.name}</div>
+        <small class="text-muted">
+            Sugerido: ${p.suggested_qty}
+        </small>
+    </div>
+    <small class="text-muted">Auto</small>
+</div>`;
                     });
 
                     purchaseContainer.innerHTML = html || `<small class="text-muted">Sem sugestões</small>`;
@@ -1222,8 +1274,25 @@ require_once '../app/views/footer.php';
         });
     }
 
+    const exportDataSelect = document.getElementById("exportData");
+    exportDataSelect.addEventListener("change", e => {
+        exportData(e.target.value);
+    })
+
+    const exportData = async (type) => {
+        let url;
+
+        if (type === "sell") {
+            url = "index/ajax/relatorio_vendas.php";
+        } else if (type === "saft") {
+            url = "index/ajax/generate_saft.php";
+        }
+
+        window.location.href = url;
+    };
+
     /* =============================
-       🔹 INIT
+    🔹 INIT
     ============================= */
     $(document).ready(function() {
 

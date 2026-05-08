@@ -11,7 +11,7 @@ try {
     // =========================
     // INPUTS
     // =========================
-    $id = (int)($_POST['id'] ?? 0);
+    $id = (int)($_POST['id'] || $_POST['item_id'] || $_POST['product_id'] ?? 0);
     $id_company = (int)($_POST['id_company'] ?? 0);
 
     $name = trim($_POST['name'] ?? '');

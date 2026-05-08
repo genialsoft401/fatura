@@ -7,215 +7,310 @@ $(document).ready(function () {
     return urlParams.get(param);
   }
 
-  function selectCountry(selectedCountry = "", selectedCity = "") {
-    return new Promise((resolve) => {
-      const username = "israelsouza";
-      const countrySelect = $("#country");
-      const citySelect = $("#city");
+  async function selectCountry(selectedCountry = "", selectedCity = "") {
+    const username = "israelsouza";
 
-      countrySelect
-        .html('<option value="">Carregando lista de países...</option>')
-        .trigger("change");
-      citySelect
-        .html('<option value="">Selecione um país primeiro</option>')
-        .trigger("change");
+    const countrySelect = $("#country");
+    const citySelect = $("#city");
 
-      fetch(`https://secure.geonames.org/countryInfoJSON?username=${username}`)
-        .then((response) => response.json())
-        .then((data) => {
-          countryMap = {};
-          let options = '<option value="">Selecione um país</option>';
+    try {
+      countrySelect.html('<option value="">Carregando países...</option>');
 
-          (data.geonames || []).forEach((country) => {
-            countryMap[country.countryName] = country.geonameId;
-            options += `<option value="${country.countryName}">${country.countryName}</option>`;
-          });
+      citySelect.html('<option value="">Selecione um país primeiro</option>');
 
-          countrySelect.html(options).trigger("change");
-          countrySelect.select2({
-            width: "100%",
-            placeholder: "Selecione um país",
-            allowClear: false,
-            dropdownParent: countrySelect.parent(),
-          });
+      // Destroy select2 antes de recriar
+      if (countrySelect.hasClass("select2-hidden-accessible")) {
+        countrySelect.select2("destroy");
+      }
 
-          if (selectedCountry) {
-            countrySelect.data("ignore-change", true);
-            countrySelect.val(selectedCountry).trigger("change");
-            countrySelect.data("ignore-change", false);
-            loadCities(selectedCountry, selectedCity).then(resolve);
-          } else {
-            resolve();
-          }
-        })
-        .catch((error) => {
-          console.error("Erro ao carregar países:", error);
-          countrySelect
-            .html('<option value="">Erro ao carregar</option>')
-            .trigger("change");
-          resolve();
-        });
-    });
+      if (citySelect.hasClass("select2-hidden-accessible")) {
+        citySelect.select2("destroy");
+      }
+
+      const response = await fetch(
+        `https://secure.geonames.org/countryInfoJSON?username=${username}`,
+      );
+
+      const data = await response.json();
+
+      countryMap = {};
+
+      let options = '<option value="">Selecione um país</option>';
+
+      (data.geonames || []).forEach((country) => {
+        countryMap[country.countryName] = country.geonameId;
+
+        options += `
+        <option value="${country.countryName}">
+          ${country.countryName}
+        </option>
+      `;
+      });
+
+      countrySelect.html(options);
+
+      countrySelect.select2({
+        width: "100%",
+        placeholder: "Selecione um país",
+        allowClear: false,
+        dropdownParent: countrySelect.parent(),
+      });
+
+      // Selecionar país automaticamente
+      if (selectedCountry) {
+        countrySelect.val(selectedCountry).trigger("change");
+
+        await loadCities(selectedCountry, selectedCity);
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Erro ao carregar países:", error);
+
+      countrySelect.html('<option value="">Erro ao carregar países</option>');
+
+      return false;
+    }
   }
 
-  function loadCities(countryName, selectedCity = "") {
-    return new Promise((resolve) => {
-      const citySelect = $("#city");
+  async function loadCities(countryName, selectedCity = "") {
+    const citySelect = $("#city");
+
+    try {
       const countryId = countryMap[countryName];
 
       if (!countryId) {
-        citySelect
-          .html('<option value="">Selecione um país primeiro</option>')
-          .trigger("change");
-        resolve();
+        citySelect.html('<option value="">Selecione um país primeiro</option>');
+
+        return false;
+      }
+
+      // Destroy select2 antes de recriar
+      if (citySelect.hasClass("select2-hidden-accessible")) {
+        citySelect.select2("destroy");
+      }
+
+      citySelect.html('<option value="">Carregando cidades...</option>');
+
+      const response = await fetch(
+        `https://secure.geonames.org/childrenJSON?geonameId=${countryId}&username=israelsouza`,
+      );
+
+      const data = await response.json();
+
+      let options = '<option value="">Selecione uma cidade</option>';
+
+      const cities = [
+        ...new Set(
+          (data.geonames || []).map((city) => city.name).filter(Boolean),
+        ),
+      ];
+
+      cities.forEach((cityName) => {
+        options += `
+        <option 
+          value="${cityName}"
+          ${cityName === selectedCity ? "selected" : ""}
+        >
+          ${cityName}
+        </option>
+      `;
+      });
+
+      citySelect.html(options);
+
+      citySelect.select2({
+        width: "100%",
+        placeholder: "Selecione uma cidade",
+        allowClear: false,
+        dropdownParent: citySelect.parent(),
+      });
+
+      if (selectedCity) {
+        citySelect.val(selectedCity).trigger("change");
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Erro ao carregar cidades:", error);
+
+      citySelect.html('<option value="">Erro ao carregar cidades</option>');
+
+      return false;
+    }
+  }
+
+  async function loadDDI(selectedDDIs = {}) {
+    try {
+      const response = await fetch("assets/ajax/get_countries.php");
+
+      const data = await response.json();
+
+      const ddiData = [
+        {
+          id: "",
+          text: "DDI",
+          selectedText: "DDI",
+        },
+        ...data.map((country) => ({
+          id: country.phone,
+          text: `${country.name} (+${country.phone})`,
+          selectedText: `+${country.phone}`,
+        })),
+      ];
+
+      const ddiFields = [
+        "telephone_ddi",
+        "cellphone_ddi",
+        "pref_telephone_ddi",
+        "pref_cellphone_ddi",
+      ];
+
+      ddiFields.forEach((fieldId) => {
+        const field = $(`#${fieldId}`);
+
+        // destroy select2 antes
+        if (field.hasClass("select2-hidden-accessible")) {
+          field.select2("destroy");
+        }
+
+        field.empty();
+
+        field.select2({
+          width: "90px",
+          placeholder: "DDI",
+          allowClear: false,
+          dropdownParent: field.parent(),
+
+          data: ddiData,
+
+          templateResult: function (option) {
+            return option.text;
+          },
+
+          templateSelection: function (option) {
+            const selectedItem = ddiData.find((item) => item.id == option.id);
+
+            return selectedItem ? selectedItem.selectedText : option.text;
+          },
+        });
+
+        // preencher valor
+        if (selectedDDIs[fieldId]) {
+          field.val(selectedDDIs[fieldId]).trigger("change");
+        }
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Erro ao carregar DDIs:", error);
+      return false;
+    }
+  }
+
+  async function loadContactData(contactId) {
+    if (!contactId) return;
+
+    try {
+      const contact = await $.ajax({
+        url: "contacts/ajax/get_contact.php",
+        method: "POST",
+        data: { id: contactId },
+        dataType: "json",
+      });
+
+      console.log("Carregando dados do contato para edição...");
+      console.log(contact);
+
+      if (!contact || !contact.id) {
+        alert("Contato não encontrado.");
         return;
       }
 
-      citySelect
-        .html('<option value="">Carregando cidades...</option>')
-        .trigger("change");
+      // =========================
+      // ID GLOBAL
+      // =========================
+      window.__CONTACT_ID__ = contact.id;
 
-      fetch(
-        `https://secure.geonames.org/childrenJSON?geonameId=${countryId}&username=israelsouza`,
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          let options = '<option value="">Selecione uma cidade</option>';
-          (data.geonames || []).forEach((city) => {
-            let isSelected = city.name === selectedCity ? "selected" : "";
-            options += `<option value="${city.name}" ${isSelected}>${city.name}</option>`;
-          });
+      // =========================
+      // INPUTS / TEXTAREAS
+      // =========================
+      $("#companyName").val(contact.name || "");
+      $("#email").val(contact.email || "");
+      $("#telephone").val(contact.telephone || "");
+      $("#address").val(contact.address || "");
+      $("#observations").val(contact.observations || "");
+      $("#contributor").val(contact.contributor || "");
+      $("#po_box").val(contact.po_box || "");
+      $("#cellphone").val(contact.cellphone || "");
+      $("#website").val(contact.website || "");
+      $("#fax").val(contact.fax || "");
+      $("#pref_name").val(contact.pref_name || "");
+      $("#pref_email").val(contact.pref_email || "");
+      $("#pref_telephone").val(contact.pref_telephone || "");
+      $("#pref_cellphone").val(contact.pref_cellphone || "");
 
-          citySelect.html(options).trigger("change");
-          citySelect.select2({
-            width: "100%",
-            placeholder: "Selecione uma cidade",
-            allowClear: false,
-            dropdownParent: citySelect.parent(),
-          });
-          resolve();
-        })
-        .catch((error) => {
-          console.error("Erro ao carregar cidades:", error);
-          citySelect
-            .html('<option value="">Erro ao carregar</option>')
-            .trigger("change");
-          resolve();
-        });
-    });
-  }
+      // =========================
+      // SELECTS NORMAIS
+      // =========================
+      const selectFields = {
+        "#type": contact.type,
+        "#num_copias": contact.numberCopys,
+        "#due_date": contact.due_date,
+        "#language": contact.language,
+        "#payment_method": contact.payment_method,
+        "#currency": contact.currency,
+      };
 
-  function loadDDI(selectedDDIs = {}) {
-    fetch("assets/ajax/get_countries.php")
-      .then((response) => response.json())
-      .then((data) => {
-        // Prepare data for Select2, including what to display in the list and what to display when selected
-        const ddiDataForSelect2 = [
-          { id: "", text: "DDI", selectedText: "DDI" },
-        ].concat(
-          data.map((country) => {
-            return {
-              id: country.phone, // The actual value of the option
-              text: `${country.name} (+${country.phone})`, // What appears in the dropdown list
-              selectedText: `+${country.phone}`, // What appears in the selected box
-            };
-          }),
-        );
+      Object.entries(selectFields).forEach(([selector, value], index) => {
+        const field = $(selector);
 
-        const ddiFields = [
-          "telephone_ddi",
-          "cellphone_ddi",
-          "pref_telephone_ddi",
-          "pref_cellphone_ddi",
-        ];
-        ddiFields.forEach((fieldId) => {
-          const field = $(`#${fieldId}`);
-
-          // Select2 with 'data' option will manage the <option> elements itself.
-          // No need to manually empty and append <option> tags.
-          field.select2({
-            width: "90px",
-            placeholder: "DDI",
-            allowClear: false,
-            dropdownParent: field.parent(),
-            data: ddiDataForSelect2, // Pass the prepared data array
-            templateResult: function (option) {
-              return option.text; // Displays `country.name (+country.phone)` in the list
+        if (field.length) {
+          setTimeout(
+            () => {
+              field.val(value || "").trigger("change");
             },
-            templateSelection: function (option) {
-              // Find the original data item to get the selectedText
-              const selectedItem = ddiDataForSelect2.find(
-                (item) => item.id === option.id,
-              );
-              return selectedItem ? selectedItem.selectedText : option.text; // Displays `country.phone` in the selected box
-            },
-          });
-          if (selectedDDIs[fieldId]) {
-            field.val(selectedDDIs[fieldId]).trigger("change");
-          }
-        });
-      })
-      .catch((error) => {
-        console.error("Erro ao carregar DDIs:", error);
+            100 * (index + 1),
+          );
+        }
       });
-  }
 
-  function loadContactData(contactId) {
-    $.ajax({
-      url: "contacts/ajax/get_contact.php",
-      method: "POST",
-      data: { id: contactId },
-      dataType: "json",
-      success: function (contact) {
-        console.log("Carregando dados do contato para edição...");
-        // Armazena globalmente o ID do contato
-        window.__CONTACT_ID__ = contact.id;
+      // =========================
+      // DDI
+      // =========================
+      await loadDDI({
+        telephone_ddi: contact.telephone_ddi || "",
+        cellphone_ddi: contact.cellphone_ddi || "",
+        pref_telephone_ddi: contact.pref_telephone_ddi || "",
+        pref_cellphone_ddi: contact.pref_cellphone_ddi || "",
+      });
 
-        $("#name").val(contact.name);
-        $("#email").val(contact.email);
-        $("#telephone").val(contact.telephone);
-        $("#address").val(contact.address);
-        $("#observations").val(contact.observations);
-        $("#contributor").val(contact.contributor);
-        $("#po_box").val(contact.po_box);
-        $("#cellphone").val(contact.cellphone);
-        $("#website").val(contact.website);
-        $("#fax").val(contact.fax);
-        $("#pref_name").val(contact.pref_name);
-        $("#pref_email").val(contact.pref_email);
-        $("#pref_telephone").val(contact.pref_telephone);
-        $("#pref_cellphone").val(contact.pref_cellphone);
-
-        $("#type").val(contact.type).trigger("change");
-        $("#num_copias").val(contact.numberCopys).trigger("change");
-        $("#due_date").val(contact.due_date).trigger("change");
-        $("#language").val(contact.language).trigger("change");
-        $("#payment_method").val(contact.payment_method).trigger("change");
-        $("#currency").val(contact.currency).trigger("change");
-
-        selectCountry(contact.country, contact.city).then(() => {
-          // Após carregar selects (país/cidade), registra estado original para detectar mudanças
-          $("#contactForm")
-            .find("input, select, textarea")
-            .each(function () {
-              $(this).data("original", $(this).val());
-            });
+      // =========================
+      // PAÍS / CIDADE
+      // =========================
+      await selectCountry(contact.country || "", contact.city || "");
+      // =========================
+      // ESTADO ORIGINAL
+      // =========================
+      $("#contactForm")
+        .find("input, select, textarea")
+        .each(function () {
+          $(this).data("original", $(this).val());
         });
 
-        loadDDI({
-          telephone_ddi: contact.telephone_ddi,
-          cellphone_ddi: contact.cellphone_ddi,
-          pref_telephone_ddi: contact.pref_telephone_ddi,
-          pref_cellphone_ddi: contact.pref_cellphone_ddi,
-        });
+      // =========================
+      // BOTÃO
+      // =========================
+      $("#saveContactButton").text("Salvar Alterações");
 
-        $("#saveContactButton").text("Salvar Alterações");
-      },
-      error: function () {
-        alert("Erro ao carregar detalhes do contato.");
-      },
-    });
+      console.log("Dados carregados com sucesso.");
+    } catch (error) {
+      console.error("Erro ao carregar contato:", error);
+
+      alert("Erro ao carregar detalhes do contato.");
+    }
   }
+
   function toggleFields() {
     let isChecked = $("#usar_definicoes").prop("checked");
 
