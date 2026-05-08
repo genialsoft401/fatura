@@ -160,6 +160,8 @@ $(document).ready(function () {
 
         const data = response.data || {};
 
+        console.log(data);
+
         const selectedCountry = data.country || "";
         const selectedCity = data.city || "";
         const ddi = data.phone_ddi || "";
@@ -170,6 +172,7 @@ $(document).ready(function () {
       |--------------------------------------------------------------------------
       */
         $("#companyName").text(data.name || "");
+        $("#nameComp").val(data.name || "");
 
         /*
       |--------------------------------------------------------------------------
@@ -221,7 +224,10 @@ $(document).ready(function () {
       | País + Cidade
       |--------------------------------------------------------------------------
       */
-        selectCountry(selectedCountry, selectedCity);
+
+        setTimeout(() => {
+          selectCountry(selectedCountry, selectedCity);
+        }, 200);
 
         /*
       |--------------------------------------------------------------------------

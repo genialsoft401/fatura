@@ -349,7 +349,7 @@ require_once '../app/views/layout_creation.php';
                                         <div class="d-flex justify-content-between">
                                             <div class="icon-box"><i class="bi bi-coin text-primary"></i></div>
                                         </div>
-                                        <h4 class="mt-3 fw-semibold" id="trimestral_volume">AOA 98.000</h4>
+                                        <h4 class="mt-3 fw-semibold" id="trimestral_volume">0</h4>
                                         <div class="d-flex justify-content-between">
                                             <span class="small-text">Volume global de vendas</span>
                                             <span id="trimestral_volume_dif" class="small"><i class="bi bi-arrow-up-right"></i>+12%</span>
@@ -360,7 +360,7 @@ require_once '../app/views/layout_creation.php';
                                 <div class="item">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
-                                        <h4 class="mt-3 fw-semibold" id="month_average">€32.666</h4>
+                                        <h4 class="mt-3 fw-semibold" id="month_average">0</h4>
                                         <div class="d-flex justify-content-between">
                                             <span class="small-text">Média mensal de vendas</span>
                                             <span id="month_average_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>
@@ -371,7 +371,7 @@ require_once '../app/views/layout_creation.php';
                                 <div class="item">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
-                                        <h4 class="mt-3 fw-semibold" id="month_sell">€32.666</h4>
+                                        <h4 class="mt-3 fw-semibold" id="month_sell">AOA 323.666</h4>
                                         <div class="d-flex justify-content-between">
                                             <span class="small-text">Venda do período (mês)</span>
                                             <span id="month_sell_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>

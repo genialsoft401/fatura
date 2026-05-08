@@ -202,7 +202,7 @@ require_once '../app/views/layout_creation.php';
                             </div>
                             <div class="col-md-12">
                                 <labe class="fw-bold">Motivo</label>
-                                <textarea name="reason" class="form-control"></textarea>
+                                    <textarea name="reason" class="form-control"></textarea>
                             </div>
                         </div>
                     </div>
@@ -244,54 +244,74 @@ require_once '../app/views/layout_creation.php';
                 url: 'rh/ajax/list_vacations.php',
                 type: 'GET',
                 data: function(d) {
-                    d.mes = $('#filter_mes').val();
-                    d.funcionario = $('#filter_funcionario').val();
+                    d.mes = $('#filter_mes').val() || null;
+                    d.funcionario = $('#filter_funcionario').val() || null;
                 },
                 dataSrc: 'data',
-                error: function(xhr, error, thrown) {
+                error: function(xhr) {
                     handleAjaxError(xhr);
                 }
             },
+
             language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json'
+                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json',
+                errorLoading: '' // evita warning visual caso falhe o i18n
             },
+
             columns: [{
                     data: 'employee_name'
                 },
                 {
                     data: 'type'
                 },
+
                 {
                     data: 'start_date',
                     render: function(data) {
+                        if (!data) return '-';
                         return new Date(data + 'T00:00:00').toLocaleDateString('pt-PT');
                     }
                 },
+
                 {
                     data: 'end_date',
                     render: function(data) {
+                        if (!data) return '-';
                         return new Date(data + 'T00:00:00').toLocaleDateString('pt-PT');
                     }
                 },
+
                 {
                     data: 'status',
                     render: function(data) {
                         let cor = 'secondary';
+
                         if (data === 'Aprovado') cor = 'success';
                         else if (data === 'Rejeitado') cor = 'danger';
                         else if (data === 'Pendente') cor = 'warning';
-                        return `<span class="badge bg-${cor}">${data}</span>`;
+
+                        return `<span class="badge bg-${cor}">${data ?? '-'}</span>`;
                     }
                 },
+
                 {
                     data: null,
                     orderable: false,
-                    render: function(row) {
+                    searchable: false,
+                    render: function(data, type, row) {
                         return `
-                            <button class='btn btn-sm btn-warning editVacation' data-id='${row.id}' title="Editar"><i class="material-icons-round">edit</i></button>
-                            <button class='btn btn-sm btn-danger deleteVacation' data-id='${row.id}' title="Excluir"><i class="material-icons-round">delete</i></button>
-                            <button class='btn btn-sm btn-outline-primary changeStatus' data-id='${row.id}' title="Alterar Status"><i class="material-icons-round">key</i></button>
-                        `;
+                    <button class="btn btn-sm btn-warning editVacation" data-id="${row.id}" title="Editar">
+                        <i class="material-icons-round">edit</i>
+                    </button>
+
+                    <button class="btn btn-sm btn-danger deleteVacation" data-id="${row.id}" title="Excluir">
+                        <i class="material-icons-round">delete</i>
+                    </button>
+
+                    <button class="btn btn-sm btn-outline-primary changeStatus" data-id="${row.id}" title="Alterar Status">
+                        <i class="material-icons-round">key</i>
+                    </button>
+                `;
                     }
                 }
             ]

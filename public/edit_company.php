@@ -150,7 +150,7 @@ require_once '../app/views/layout_creation.php';
 
                                     <div class="col-md-6">
                                         <label for="name" class="form-label"><?= t('Nome da Empresa'); ?></label>
-                                        <input type="text" class="form-control" id="name" name="name">
+                                        <input type="text" class="form-control" id="nameComp" name="name">
                                     </div>
 
                                     <div class="col-md-6">
