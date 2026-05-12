@@ -1,84 +1,196 @@
 <?php
+
 require_once '../../../app/config/db.php';
+
+header('Content-Type: application/json');
+
 session_start();
 
-// Verifique se o company_id está na sessão
-if (!isset($_SESSION['user']['company_id'])) {
-    echo json_encode(['error' => 'Company ID não encontrado na sessão.']);
-    exit;
-}
+try {
 
-$company_id = $_SESSION['user']['company_id'];
+    // =====================================================
+    // VALIDAR SESSÃO
+    // =====================================================
 
-// Consulta para obter os dados para os gráficos
-$query = "SELECT 
-        YEAR(issue_date) AS year,
-        contact_id,
-        SUM(final_total) AS total,
-        name
-    FROM invoices i
-     Left JOIN contact c
-ON i.contact_id = c.id
-    WHERE i.company_id = :company_id
-    GROUP BY year, contact_id
-    ORDER BY year DESC
-";
+    if (!isset($_SESSION['user']['company_id'])) {
 
-$stmt = $pdo->prepare($query);
-$stmt->bindParam(':company_id', $company_id, PDO::PARAM_INT);
-$stmt->execute();
-$results = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        http_response_code(401);
 
-// Preparar dados para gráficos
-$yearlyData = [];
-$contactData = [];
+        echo json_encode([
+            'success' => false,
+            'error' => 'Company ID não encontrado na sessão.'
+        ]);
 
-foreach ($results as $row) {
-    // Organizar os dados por ano
-    if (!isset($yearlyData[$row['year']])) {
-        $yearlyData[$row['year']] = 0;
+        exit;
     }
-    $yearlyData[$row['year']] += $row['total'];
 
-    // Organizar os dados por contato
-    if (!isset($contactData[$row['name']])) {
-        $contactData[$row['name']] = 0;
+    $company_id = (int)$_SESSION['user']['company_id'];
+
+    // =====================================================
+    // GRÁFICOS
+    // apenas status diferentes de 1 e 2
+    // =====================================================
+
+    $queryGraphs = "
+        SELECT 
+            YEAR(i.issue_date) AS year,
+            i.contact_id,
+            ROUND(SUM(i.final_total), 2) AS total,
+            COALESCE(c.name, 'Sem cliente') AS contact_name
+        FROM invoices i
+
+        LEFT JOIN contact c
+            ON i.contact_id = c.id
+
+        WHERE i.company_id = :company_id
+        AND i.status NOT IN (1,2)
+
+        GROUP BY 
+            YEAR(i.issue_date),
+            i.contact_id,
+            c.name
+
+        ORDER BY year DESC
+    ";
+
+    $stmtGraphs = $pdo->prepare($queryGraphs);
+
+    $stmtGraphs->bindParam(
+        ':company_id',
+        $company_id,
+        PDO::PARAM_INT
+    );
+
+    $stmtGraphs->execute();
+
+    $results = $stmtGraphs->fetchAll(PDO::FETCH_ASSOC);
+
+    // =====================================================
+    // PREPARAR DADOS DOS GRÁFICOS
+    // =====================================================
+
+    $yearlyData = [];
+    $contactData = [];
+
+    foreach ($results as $row) {
+
+        $year = $row['year'];
+        $contactName = $row['contact_name'];
+        $total = (float)$row['total'];
+
+        // total por ano
+        if (!isset($yearlyData[$year])) {
+            $yearlyData[$year] = 0;
+        }
+
+        $yearlyData[$year] += $total;
+
+        // total por cliente
+        if (!isset($contactData[$contactName])) {
+            $contactData[$contactName] = 0;
+        }
+
+        $contactData[$contactName] += $total;
     }
-    $contactData[$row['name']] += $row['total'];
+
+    // =====================================================
+    // ORDENAR CLIENTES POR FATURAÇÃO
+    // =====================================================
+
+    arsort($contactData);
+
+    // =====================================================
+    // PREPARAR RESPONSE DOS GRÁFICOS
+    // =====================================================
+
+    $graphs = [
+
+        'yearly' => [
+            'labels' => array_keys($yearlyData),
+            'values' => array_map(
+                fn($value) => round($value, 2),
+                array_values($yearlyData)
+            )
+        ],
+
+        'contact' => [
+            'labels' => array_keys($contactData),
+            'values' => array_map(
+                fn($value) => round($value, 2),
+                array_values($contactData)
+            )
+        ]
+    ];
+
+    // =====================================================
+    // ÚLTIMAS FATURAS
+    // =====================================================
+
+    $queryInvoices = "
+        SELECT 
+            i.*,
+
+            c.name,
+
+            CONCAT(
+                YEAR(i.issue_date),
+                '/',
+                i.id
+            ) AS codigo,
+
+            cc.currency AS currency_name,
+            cc.symbol,
+            cc.position,
+            cc.iso_code,
+
+            ist.name AS status_name
+
+        FROM invoices i
+
+        LEFT JOIN contact c
+            ON i.contact_id = c.id
+
+        LEFT JOIN currencies cc
+            ON cc.iso_code = i.currency
+
+        LEFT JOIN invoice_status ist
+            ON ist.id = i.status
+
+        WHERE i.company_id = :company_id
+        AND i.status NOT IN (1,2)
+
+        ORDER BY i.issue_date DESC
+    ";
+
+    $stmtInvoices = $pdo->prepare($queryInvoices);
+
+    $stmtInvoices->bindParam(
+        ':company_id',
+        $company_id,
+        PDO::PARAM_INT
+    );
+
+    $stmtInvoices->execute();
+
+    $invoices = $stmtInvoices->fetchAll(PDO::FETCH_ASSOC);
+
+    // =====================================================
+    // RESPONSE
+    // =====================================================
+
+    echo json_encode([
+        'success' => true,
+
+        'invoices' => $invoices,
+
+        'graphs' => $graphs
+    ]);
+} catch (Throwable $e) {
+
+    http_response_code(500);
+
+    echo json_encode([
+        'success' => false,
+        'error' => $e->getMessage()
+    ]);
 }
-
-// Preparar os dados para resposta
-$graphs = [
-    'yearly' => [
-        'labels' => array_keys($yearlyData),
-        'values' => array_values($yearlyData)
-    ],
-    'contact' => [
-        'labels' => array_keys($contactData),
-        'values' => array_values($contactData)
-    ]
-];
-
-// Consulta para obter as últimas faturas emitidas
-$queryInvoices = "SELECT i.*,c.name,
-        concat(YEAR(i.issue_date),'/',i.id) AS codigo, cc.currency as currency_name, cc.symbol, cc.position,
-        cc.iso_code, ist.name as status_name
-         FROM invoices i
-    Left JOIN contact c ON i.contact_id = c.id
-    left join currencies cc on cc.iso_code = i.currency
-    left join invoice_status ist on ist.id = i.status
-    WHERE i.company_id = :company_id
-    ORDER BY issue_date DESC
-   
-";
-
-$stmtInvoices = $pdo->prepare($queryInvoices);
-$stmtInvoices->bindParam(':company_id', $company_id, PDO::PARAM_INT);
-$stmtInvoices->execute();
-$invoices = $stmtInvoices->fetchAll(PDO::FETCH_ASSOC);
-
-// Enviar os dados em formato JSON
-echo json_encode([
-    'invoices' => $invoices,
-    'graphs' => $graphs
-]);

@@ -132,8 +132,11 @@ $(function () {
   $("#modalPagamento").on("show.bs.modal", function () {
     if (!currentInvoice) return alert("Fatura ainda não carregada!");
 
+    console.log(currentInvoice);
+
     const total = Number(currentInvoice.final_total) || 0;
     const jaPago = Number(currentInvoice.paid_total) || 0;
+    const retention = Number(currentInvoice.retention) || 0;
     const saldo = total - jaPago;
 
     $("#pg_valor")
@@ -147,6 +150,8 @@ $(function () {
 
     // data = hoje
     $("#pg_data").val(new Date().toISOString().slice(0, 10));
+
+    $("#pg_obs").val(retention != null ? `Retenção: ${retention}` : "");
   });
 
   // ---------- 4) submit do pagamento ----------

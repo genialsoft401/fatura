@@ -616,17 +616,34 @@ require_once '../app/views/layout_creation.php';
     <main>
         <div class="container mt-5">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0"><?= t('Meus Contatos') ?></h2>
+                <h2 class="mb-0"><?= t('Meus Clientes') ?></h2>
                 <div class="d-flex flex-wrap gap-2">
                     <button id="downloadCSV" class="btn btn-outline-success rounded-pill d-flex align-items-center gap-2"><i class="bi bi-download align-middle fs-6"></i> <?= t('Baixar em CSV') ?></button>
                     <button id="downloadExcel" class="btn btn-outline-primary rounded-pill d-flex align-items-center gap-2"><i class="bi bi-filetype-xls align-middle fs-6"></i> <?= t('Baixar em Excel') ?></button>
                     <button id="downloadPDF" class="btn btn-outline-danger rounded-pill d-flex align-items-center gap-2"><i class="bi bi-filetype-pdf align-middle fs-6"></i> <?= t('Baixar em PDF') ?></button>
-                    <a href="register_contact.php" id="newContact" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-plus-circle align-middle fs-6"></i> <?= t('Novo Contato') ?></a>
+                    <a href="register_contact.php" id="newContact" class="btn btn-primary d-flex align-items-center gap-2"><i class="bi bi-plus-circle align-middle fs-6"></i> <?= t('Novo Cliente') ?></a>
                 </div>
             </div>
 
             <div class="col-12">
                 <div class="card-body">
+                    <div class="d-flex gap-2 mb-3">
+
+                        <button
+                            id="filterActive"
+                            class="btn btn-primary btn-sm">
+                            <i class="bi bi-people"></i>
+                            Ativos
+                        </button>
+
+                        <button
+                            id="filterArchived"
+                            class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-archive"></i>
+                            Arquivados
+                        </button>
+
+                    </div>
                     <table id="contactTable" class="table nowrap w-100">
                         <thead>
                             <tr>
@@ -646,11 +663,10 @@ require_once '../app/views/layout_creation.php';
 
 
     <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="contacts/contacts.js"></script>
     <script>
         lucide.createIcons();
     </script>
-    <script src="contacts/contacts.js"></script>
-
     <?php require_once '../app/views/footer.php'; ?>
 </body>
 

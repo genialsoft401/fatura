@@ -143,9 +143,10 @@ require_once '../app/views/layout_creation.php';
     }
 
     #clients {
-        height: 260px !important;
+        height: 320px !important;
         overflow-y: hidden;
         margin-top: 5px;
+        padding-bottom: 200px;
     }
 
     #topClients {
@@ -318,7 +319,7 @@ require_once '../app/views/layout_creation.php';
     <main style="background: #f7f7f7;">
         <div>
             <!-- Gráficos -->
-            <div class="container-fluid px-lg-5 px-2">
+            <div class="container">
                 <div class="row g-4 mt-5">
                     <div class="col-12">
                         <div class="d-flex justify-content-between col-12 col-sm-12">
@@ -342,9 +343,9 @@ require_once '../app/views/layout_creation.php';
                         <!-- Sessao Gestao de Vendas -->
                         <div class="col-12 tag-content active" data-tag-content="sell">
                             <!-- ================== CARDS ================== -->
-                            <div class="owl-carousel dashboard-carousel mb-4">
+                            <div class="row g-3 mb-4">
 
-                                <div class="item">
+                                <div class="col-lg-3 col-12">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex justify-content-between">
                                             <div class="icon-box"><i class="bi bi-coin text-primary"></i></div>
@@ -357,7 +358,7 @@ require_once '../app/views/layout_creation.php';
                                     </div>
                                 </div>
 
-                                <div class="item">
+                                <div class="col-lg-3 col-12">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="month_average">0</h4>
@@ -368,7 +369,7 @@ require_once '../app/views/layout_creation.php';
                                     </div>
                                 </div>
 
-                                <div class="item">
+                                <div class="col-lg-3 col-12">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="month_sell">AOA 323.666</h4>
@@ -379,7 +380,7 @@ require_once '../app/views/layout_creation.php';
                                     </div>
                                 </div>
 
-                                <div class="item">
+                                <!-- <div class="col-2">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-people text-primary"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="total_customer">64</h4>
@@ -388,9 +389,9 @@ require_once '../app/views/layout_creation.php';
                                             <span id="total_customer_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>
                                         </div>
                                     </div>
-                                </div>
+                                </div> -->
 
-                                <div class="item">
+                                <div class="col-lg-3 col-12">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-file-earmark-text text-primary"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="total_docs">157</h4>
@@ -423,7 +424,7 @@ require_once '../app/views/layout_creation.php';
                                     </div>
                                 </div>
 
-                                <div class="col-lg-4">
+                                <div class="col-lg-4" id="card-others">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex justify-content-between mb-3">
                                             <h6 class="h-title"><i class="bi bi-file-earmark-text"></i> Últimas Facturas</h6>
@@ -688,6 +689,7 @@ require_once '../app/views/footer.php';
     /* =============================
    🔹 INIT VARS
 ============================= */
+
     const userEl = document.getElementById("user_id");
     const companyEl = document.getElementById("company_id");
 
@@ -806,9 +808,9 @@ require_once '../app/views/footer.php';
                             <strong>${inv.client_name ?? ''}</strong>
                             <div class="d-flex justify-content-between">
                                 <small>${formatDate(inv.issue_date)}</small>
-                                <strong class="text-success">
+                                <span class="small text-black">
                                     ${formatCurrency(inv.final_total)}
-                                </strong>
+                                </span>
                             </div>
                         </div>
                     </div>`;
@@ -898,7 +900,7 @@ require_once '../app/views/footer.php';
         const kpis = data?.kpis || {};
 
         $("#trimestral_volume").text(formatCurrency(kpis.volume_global));
-        $("#month_average").text(formatCurrency(kpis.media_mensal));
+        $("#month_average").text(formatCurrency(kpis?.media_mensal));
         $("#month_sell").text(formatCurrency(kpis.venda_periodo));
         $("#total_customer").text(kpis.clientes || 0);
         $("#total_docs").text(kpis.documentos || 0);
@@ -1038,7 +1040,7 @@ require_once '../app/views/footer.php';
         <strong>${c.cliente ?? ''}</strong><br>
         <small class="text-muted">${c.total_faturas || 0} facturas</small>
     </div>
-    <span class="text-success fw-semibold">
+    <span class="text-black small">
         ${formatCurrency(c.total_faturado)}
     </span>
 </div>
@@ -1308,7 +1310,14 @@ require_once '../app/views/footer.php';
             loadRHData();
             loadStockDashboard();
         }, 10000);
+
     });
+
+    document.addEventListener("DOMContentLoaded", e => {
+        const chartCard = window.getElementById("chart-card");
+        const cardOthers = document.getElementById("card-others");
+        
+    })
 </script>
 
 </html>

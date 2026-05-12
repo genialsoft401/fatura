@@ -254,7 +254,7 @@ if ($paid_total >= $inv['final_total']) {  // quitada
       <div class="inv-left d-flex flex-column align-items-start">
         <div id="company-info">
           <!-- PHP ancora o conteúdo aqui -->
-          <h6 class="fw-bold fs-5 mb-1 tag-title"><?= htmlspecialchars($inv['company_name']) ?></h6>
+          <h6 style="width: 250px !important;" class="fw-bold fs-6 mb-1 tag-title text-uppercase"><?= htmlspecialchars($inv['company_name']) ?></h6>
           <p class="mb-0">
             <?= nl2br(htmlspecialchars(
               $inv['company_address'] . ', ' .
@@ -307,7 +307,7 @@ if ($paid_total >= $inv['final_total']) {  // quitada
         <div class="meta-mini mt-2">
 
           <div class="vals">
-            <span class="small">Cliente:</span><span class="small opacity-75" style="margin-left: -50px !important; color: black;"><?= htmlspecialchars($inv['client_name']) ?></span>
+            <span class="small">Cliente:</span><span class="small opacity-75 fw-semibold" style="margin-left: -50px !important; color: black;"><?= htmlspecialchars($inv['client_name']) ?></span>
           </div>
           <div class="vals">
             <span class="mb-0 small">Contribuinte:</span><span class="small" style="margin-left: -50px !important;"><?= htmlspecialchars($inv['registration_number']) ?></span>
@@ -433,14 +433,15 @@ if ($paid_total >= $inv['final_total']) {  // quitada
 
       <!-- ===== DIREITA – Sumário ===== -->
       <div style="width: 270px !important;">
-        <?php $totalPagar = (float)$inv['final_total'] - (float)$inv['retention_value']; ?>
+        <?php $totalPagar = (float)$inv['final_total']; ?>
         <div class="sum-head tag-title small" style="opacity: .6;">Sumário</div>
 
         <div class="lh-1">
 
           <div class="sum-row mt-1">
             <span class="small">Total ílíquido:</span>
-            <span class="right small"> <?= formatCurrency($totalPagar, $inv['moneySymbol'], $inv['moneyPos']) ?></span>
+            <span class="right small"> <?= formatCurrency($inv['total_sum'] - $inv['total_discount'], $inv['moneySymbol'], $inv['moneyPos']) ?>
+            </span>
           </div>
 
           <div class="sum-row">

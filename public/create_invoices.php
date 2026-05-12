@@ -344,7 +344,7 @@ require_once '../app/views/layout_creation.php';
                             <h4><?= t('Itens') ?></h4>
 
                             <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#itemModal">
-                                <i class="bi bi-plus-circle"></i> Novo produto
+                                <i class="bi bi-plus-circle"></i> Novo produto/serviço
                             </button>
                         </div>
 
@@ -362,7 +362,7 @@ require_once '../app/views/layout_creation.php';
                                             <div style="width: 80px !important;" class="col-1 text-center"><?= t('Taxa/IVA') ?></div>
                                             <div class="col-1 text-center"><?= t('Desc.%') ?></div>
                                             <div class="col-2 text-center"><?= t('Total') ?></div>
-                                            <div style="width: 50px !important;" class="text-center"></div>
+                                            <div style="width: 50px !important;" class="text-center">Ações</div>
                                         </div>
                                     </div>
                                     <label for="item_select" class="form-label mt-4 mb-2"><?= t('Selecionar Item') ?></label><br>
@@ -386,7 +386,7 @@ require_once '../app/views/layout_creation.php';
                                 <tr>
                                     <th><?= t('Taxa/IVA') ?></th>
                                     <th><?= t('Incidência') ?></th>
-                                    <th><?= t('Valor') ?></th>
+                                    <th><?= t('Valor (IVA)') ?></th>
                                     <th><?= t('Retenção') ?></th>
                                     <th><?= t('Total') ?></th>
                                 </tr>

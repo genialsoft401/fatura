@@ -288,12 +288,12 @@ require_once '../app/views/layout_creation.php';
                                     </select>
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-6 d-none">
                                     <label for="iban" class="form-label">IBAN</label>
                                     <input type="text" class="form-control" id="iban" name="iban">
                                 </div>
 
-                                <div class="col-md-6">
+                                <div class="col-md-6 d-none">
                                     <label for="bank_name_optional" class="form-label">Banco Secundário</label>
                                     <select class="form-select" id="bank_name_optional" name="bank_name_optional">
                                         <option value="" selected>- Selecione -</option>

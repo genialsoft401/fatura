@@ -298,7 +298,7 @@ require_once '../app/views/layout_creation.php';
 
                 <!-- FILTRO -->
                 <div class="col-md-8">
-                    <div class="pt-4 bg-light rounded-3 d-flex justify-content-between align-items-center">
+                    <div class="pt-4 rounded-3 d-flex justify-content-between align-items-center">
                         <div>
                             <button id="deleteSelected" class="btn btn-danger rounded-pill d-flex align-items-center gap-2"><i class="bi bi-trash align-middle fs-6"></i>Eliminar selecionados</button>
                         </div>

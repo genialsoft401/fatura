@@ -133,7 +133,7 @@ require_once '../app/views/layout_creation.php';
                     <div class="mt-3 mt-md-0">
                         <?php if ($isLocal): // Renderiza o botão apenas se estiver em localhost 
                         ?>
-                            <button type="button" id="btnFillContact" class="btn btn-outline-warning btn-sm">
+                            <button type="button" id="btnFillContact" class="btn btn-outline-warning btn-sm d-none">
                                 <i class="material-icons-round align-middle fs-6">science</i> Preencher (Teste)
                             </button>
                         <?php endif; ?>

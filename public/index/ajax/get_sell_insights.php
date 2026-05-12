@@ -1,151 +1,47 @@
 <?php
 
 require_once '../../../app/config/db.php';
+
 header('Content-Type: application/json');
 
 try {
 
-    $company_id = isset($_GET['company_id']) ? (int) $_GET['company_id'] : null;
-    $user_id    = isset($_GET['user_id']) ? (int) $_GET['user_id'] : null;
+    // =====================================================
+    // VALIDAR PARÂMETROS
+    // =====================================================
 
-    if (!$company_id || !$user_id) {
+    $company_id = isset($_GET['company_id'])
+        ? (int) $_GET['company_id']
+        : 0;
+
+    $user_id = isset($_GET['user_id'])
+        ? (int) $_GET['user_id']
+        : 0;
+
+    if ($company_id <= 0 || $user_id <= 0) {
+
         echo json_encode([
             'success' => false,
             'error' => 'company_id e user_id são obrigatórios'
         ]);
+
         exit;
     }
 
-    /*
-    =====================================================
-    DATAS
-    =====================================================
-    */
+    // =====================================================
+    // DATAS
+    // =====================================================
 
     $today = date('Y-m-d');
 
-    // início do ano até hoje
+    // ano atual
     $yearStart = date('Y-01-01');
 
     // mês atual
     $monthStart = date('Y-m-01');
-    $monthEnd   = date('Y-m-t');
+    $monthEnd = date('Y-m-t');
 
-    // últimos 3 meses (comparação)
-    $current = [
-        'start' => date('Y-m-01', strtotime('-2 months')),
-        'end'   => date('Y-m-t')
-    ];
-
-    // 3 meses anteriores
-    $previous = [
-        'start' => date('Y-m-01', strtotime('-5 months')),
-        'end'   => date('Y-m-t', strtotime('-3 months'))
-    ];
-
-    /*
-    =====================================================
-    FUNÇÃO TOTAL
-    =====================================================
-    */
-
-    function getTotal($pdo, $start, $end, $company_id)
-    {
-        $sql = "
-            SELECT COALESCE(SUM(final_total), 0)
-            FROM invoices
-            WHERE issue_date BETWEEN :start AND :end
-            AND company_id = :company_id
-        ";
-
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            'start' => $start . ' 00:00:00',
-            'end' => $end . ' 23:59:59',
-            'company_id' => $company_id
-        ]);
-
-        return (float) $stmt->fetchColumn();
-    }
-
-    /*
-    =====================================================
-    TOP CLIENTES
-    =====================================================
-    */
-
-    $topClientesSql = "
-        SELECT
-            c.id,
-            c.name AS cliente,
-            SUM(i.final_total) AS total_faturado,
-            COUNT(i.id) AS total_faturas
-        FROM invoices i
-        INNER JOIN contact c
-            ON c.id = i.contact_id
-        WHERE i.company_id = :company_id
-        GROUP BY c.id, c.name
-        ORDER BY total_faturado DESC
-        LIMIT 10
-    ";
-
-    $stmtTop = $pdo->prepare($topClientesSql);
-    $stmtTop->execute([
-        'company_id' => $company_id
-    ]);
-
-    $topClientes = $stmtTop->fetchAll(PDO::FETCH_ASSOC);
-
-    /*
-    =====================================================
-    VOLUME GLOBAL (ANO ATUAL)
-    =====================================================
-    */
-
-    $volumeGlobal = getTotal(
-        $pdo,
-        $yearStart,
-        $today,
-        $company_id
-    );
-
-    /*
-    =====================================================
-    VENDA DO PERÍODO (MÊS ATUAL)
-    =====================================================
-    */
-
-    $vendaPeriodo = getTotal(
-        $pdo,
-        $monthStart,
-        $monthEnd,
-        $company_id
-    );
-
-    /*
-=====================================================
-VENDA DO PERÍODO (MÊS ATUAL)
-+
-CRESCIMENTO FACE AO MÊS ANTERIOR
-=====================================================
-*/
-
-    /*
-MÊS ATUAL
-*/
-
-    $vendaPeriodo = getTotal(
-        $pdo,
-        $monthStart,
-        $monthEnd,
-        $company_id
-    );
-
-
-    /*
-MÊS ANTERIOR
-*/
-
+    // mês anterior
     $previousMonthStart = date(
         'Y-m-01',
         strtotime('first day of last month')
@@ -156,6 +52,121 @@ MÊS ANTERIOR
         strtotime('last day of last month')
     );
 
+    // últimos 3 meses
+    $current = [
+        'start' => date('Y-m-01', strtotime('-2 months')),
+        'end' => $today
+    ];
+
+    // 3 meses anteriores
+    $previous = [
+        'start' => date('Y-m-01', strtotime('-5 months')),
+        'end' => date('Y-m-t', strtotime('-3 months'))
+    ];
+
+    // =====================================================
+    // FUNÇÃO TOTAL
+    // =====================================================
+
+    function getTotal($pdo, $start, $end, $company_id)
+    {
+        $sql = "
+            SELECT COALESCE(SUM(final_total), 0)
+            FROM invoices
+            WHERE company_id = :company_id
+            AND status NOT IN (1,2)
+            AND DATE(issue_date) BETWEEN :start AND :end
+        ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([
+            'start' => $start,
+            'end' => $end,
+            'company_id' => $company_id
+        ]);
+
+        return (float)$stmt->fetchColumn();
+    }
+
+    // =====================================================
+    // FUNÇÃO CRESCIMENTO
+    // =====================================================
+
+    function calcGrowth($current, $previous)
+    {
+        $current = (float)$current;
+        $previous = (float)$previous;
+
+        if ($previous <= 0) {
+
+            if ($current > 0) {
+                return 100;
+            }
+
+            return 0;
+        }
+
+        return round(
+            (($current - $previous) / $previous) * 100,
+            1
+        );
+    }
+
+    // =====================================================
+    // TOP CLIENTES
+    // =====================================================
+
+    $topClientesSql = "
+        SELECT
+            c.id,
+            c.name AS cliente,
+            ROUND(SUM(i.final_total), 2) AS total_faturado,
+            COUNT(i.id) AS total_faturas
+        FROM invoices i
+        INNER JOIN contact c
+            ON c.id = i.contact_id
+        WHERE i.company_id = :company_id
+        AND i.status NOT IN (1,2)
+        GROUP BY c.id, c.name
+        ORDER BY total_faturado DESC
+        LIMIT 10
+    ";
+
+    $stmtTop = $pdo->prepare($topClientesSql);
+
+    $stmtTop->execute([
+        'company_id' => $company_id
+    ]);
+
+    $topClientes = $stmtTop->fetchAll(PDO::FETCH_ASSOC);
+
+    // =====================================================
+    // VOLUME GLOBAL
+    // =====================================================
+
+    $volumeGlobal = getTotal(
+        $pdo,
+        $yearStart,
+        $today,
+        $company_id
+    );
+
+    // =====================================================
+    // VENDA PERÍODO
+    // =====================================================
+
+    $vendaPeriodo = getTotal(
+        $pdo,
+        $monthStart,
+        $monthEnd,
+        $company_id
+    );
+
+    // =====================================================
+    // VENDA PERÍODO ANTERIOR
+    // =====================================================
+
     $vendaPeriodoAnterior = getTotal(
         $pdo,
         $previousMonthStart,
@@ -163,45 +174,32 @@ MÊS ANTERIOR
         $company_id
     );
 
+    // =====================================================
+    // CRESCIMENTO PERÍODO
+    // =====================================================
 
-    /*
-CRESCIMENTO DO PERÍODO (%)
-*/
+    $vendaPeriodoGrowth = calcGrowth(
+        $vendaPeriodo,
+        $vendaPeriodoAnterior
+    );
 
-    if ($vendaPeriodoAnterior > 0) {
-        $vendaPeriodoGrowth =
-            (
-                ($vendaPeriodo - $vendaPeriodoAnterior)
-                / $vendaPeriodoAnterior
-            ) * 100;
-    } else {
-        /*
-    evita divisão por zero
-    */
-        $vendaPeriodoGrowth = $vendaPeriodo > 0 ? 100 : 0;
-    }
+    // =====================================================
+    // MÉDIA MENSAL
+    // =====================================================
 
-    $vendaPeriodoGrowth = round($vendaPeriodoGrowth, 1);
+    $currentMonthNumber = max(
+        1,
+        (int)date('n')
+    );
 
+    $mediaMensal = round(
+        $volumeGlobal / $currentMonthNumber,
+        2
+    );
 
-    /*
-    =====================================================
-    MÉDIA MENSAL
-    baseada no volume global
-    =====================================================
-    */
-
-    $currentMonthNumber = (int) date('n'); // 1 a 12
-
-    $mediaMensal = $currentMonthNumber > 0
-        ? ($volumeGlobal / $currentMonthNumber)
-        : 0;
-
-    /*
-    =====================================================
-    COMPARAÇÃO DE MÉDIA (últimos 3 meses)
-    =====================================================
-    */
+    // =====================================================
+    // COMPARAÇÃO 3 MESES
+    // =====================================================
 
     $volumeAtual = getTotal(
         $pdo,
@@ -220,55 +218,43 @@ CRESCIMENTO DO PERÍODO (%)
     $mediaAtual = $volumeAtual / 3;
     $mediaAnterior = $volumeAnterior / 3;
 
-    if ($mediaAnterior > 0) {
-        $mediaMensal_dif =
-            (($mediaAtual - $mediaAnterior) / $mediaAnterior) * 100;
-    } else {
-        $mediaMensal_dif = $mediaAtual > 0 ? 100 : 0;
-    }
+    $mediaMensal_dif = calcGrowth(
+        $mediaAtual,
+        $mediaAnterior
+    );
 
-    /*
-    =====================================================
-    CRESCIMENTO GERAL (%)
-    =====================================================
-    */
+    // =====================================================
+    // CRESCIMENTO GERAL
+    // =====================================================
 
-    if ($volumeAnterior > 0) {
-        $crescimento =
-            (($volumeAtual - $volumeAnterior) / $volumeAnterior) * 100;
-    } else {
-        $crescimento = $volumeAtual > 0 ? 100 : 0;
-    }
+    $crescimento = calcGrowth(
+        $volumeAtual,
+        $volumeAnterior
+    );
 
-    $crescimento = round($crescimento, 1);
-
-    /*
-    =====================================================
-    CLIENTES ATIVOS
-    clientes pagantes no mês atual
-    =====================================================
-    */
+    // =====================================================
+    // CLIENTES ATIVOS
+    // =====================================================
 
     $clientesAtivosStmt = $pdo->prepare("
         SELECT COUNT(DISTINCT contact_id) AS total
         FROM invoices
         WHERE company_id = :company_id
-        AND issue_date BETWEEN :start AND :end
+        AND status NOT IN (1,2)
+        AND DATE(issue_date) BETWEEN :start AND :end
     ");
 
     $clientesAtivosStmt->execute([
         'company_id' => $company_id,
-        'start' => $monthStart . ' 00:00:00',
-        'end' => $monthEnd . ' 23:59:59'
+        'start' => $monthStart,
+        'end' => $monthEnd
     ]);
 
-    $clientesAtivos = (int) $clientesAtivosStmt->fetchColumn();
+    $clientesAtivos = (int)$clientesAtivosStmt->fetchColumn();
 
-    /*
-    =====================================================
-    TOTAL DE CLIENTES
-    =====================================================
-    */
+    // =====================================================
+    // TOTAL CLIENTES
+    // =====================================================
 
     $clientesStmt = $pdo->prepare("
         SELECT COUNT(*) AS total
@@ -280,31 +266,31 @@ CRESCIMENTO DO PERÍODO (%)
         'company_id' => $company_id
     ]);
 
-    $clientes = (int) $clientesStmt->fetchColumn();
+    $clientes = (int)$clientesStmt->fetchColumn();
 
-    /*
-    =====================================================
-    DOCUMENTOS
-    =====================================================
-    */
+    // =====================================================
+    // DOCUMENTOS
+    // =====================================================
 
     $documentosStmt = $pdo->prepare("
         SELECT COUNT(*) AS total
         FROM invoices
         WHERE company_id = :company_id
+        AND status NOT IN (1,2)
+        AND DATE(issue_date) BETWEEN :start AND :end
     ");
 
     $documentosStmt->execute([
-        'company_id' => $company_id
+        'company_id' => $company_id,
+        'start' => $monthStart,
+        'end' => $monthEnd
     ]);
 
-    $documentos = (int) $documentosStmt->fetchColumn();
+    $documentos = (int)$documentosStmt->fetchColumn();
 
-    /*
-    =====================================================
-    NOVOS CLIENTES (últimos 3 meses)
-    =====================================================
-    */
+    // =====================================================
+    // NOVOS CLIENTES
+    // =====================================================
 
     $novosClientesStmt = $pdo->prepare("
         SELECT COUNT(*) AS total
@@ -317,18 +303,17 @@ CRESCIMENTO DO PERÍODO (%)
         'company_id' => $company_id
     ]);
 
-    $novosClientes = (int) $novosClientesStmt->fetchColumn();
+    $novosClientes = (int)$novosClientesStmt->fetchColumn();
 
-    /*
-    =====================================================
-    NOVOS DOCUMENTOS (últimos 3 meses)
-    =====================================================
-    */
+    // =====================================================
+    // NOVOS DOCUMENTOS
+    // =====================================================
 
     $novosDocumentosStmt = $pdo->prepare("
         SELECT COUNT(*) AS total
         FROM invoices
         WHERE company_id = :company_id
+        AND status NOT IN (1,2)
         AND created_at >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
     ");
 
@@ -336,72 +321,101 @@ CRESCIMENTO DO PERÍODO (%)
         'company_id' => $company_id
     ]);
 
-    $novosDocumentos = (int) $novosDocumentosStmt->fetchColumn();
+    $novosDocumentos = (int)$novosDocumentosStmt->fetchColumn();
 
-    /*
-    =====================================================
-    EVOLUÇÃO MENSAL
-    =====================================================
-    */
+    // =====================================================
+    // EVOLUÇÃO MENSAL
+    // =====================================================
 
     $evolucaoSql = "
         SELECT
             DATE_FORMAT(issue_date, '%Y-%m') AS mes,
-            SUM(final_total) AS total
+            ROUND(SUM(final_total), 2) AS total
         FROM invoices
-        WHERE issue_date BETWEEN :start AND :end
-        AND company_id = :company_id
+        WHERE company_id = :company_id
+        AND status NOT IN (1,2)
+        AND DATE(issue_date) BETWEEN :start AND :end
         GROUP BY mes
         ORDER BY mes ASC
     ";
 
-    $stmt = $pdo->prepare($evolucaoSql);
-    $stmt->execute([
+    $stmtEvolucao = $pdo->prepare($evolucaoSql);
+
+    $stmtEvolucao->execute([
         'start' => $yearStart,
         'end' => $today,
         'company_id' => $company_id
     ]);
 
-    $evolucao = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $evolucao = $stmtEvolucao->fetchAll(PDO::FETCH_ASSOC);
 
-    /*
-    =====================================================
-    RESPONSE
-    =====================================================
-    */
+    // =====================================================
+    // RESPONSE
+    // =====================================================
 
     echo json_encode([
         'success' => true,
+
         'data' => [
+
             'top_clients' => $topClientes,
 
             'kpis' => [
-                'volume_global' => round($volumeGlobal, 2),
-                'media_mensal' => round($mediaMensal, 2),
-                'media_mensal_dif' => round($mediaMensal_dif, 1),
 
-                'venda_periodo' => round($vendaPeriodo, 2),
-                'venda_periodo_growth' => $vendaPeriodoGrowth,
+                'volume_global' => round($volumeGlobal, 2),
+
+                'media_mensal' => round($mediaMensal, 2),
+
+                'media_mensal_dif' => round(
+                    $mediaMensal_dif,
+                    1
+                ),
+
+                'venda_periodo' => round(
+                    $vendaPeriodo,
+                    2
+                ),
+
+                'venda_periodo_growth' => round(
+                    $vendaPeriodoGrowth,
+                    1
+                ),
 
                 'clientes' => $clientes,
+
                 'clientes_ativos' => $clientesAtivos,
+
                 'crescimento_clientes' => $novosClientes,
 
                 'documentos' => $documentos,
+
                 'crescimento_documentos' => $novosDocumentos,
 
-                'crescimento' => $crescimento
+                'crescimento' => round(
+                    $crescimento,
+                    1
+                )
             ],
 
             'comparacao' => [
-                'atual' => round($volumeAtual, 2),
-                'anterior' => round($volumeAnterior, 2)
+
+                'atual' => round(
+                    $volumeAtual,
+                    2
+                ),
+
+                'anterior' => round(
+                    $volumeAnterior,
+                    2
+                )
             ],
 
             'evolucao' => $evolucao
         ]
     ]);
-} catch (Exception $e) {
+} catch (Throwable $e) {
+
+    http_response_code(500);
 
     echo json_encode([
         'success' => false,

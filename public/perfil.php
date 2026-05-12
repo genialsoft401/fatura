@@ -214,7 +214,7 @@ require_once '../app/views/layout_creation.php';
                             </div>
 
                             <div class="mt-4">
-                                <button id="update-profile" class="btn btn-primary"><?= t('Atualizar') ?></button>
+                                <button id="update-profile" class="btn btn-primary"><?= t('Actualizar') ?></button>
 
                             </div>
 

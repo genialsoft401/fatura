@@ -147,7 +147,7 @@
 
                             <!-- DESCRIÇÃO -->
                             <div class="col-12">
-                                <label class="form-label"><?= t('Descrição detalhada') ?><small class="text-danger">(opcional)</small></label>
+                                <label class="form-label"><?= t('Descrição detalhada') ?> <small>(opcional)</small></label>
                                 <textarea class="form-control" rows="2" name="descricao" id="descricao"></textarea>
                             </div>
 
@@ -247,7 +247,7 @@
 
                             <div class="col-md-4 mb-2">
                                 <label class="form-label"><?= t('Preço Unitário') ?></label>
-                                <input type="number" class="form-control" name="unit_price" step="0.01" required>
+                                <input type="number" class="form-control" name="unit_price" step="0.00" required>
                             </div>
 
                             <!-- IVA -->

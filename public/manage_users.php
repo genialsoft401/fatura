@@ -3,6 +3,98 @@ require_once '../app/views/layout_creation.php';
 $company_id = $_GET['company_id'];
 ?>
 
+<style>
+    /* ===== TABELA ESTILO ===== */
+    #usersTable {
+        border-collapse: separate;
+        border-spacing: 0 12px;
+        width: 100%;
+    }
+
+    /* HEADER */
+    #usersTable thead th {
+        border: none;
+        font-size: 12px;
+        color: #9ca3af;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        padding: 12px 16px;
+        text-align: left;
+        border-right: 1px solid #e5e7eb57;
+    }
+
+    #usersTable thead th:last-child {
+        border-right: none;
+    }
+
+    #usersTable tbody tr td {
+        border-right: 1px solid #e5e7eb57;
+    }
+
+    /* ROW */
+    #usersTable tbody tr {
+        background: #fff !important;
+        border-radius: 14px;
+        transition: all 0.25s ease;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        text-align: left !important;
+    }
+
+
+    /* HOVER PRO */
+    #usersTable tbody tr:hover {
+        transform: translateY(-4px) scale(1.01);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+    }
+
+    /* CELLS */
+    #usersTable tbody td {
+        border: none;
+        padding: 18px 16px;
+        vertical-align: middle;
+        font-size: 0.95rem;
+        background: #fff !important;
+        text-align: left !important;
+    }
+
+    #usersTable thead td {
+        background: #111 !important;
+        display: none;
+        max-width: 80px !important;
+    }
+
+    /* BORDAS ARREDONDADAS */
+    #usersTable tbody td:first-child {
+        border-top-left-radius: 14px;
+        border-bottom-left-radius: 14px;
+        background: #fff !important;
+    }
+
+    #usersTable tbody th {
+        text-align: left !important;
+    }
+
+    #usersTable tbody td:last-child {
+        border-top-right-radius: 14px;
+        border-bottom-right-radius: 14px;
+        text-align: right;
+        padding-right: 24px;
+    }
+
+    /* ===== NOME (PRINCIPAL) ===== */
+    #usersTable tbody td:first-child {
+        font-weight: 600;
+        color: #111;
+    }
+
+    /* SUBINFO */
+    #usersTable tbody td small {
+        display: block;
+        color: #6b7280;
+    }
+</style>
+
 <body>
     <main>
         <div class="container mt-5">
@@ -202,7 +294,7 @@ $company_id = $_GET['company_id'];
             <table id="usersTable" class="table">
                 <thead>
                     <tr>
-                        <th>Imagem</th> <!-- Adicionando coluna para a imagem -->
+                        <th>Foto</th> <!-- Adicionando coluna para a imagem -->
                         <th>Nome</th>
                         <th>Perfil</th>
                         <th>Status</th> <!-- Coluna para o status (ativo/inativo) -->
@@ -270,8 +362,8 @@ $company_id = $_GET['company_id'];
                                     <td>${isActiveBadge}</td>
                                     <td>${user.email}</td>
                                     <td class="text-nowrap">
-                                        <button type="button" class="btn btn-warning btn-sm js-change-role" data-user-id="${user.id}" data-user-name="${user.name}" data-user-email="${user.email}" data-current-role="${user.role}">Mudar Role</button>
-                                        <button type="button" class="btn btn-danger btn-sm js-unlink-user" data-user-id="${user.id}" data-user-name="${user.name}" data-user-email="${user.email}" data-current-role="${user.role}">Remover</button>
+                                        <button type="button" class="btn text-warning btn-sm js-change-role" data-user-id="${user.id}" data-user-name="${user.name}" data-user-email="${user.email}" data-current-role="${user.role}"><i class="bi bi-person-gear"></i></button>
+                                        <button type="button" class="btn text-danger btn-sm js-unlink-user" data-user-id="${user.id}" data-user-name="${user.name}" data-user-email="${user.email}" data-current-role="${user.role}"><i class="bi bi-trash"></i></button>
                                     </td>
                                 </tr>
                             `;

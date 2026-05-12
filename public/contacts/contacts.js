@@ -1,15 +1,27 @@
 $(document).ready(function () {
   let contactTable;
+  let currentFilter = "active";
 
-  function initializeDataTable() {
+  // =====================================
+  // DATATABLE
+  // =====================================
+
+  function initializeDataTable(statusFilter = "active") {
     const TABLE_ID = "#contactTable";
 
-    // Destroy se já existir
+    // =====================================
+    // DESTROY DATATABLE
+    // =====================================
+
     if ($.fn.DataTable.isDataTable(TABLE_ID)) {
-      $(TABLE_ID).DataTable().destroy();
+      $(TABLE_ID).DataTable().clear().destroy();
+      $(`${TABLE_ID} tbody`).empty();
     }
 
-    // ===== HELPERS =====
+    // =====================================
+    // HELPERS
+    // =====================================
+
     const renderEmpty = (val) => val || "Não informado";
 
     const renderIconText = (icon, text, extraClass = "") => `
@@ -20,58 +32,192 @@ $(document).ready(function () {
   `;
 
     const renderLink = (href, title, content) => `
-    <a href="${href}" class="text-decoration-none text-body"
-       data-bs-toggle="tooltip" title="${title}">
+    <a 
+      href="${href}" 
+      class="text-decoration-none text-body"
+      data-bs-toggle="tooltip" 
+      title="${title}"
+    >
       ${content}
     </a>
   `;
 
     const renderLocation = (city, country) => {
       const location = [city, country].filter(Boolean).join(", ");
-      if (!location) return "";
+
+      if (!location) {
+        return "-";
+      }
 
       return renderIconText("bi-geo-alt", location, "text-muted");
     };
 
-    const renderActions = (id) => `
-    <div class="d-flex justify-content-start gap-3">
-      <button class="btn p-0 edit-contact" data-id="${id}" 
-        data-bs-toggle="tooltip" title="Editar">
-        <i class="bi bi-pencil text-muted"></i>
-      </button>
+    // =====================================
+    // AÇÕES
+    // =====================================
 
-      <button class="btn p-0 delete-contact" data-id="${id}" 
-        data-bs-toggle="tooltip" title="Excluir">
-        <i class="bi bi-trash text-danger"></i>
-      </button>
+    const renderActions = (id, is_active) => {
+      let buttons = `
+      <div class="d-flex justify-content-start gap-3">
 
-      <i class="bi bi-card-list view-contact table-icon"
-         data-id="${id}" data-bs-toggle="tooltip" 
-         title="Ver detalhes" style="cursor:pointer;"></i>
-    </div>
-  `;
+        <button 
+          class="btn p-0 edit-contact"
+          data-id="${id}"
+          data-bs-toggle="tooltip"
+          title="Editar"
+        >
+          <i class="bi bi-pencil text-muted"></i>
+        </button>
+    `;
 
-    // ===== DATATABLE =====
+      // =====================================
+      // CONTATO ATIVO
+      // =====================================
+
+      if (parseInt(is_active) === 1) {
+        buttons += `
+        <button 
+          class="btn p-0 archive-contact"
+          data-id="${id}"
+          data-bs-toggle="tooltip"
+          title="Arquivar"
+        >
+          <i class="bi bi-archive text-warning"></i>
+        </button>
+      `;
+      }
+
+      // =====================================
+      // CONTATO ARQUIVADO
+      // =====================================
+      else {
+        buttons += `
+        <button 
+          class="btn p-0 restore-contact"
+          data-id="${id}"
+          data-bs-toggle="tooltip"
+          title="Restaurar"
+        >
+          <i class="bi bi-arrow-counterclockwise text-success"></i>
+        </button>
+      `;
+      }
+
+      buttons += `
+        <button 
+          class="btn p-0 delete-contact"
+          data-id="${id}"
+          data-bs-toggle="tooltip"
+          title="Excluir"
+        >
+          <i class="bi bi-trash text-danger"></i>
+        </button>
+
+        <i 
+          class="bi bi-card-list view-contact table-icon"
+          data-id="${id}"
+          data-bs-toggle="tooltip"
+          title="Ver detalhes"
+          style="cursor:pointer;"
+        ></i>
+
+      </div>
+    `;
+
+      return buttons;
+    };
+
+    // =====================================
+    // DATATABLE
+    // =====================================
+
     contactTable = $(TABLE_ID).DataTable({
+      processing: true,
+      destroy: true,
+      responsive: false,
+      autoWidth: false,
+      deferRender: true,
+
       ajax: {
         url: "contacts/ajax/fetch_contacts.php",
-        dataSrc: "",
+        type: "GET",
+
+        data: function (d) {
+          d.archived = statusFilter === "archived" ? 1 : 0;
+        },
+
+        dataSrc: function (json) {
+          console.log("CONTACTS:", json);
+
+          if (json.success && Array.isArray(json.data)) {
+            return json.data;
+          }
+
+          return [];
+        },
+
+        error: function (xhr, status, error) {
+          console.log("STATUS:", status);
+          console.log("ERROR:", error);
+          console.log("RESPONSE:", xhr.responseText);
+        },
       },
 
+      // =====================================
+      // COLUMNS
+      // =====================================
+
       columns: [
+        // =====================================
+        // NOME
+        // =====================================
+
         {
           data: null,
+
           render: (_, __, row) => {
             const name = renderEmpty(row.name);
+
             const email = row.email
-              ? `<small class="text-muted d-block">${row.email}</small>`
-              : `<small class="text-muted d-block">Sem email</small>`;
+              ? `
+              <small class="text-muted d-block">
+                ${row.email}
+              </small>
+            `
+              : `
+              <small class="text-muted d-block">
+                Sem email
+              </small>
+            `;
 
             return `
-            <div class="d-flex align-items-center gap-3">              
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="blue" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-75 lucide lucide-building2 h-4 w-4 text-primary"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path><path d="M10 6h4"></path><path d="M10 10h4"></path><path d="M10 14h4"></path><path d="M10 18h4"></path></svg>
-            <div>
-                <div class="fw-semibold">${name}</div>
+            <div class="d-flex align-items-center gap-3">
+
+              <svg xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="blue"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="opacity-75 lucide lucide-building2 h-4 w-4 text-primary">
+
+                <path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"></path>
+                <path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path>
+                <path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"></path>
+                <path d="M10 6h4"></path>
+                <path d="M10 10h4"></path>
+                <path d="M10 14h4"></path>
+                <path d="M10 18h4"></path>
+              </svg>
+
+              <div>
+                <div class="fw-semibold">
+                  ${name}
+                </div>
+
                 ${email}
               </div>
 
@@ -79,10 +225,18 @@ $(document).ready(function () {
           `;
           },
         },
+
+        // =====================================
+        // TELEFONE
+        // =====================================
+
         {
           data: "telephone",
+
           render: (data) => {
-            if (!data) return renderEmpty();
+            if (!data) {
+              return renderEmpty();
+            }
 
             return renderLink(
               `tel:${data}`,
@@ -91,17 +245,33 @@ $(document).ready(function () {
             );
           },
         },
+
+        // =====================================
+        // LOCALIZAÇÃO
+        // =====================================
+
         {
           data: null,
+
           render: (_, __, row) => renderLocation(row.city, row.country),
         },
+
+        // =====================================
+        // AÇÕES
+        // =====================================
+
         {
-          data: "id",
+          data: null,
           orderable: false,
           searchable: false,
-          render: (id) => renderActions(id),
+
+          render: (_, __, row) => renderActions(row.id, row.is_active),
         },
       ],
+
+      // =====================================
+      // DEFINIÇÕES
+      // =====================================
 
       columnDefs: [
         {
@@ -112,20 +282,30 @@ $(document).ready(function () {
 
       createdRow: function (row) {
         const labels = ["Nome", "Telefone", "País/Cidade", "Ações"];
-        $("td", row).each((i, td) => $(td).attr("data-label", labels[i]));
+
+        $("td", row).each((i, td) => {
+          $(td).attr("data-label", labels[i]);
+        });
       },
 
       pageLength: 25,
+
       lengthMenu: [10, 25, 50, 100],
 
       language: {
         search: "",
         searchPlaceholder: "Pesquisar contatos...",
+
         lengthMenu: "Mostrar _MENU_",
+
         zeroRecords: "Nenhum contato encontrado",
+
         info: "_START_–_END_ de _TOTAL_",
+
         infoEmpty: "Sem dados",
+
         infoFiltered: "(filtrado de _MAX_)",
+
         paginate: {
           first: "«",
           last: "»",
@@ -134,22 +314,29 @@ $(document).ready(function () {
         },
       },
 
+      // =====================================
+      // SEARCH CUSTOM
+      // =====================================
+
       initComplete: function () {
         const wrapper = $(TABLE_ID).closest(".dataTables_wrapper");
+
         const searchInput = wrapper.find(".dataTables_filter input");
 
-        // adiciona classe moderna
         searchInput.addClass("form-control rounded-3 shadow-sm ps-5");
 
-        // cria ícone
         if (!wrapper.find(".search-icon").length) {
           wrapper.find(".dataTables_filter").css("position", "relative");
 
           wrapper.find(".dataTables_filter").append(`
-          <i class="bi bi-search search-icon"></i>
-        `);
+            <i class="bi bi-search search-icon"></i>
+          `);
         }
       },
+
+      // =====================================
+      // TOOLTIPS
+      // =====================================
 
       drawCallback: function () {
         document
@@ -158,14 +345,51 @@ $(document).ready(function () {
             bootstrap.Tooltip.getOrCreateInstance(el);
           });
       },
-
-      responsive: false,
-      autoWidth: false,
-      deferRender: true,
     });
   }
 
-  initializeDataTable();
+  // =====================================
+  // FILTRO ATIVOS
+  // =====================================
+
+  $("#filterActive").on("click", function () {
+    // alert("ok")
+    currentFilter = "active";
+
+    $("#filterActive")
+      .removeClass("btn-outline-primary")
+      .addClass("btn-primary");
+
+    $("#filterArchived")
+      .removeClass("btn-secondary")
+      .addClass("btn-outline-secondary");
+
+    initializeDataTable(currentFilter);
+  });
+
+  // =====================================
+  // FILTRO ARQUIVADOS
+  // =====================================
+
+  $("#filterArchived").on("click", function () {
+    currentFilter = "archived";
+
+    $("#filterArchived")
+      .removeClass("btn-outline-secondary")
+      .addClass("btn-secondary");
+
+    $("#filterActive")
+      .removeClass("btn-primary")
+      .addClass("btn-outline-primary");
+
+    initializeDataTable(currentFilter);
+  });
+
+  // =====================================
+  // LOAD INICIAL
+  // =====================================
+
+  initializeDataTable(currentFilter);
 
   // --- Manipuladores de Eventos ---
 

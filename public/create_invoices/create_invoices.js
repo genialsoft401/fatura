@@ -19,8 +19,7 @@ $(document).ready(function () {
   // Carregar países ao iniciar a página
   selectCountry();
 
-
-  console.log($("#contact-form #name"))
+  console.log($("#contact-form #name"));
 
   // Quando um contato é selecionado, carrega os dados no formulário
   $("#contact-select").on("change", function () {
@@ -307,7 +306,7 @@ $(document).ready(function () {
 
       <div
         class="text-center"
-        style="width: 120px !important;"
+        style="width: 0px !important;"
       >
       <input
         type="text"

@@ -115,13 +115,12 @@
                 <button class="btn nav-pill dropdown-toggle d-flex align-items-center gap-2"
                     id="empresaDropdown" data-bs-toggle="dropdown">
 
-                    <span class="material-icons-round text-primary">business</span>
-
-                    <span class="d-none d-sm-inline fw-semibold">
+                    <i data-lucide="building-2"></i>
+                    <span class="d-none d-sm-inline">
                         <?= $_SESSION['user']['name_company'] ?? 'Empresa' ?>
                     </span>
 
-                    <span class="d-inline d-sm-none fw-bold text-uppercase">
+                    <span class="d-inline d-sm-none text-uppercase">
                         <?= $_SESSION['user']['acronym'] ?? 'EMP' ?>
                     </span>
                 </button>
@@ -152,7 +151,7 @@
         <!-- RIGHT -->
         <div class="d-flex align-items-center gap-3">
 
-            <!-- 🔔 NOTIFICAÇÕES -->
+            <!-- NOTIFICAÇÕES -->
             <div class="position-relative">
                 <button class="btn nav-icon-btn position-relative" onclick="togglePopup('notif-menu')">
                     <i class="bi bi-bell"></i>
@@ -211,7 +210,10 @@
     </div>
 </header>
 
+<script src="assets/js/lucide.js"></script>
 <script>
+    lucide.createIcons();
+
     const formatName = (name) => {
         if (!name) return null;
         name.split("")[0];

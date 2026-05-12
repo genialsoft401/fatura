@@ -87,7 +87,7 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
   }
 
   .progress {
-    height: 6px;
+    height: 10px;
     border-radius: 50px;
     background: #e9edf5;
   }
@@ -281,11 +281,8 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
             <button class="btn-sm btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalPlans">
               Alterar plano
             </button>
-            <button class="btn-sm btn btn-primary" id="btnRenew">
+            <button class="btn-sm btn btn-outline-success" id="btnRenew">
               Renovar
-            </button>
-            <button class="btn-sm btn btn-outline-success" id="btnMarkPaid">
-              Marcar como pago
             </button>
           </div>
         </div>
@@ -294,7 +291,7 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
         <div class="row g-3">
 
           <!-- USO -->
-          <div class="col-md-6">
+          <div class="col-md-12">
             <div class="soft-box h-100">
               <div class="d-flex">
                 <h6 class="mb-3 fw-bold h-title" style="margin-left: 10px;"><i class="bi bi-bar-chart"></i> Uso do mês (<?= htmlspecialchars($usage['ym']) ?>)</h6>
@@ -354,78 +351,6 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
                   </div>
                 </div>
               </div>
-
-            </div>
-          </div>
-
-
-          <!-- LIMITES -->
-          <div class="col-md-6">
-            <div class="soft-box h-100">
-              <div class="d-flex">
-                <h6 class="mb-3 fw-bold h-title" style="margin-left: 10px;"><i class="bi bi-graph-up"></i> Limites do plano</h6>
-              </div>
-
-              <?php
-              // mesmos percentuais para consistência visual
-              $invoicePct = $limInv === '∞' ? 0 : min(100, ($usage['invoice_count'] / $limInv) * 100);
-              $userPct    = $limUsers === '∞' ? 0 : min(100, ($usage['user_count'] / $limUsers) * 100);
-              $rhPct      = $limRh === '∞' ? 0 : min(100, ($usage['employee_count'] / $limRh) * 100);
-              $stockPct   = $limStock === '∞' ? 0 : min(100, ($usage['stock_item_count'] / $limStock) * 100);
-              ?>
-
-              <!-- GRID 2 COLUNAS -->
-              <div class="d-flex flex-wrap">
-
-                <!-- Faturas -->
-                <div class="col-6 p-2">
-                  <div class="d-flex justify-content-between">
-                    <span>Faturas/mês</span>
-                    <strong><?= $limInv ?></strong>
-                  </div>
-                  <div class="progress mt-1">
-                    <div class="progress-bar" style="width: <?= $invoicePct ?>%"></div>
-                  </div>
-                </div>
-
-                <!-- Utilizadores -->
-                <div class="col-6 p-2">
-                  <div class="d-flex justify-content-between">
-                    <span>Utilizadores</span>
-                    <strong><?= $limUsers ?></strong>
-                  </div>
-                  <div class="progress mt-1">
-                    <div class="progress-bar" style="width: <?= $userPct ?>%"></div>
-                  </div>
-                </div>
-
-                <!-- RH -->
-                <div class="col-6 p-2">
-                  <div class="d-flex justify-content-between">
-                    <span>RH</span>
-                    <strong><?= $limRh ?></strong>
-                  </div>
-                  <div class="progress mt-1">
-                    <div class="progress-bar" style="width: <?= $rhPct ?>%"></div>
-                  </div>
-                </div>
-
-                <!-- Stock -->
-                <div class="col-6 p-2">
-                  <div class="d-flex justify-content-between">
-                    <span>Stock</span>
-                    <strong><?= $limStock ?></strong>
-                  </div>
-                  <div class="progress mt-1">
-                    <div class="progress-bar" style="width: <?= $stockPct ?>%"></div>
-                  </div>
-                </div>
-
-              </div>
-
-              <small class="text-muted d-none mt-3">
-                Integração de pagamento será ativada futuramente.
-              </small>
 
             </div>
           </div>
