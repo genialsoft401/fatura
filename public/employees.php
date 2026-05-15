@@ -378,18 +378,26 @@ require_once '../app/views/layout_creation.php';
                                 </div>
 
                                 <div class="col-md-6">
-                                    <label>Nº do BI</label>
-                                    <input type="text" name="bi" class="form-control">
-                                </div>
-
-                                <div class="col-md-6 mt-3">
                                     <label>Data de Nascimento</label>
                                     <input type="date" name="birth_date" class="form-control">
                                 </div>
 
                                 <div class="col-md-6 mt-3">
+                                    <label>Tipo de documento</label>
+                                    <select name="document_type" class="form-select">
+                                        <option>BI</option>
+                                        <option>Passaporte</option>
+                                    </select>
+                                </div>
+
+                                <div class="col-md-6 mt-3">
+                                    <label>Nº do BI/Passaporte</label>
+                                    <input type="text" name="bi" class="form-control">
+                                </div>
+
+                                <div class="col-md-6 mt-3">
                                     <label>Estado civil</label>
-                                    <select name="marital_status" class="form-control">
+                                    <select name="marital_status" class="form-select">
                                         <option>Selecione...</option>
                                         <option>Solteiro(a)</option>
                                         <option>Casado(a)</option>
@@ -397,13 +405,6 @@ require_once '../app/views/layout_creation.php';
                                     </select>
                                 </div>
 
-                                <div class="col-md-6 mt-3">
-                                    <label>Tipo de documento</label>
-                                    <select name="document_type" class="form-control">
-                                        <option>BI</option>
-                                        <option>Passaporte</option>
-                                    </select>
-                                </div>
                             </div>
                         </div>
                     </div>

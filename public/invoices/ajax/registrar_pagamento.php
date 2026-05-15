@@ -1,11 +1,13 @@
 <?php
+
 require_once '../../../app/config/db.php';
 require_once '../../../app/helpers/document_helper.php';
 
 header('Content-Type: application/json');
 
 $invoice_id     = (int)($_POST['invoice_id'] ?? 0);
-$amount         = (float)($_POST['amount'] ?? 0);
+$serie          = (int)($_POST['serie'] ?? 0);
+$amount         = round((float)($_POST['amount'] ?? 0), 2);
 $pay_date       = $_POST['pay_date'] ?? '';
 $payment_method = trim($_POST['payment_method'] ?? '');
 $notes          = trim($_POST['notes'] ?? '');
@@ -19,78 +21,85 @@ try {
 
   $pdo->beginTransaction();
 
-  /* --------------------------------------------------------------------------
-       1) BLOQUEAR FATURA
-    --------------------------------------------------------------------------*/
-  $sql = "
-        SELECT final_total, paid_total, company_id
-        FROM invoices
-        WHERE id = :inv
-        FOR UPDATE
-    ";
+  // =========================
+  // FATURA
+  // =========================
+  $st = $pdo->prepare("
+    SELECT final_total, paid_total, company_id
+    FROM invoices
+    WHERE id = ?
+    FOR UPDATE
+  ");
 
-  $st = $pdo->prepare($sql);
-  $st->execute([':inv' => $invoice_id]);
+  $st->execute([$invoice_id]);
   $inv = $st->fetch(PDO::FETCH_ASSOC);
 
   if (!$inv) {
-    throw new Exception('Fatura não encontrada.', 404);
+    throw new Exception('Fatura não encontrada.');
   }
 
-  $paidTotal = $inv['paid_total'] ?? 0;
-  $saldo = $inv['final_total'] - $paidTotal;
+  $paidTotal = (float)$inv['paid_total'];
+  $finalTotal = (float)$inv['final_total'];
 
-  if ($amount > $saldo + 0.01) {
-    throw new Exception("Valor {$amount} excede saldo {$saldo}.", 422);
-  }
+  $prefix = 'FR';
 
-  /* --------------------------------------------------------------------------
-       2) GERAR NÚMERO PROFISSIONAL (FR)
-    --------------------------------------------------------------------------*/
-  $reference = generate_document_number(
-    $pdo,
-    (int)$inv['company_id'],
-    'FR' // Fatura-Recibo
-  );
+  // =========================
+  // ✔ NUMBER CORRETO (INT)
+  // =========================
+  $stmt = $pdo->prepare("
+    SELECT COALESCE(MAX(number), 0) + 1
+    FROM receipts
+    FOR UPDATE
+  ");
 
-  /* --------------------------------------------------------------------------
-       3) INSERIR RECIBO
-    --------------------------------------------------------------------------*/
-  $sql = "
-        INSERT INTO receipts
-        (invoice_id, reference, pay_date, amount_paid, payment_method, notes)
-        VALUES
-        (:inv, :ref, :dt, :am, :pm, :no)
-    ";
+  $stmt->execute();
+  $number = (int)$stmt->fetchColumn();
 
-  $pdo->prepare($sql)->execute([
-    ':inv' => $invoice_id,
-    ':ref' => $reference,
-    ':dt'  => $pay_date,
-    ':am'  => $amount,
-    ':pm'  => $payment_method,
-    ':no'  => $notes
+  // =========================
+  // reference (continua separado)
+  // =========================
+  $reference = $prefix . '-' . str_pad($number, 6, '0', STR_PAD_LEFT);
+
+  // =========================
+  // INSERT RECEIPT
+  // =========================
+  $stmt = $pdo->prepare("
+    INSERT INTO receipts
+    (invoice_id, number, reference, serie, pay_date, amount_paid, payment_method, notes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  ");
+
+  $stmt->execute([
+    $invoice_id,
+    $number,
+    $reference,
+    $serie,
+    $pay_date,
+    $amount,
+    $payment_method,
+    $notes
   ]);
 
-  $receipt_id = $pdo->lastInsertId();
+  $receipt_id = (int)$pdo->lastInsertId();
 
-  /* --------------------------------------------------------------------------
-       4) ATUALIZAR FATURA
-    --------------------------------------------------------------------------*/
+  // =========================
+  // UPDATE FATURA
+  // =========================
   $novoTotalPago = $paidTotal + $amount;
-  $novoSaldo = $inv['final_total'] - $novoTotalPago;
+  $novoSaldo = $finalTotal - $novoTotalPago;
 
-  $status = $novoSaldo <= 0.009 ? 4 : 5; // pago ou parcial
+  $status = ($novoSaldo <= 0.01) ? 4 : 5;
 
-  $pdo->prepare("
-        UPDATE invoices
-        SET paid_total = :paid,
-            status = :st
-        WHERE id = :inv
-    ")->execute([
-    ':paid' => $novoTotalPago,
-    ':st'   => $status,
-    ':inv'  => $invoice_id
+  $upd = $pdo->prepare("
+    UPDATE invoices
+    SET paid_total = ?, status = ?
+    WHERE id = ?
+  ");
+
+  $upd->execute([
+    $novoTotalPago,
+    $status,
+    $invoice_id
   ]);
 
   $pdo->commit();
@@ -98,7 +107,9 @@ try {
   echo json_encode([
     'success' => true,
     'receipt_id' => $receipt_id,
-    'reference' => $reference
+    'number' => $number,
+    'reference' => $reference,
+    'serie' => $serie
   ]);
 } catch (Throwable $e) {
 

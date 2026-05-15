@@ -70,7 +70,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
   if (taxField) {
     ["keydown", "paste", "drop"].forEach((evt) =>
-      taxField.addEventListener(evt, (e) => e.preventDefault())
+      taxField.addEventListener(evt, (e) => e.preventDefault()),
     );
   }
 
@@ -83,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!id) return;
 
       const res = await fetch(
-        `assets/ajax/get_company.php?id=${encodeURIComponent(id)}`
+        `assets/ajax/get_company.php?id=${encodeURIComponent(id)}`,
       );
 
       const data = await res.json();
@@ -98,14 +98,27 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =========================
-  // FISCAL
+  // FISCAL (CORRIGIDO)
   // =========================
   function updateFiscal() {
-    if (!taxField || !categorySelect) return;
+    const taxField = document.getElementById("tax");
+    const categorySelect = document.getElementById("item_type");
+    const subcategorySelect = document.getElementById("subcategory");
+    const unitPriceInput = document.getElementById("unit_price");
+    const retentionField = document.getElementById("retention");
+    const ivaRegimeField = document.getElementById("iva_regime"); // assumido
 
-    const unitPrice = parseFloat(unitPriceInput?.value) || 0;
-    const subcat = subcategorySelect?.value;
+    if (!taxField || !categorySelect || !unitPriceInput) return;
 
+    const unitPrice = parseFloat(unitPriceInput.value) || 0;
+
+    const subcat = subcategorySelect?.value || "";
+    const category = categorySelect?.value || "";
+    const ivaRegime = ivaRegimeField?.value || "geral";
+
+    // =========================
+    // TAX LOGIC
+    // =========================
     let tax = 0;
 
     if (subcat === "essential" || subcat === "agriculture") {
@@ -125,17 +138,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     taxField.value = String(tax);
 
+    taxField.dispatchEvent(new Event("input", { bubbles: true }));
+    taxField.dispatchEvent(new Event("change", { bubbles: true }));
+
+    // =========================
+    // RETENTION LOGIC
+    // =========================
     if (retentionField) {
-      const applyRetention =
-        categorySelect.value === "service" && unitPrice >= 20000;
+      const applyRetention = category === "service" && unitPrice >= 20000;
 
-      const value = applyRetention ? "6.5" : "0";
+      retentionField.value = applyRetention ? "6.5" : "0";
 
-      const exists = [...retentionField.options].some(
-        (opt) => opt.value === value
-      );
-
-      if (exists) retentionField.value = value;
+      retentionField.dispatchEvent(new Event("input", { bubbles: true }));
+      retentionField.dispatchEvent(new Event("change", { bubbles: true }));
     }
   }
 
@@ -165,8 +180,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const res = await fetch(
         `items/ajax/generate_code.php?stock_id=${encodeURIComponent(
-          stockId || ""
-        )}&item_type=${itemType}`
+          stockId || "",
+        )}&item_type=${itemType}`,
       );
 
       const data = await res.json();

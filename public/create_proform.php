@@ -1,9 +1,11 @@
 <?php
 require_once '../app/views/layout_creation.php';
 ?>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <link rel="stylesheet" href="create_invoices/create_invoices.css">
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<link href="assets/css/select2.min.css" rel="stylesheet" />
+<script src="assets/js/select2.min.js"></script>
 
 <style>
     /* ===== STEPPER ===== */
@@ -148,13 +150,29 @@ require_once '../app/views/layout_creation.php';
     .btn-prev {
         background: #e5e7eb;
     }
+
+    #aside input,
+    #aside select {
+        padding: 5px 5px !important;
+    }
+
+    #aside textarea {
+        height: 60px !important;
+    }
+
+    .row-total {
+        font-size: 10pt !important;
+    }
 </style>
 
 <main>
     <div class="container mt-5">
         <br><br>
-        <h2 class="text-left mb-4"><?= t('Emissão de Proforma') ?></h2>
+        <h2 class="text-left mb-4"><?= t('Emissão de Fatura') ?></h2>
+
         <form id="formFatura" class="mt-5">
+
+            <input type="hidden" value="<?= $_SESSION['user']['company_id'] ?>" id="id_company" name="id_company">
 
             <!-- STEPPER -->
             <div class="stepper">
@@ -167,26 +185,31 @@ require_once '../app/views/layout_creation.php';
                 <div class="step" data-step="3">
                     <div class="circle">3</div><span>Produtos & Serviços</span>
                 </div>
+                <div class="step" data-step="4">
+                    <div class="circle">4</div><span>Resumo</span>
+                </div>
             </div>
 
+            <!-- PROGRESS -->
             <div class="progress mb-4" style="height:6px;">
-                <div id="progressBar" class="progress-bar" style="width:33%"></div>
+                <div id="progressBar" class="progress-bar" style="width:25%"></div>
             </div>
 
             <div class="row">
+                <div class="col-lg-12">
 
-                <!-- ================= LEFT ================= -->
-                <div class="col-lg-9">
-
-                    <!-- ================= STEP 1 ================= -->
+                    <!-- STEP 1 -->
                     <div class="form-step active bg-white shadow-sm p-3 rounded" data-step="1">
 
-                        <div class="d-flex gap-8 mb-3 justify-content-between">
-                            <h4><?= t('Dados do Cliente') ?></h4>
-                            <button type="btn btn-success btn-sm" style="cursor: pointer; width: 140px !important; padding: 5px 10px !important; border-radius: 20px; background: #198754 !important; font-size: 10pt !important; border: 0px solid #000;" class="bg-plan" data-bs-toggle="modal" data-bs-target="#createContactModal">
-                                <span class="ml-4 text-white"><i class="bi-plus-circle"></i> Novo cliente</span>
-                            </button>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h4 class="mb-0"><?= t('Dados do Cliente') ?></h4>
+
+                            <a href="register_contact.php"
+                                class="btn btn-success btn-sm rounded-pill px-3">
+                                <i class="bi bi-plus-circle"></i> Novo cliente
+                            </a>
                         </div>
+
                         <hr>
 
                         <div class="col-lg-12">
@@ -206,7 +229,7 @@ require_once '../app/views/layout_creation.php';
                                     <div class="col-md-6 mb-3">
                                         <div>
                                             <label for="name" class="form-label"><?= t('Nome') ?>:</label>
-                                            <input type="text" class="form-control" id="name" name="name" required>
+                                            <input type="text" class="form-control" id="contact_name" name="name" required>
                                         </div>
                                         <div class="mt-2">
                                             <label for="contributor" class="form-label"><?= t('NIF') ?>:</label>
@@ -226,20 +249,20 @@ require_once '../app/views/layout_creation.php';
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="po_box" class="form-label"><?= t('Telefone') ?>:</label>
-                                        <input type="tel" class="form-control" id="po_box" name="po_box" required>
+                                        <input type="tel" class="form-control" id="po_box" name="po_box">
                                     </div>
                                 </div>
 
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="country" class="form-label"><?= t('País') ?>:</label>
-                                        <select class="form-select" id="country" name="country" required>
+                                        <select class="form-select" id="country" name="country">
                                             <option value=""><?= t('Carregando países') ?>...</option>
                                         </select>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="city" class="form-label"><?= t('Cidade') ?>: </label>
-                                        <select class="form-select" id="city" name="city" required>
+                                        <select class="form-select" id="city" name="city">
                                             <option value=""><?= t('Escolha um país primeiro') ?></option>
                                         </select>
                                     </div>
@@ -249,13 +272,13 @@ require_once '../app/views/layout_creation.php';
 
                     </div>
 
-                    <!-- ================= STEP 2 ================= -->
-                    <div class="form-step bg-white shadow-sm p-3 rounded" data-step="2">
+                    <!-- STEP 2 -->
+                    <div class="form-step bg-white shadow-sm p-3 pb-4 rounded" data-step="2">
 
                         <h4><?= t('Detalhes do Documento') ?></h4>
-
                         <hr>
-                        <div class="row">
+
+                        <div class="row mb-4">
                             <input hidden readonly value="<?= $_SESSION['user']['company_id'] ?>" id="company_id" name="company_id" required>
                             <input hidden readonly value="<?= $_SESSION['user']['id'] ?>" id="user_id" name="user_id" required>
 
@@ -281,25 +304,23 @@ require_once '../app/views/layout_creation.php';
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label for="observation" class="form-label"><?= t('Observações') ?>:</label>
-                                <textarea style="height: 11rem;" type="text" class="form-control" id="observation" name="observation" required></textarea>
+                                <textarea style="height: 11rem;" type="text" class="form-control" id="observation" name="observation"></textarea>
                             </div>
                         </div>
                         <div class="row" style="margin-top: -45px !important;">
                             <div class="col-md-6 mb-3">
                                 <label for="series" class="form-label"><?= t('Série') ?>:</label>
-                                <select class="form-control" id="series" name="series" required>
-                                    <option selected><?= date('Y') ?></option>
-                                </select>
+                                <input class="form-control" id="series" name="series" readonly>
                             </div>
 
-                            <div class="col-md-6 mb-6" style="margin-top: 40px;">
+                            <div class="col-md-6 mb-6 d-none" style="margin-top: 40px;">
                                 <label for="retention" class="form-label"><?= t('Retenção') ?>: (%)</label>
                                 <input type="number" value="0.00" step="0.01" class="form-control" id="retention" name="retention">
                             </div>
                         </div>
 
                         <div class="row">
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6 mb-3 d-none">
                                 <label for="currency" class="form-label"><?= t('Moeda') ?>:</label>
                                 <select class="form-select" id="currency" name="currency" required>
                                     <?= currencySelects(); ?>
@@ -316,28 +337,32 @@ require_once '../app/views/layout_creation.php';
 
                     </div>
 
-                    <!-- ================= STEP 3 ================= -->
+                    <!-- STEP 3 -->
                     <div class="form-step bg-white shadow-sm p-3 rounded" data-step="3">
-                        <div class="d-flex gap-2 mb-2 justify-content-between">
+
+                        <div class="d-flex justify-content-between mb-2">
                             <h4><?= t('Itens') ?></h4>
-                            <a href="#" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#itemModal">
-                                <i class="bi bi-plus-circle"></i> Novo produto
-                            </a>
+
+                            <button type="button" class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#itemModal">
+                                <i class="bi bi-plus-circle"></i> Novo produto/serviço
+                            </button>
                         </div>
 
                         <hr>
+
                         <div class="row mt-3">
                             <div class="row mb-2">
                                 <div class="col-md-12">
                                     <div class="items-container d-none" id="items_list">
                                         <div class="row fw-bold bg-light p-2 rounded">
-                                            <div class="col-1 text-center"><?= t('Código') ?></div>
-                                            <div class="col-4"><?= t('Descrição') ?></div>
+                                            <div style="width: 120px !important;" class="col-1 text-center"><?= t('Código') ?></div>
+                                            <div class="col-3"><?= t('Descrição') ?></div>
                                             <div class="col-2 text-center"><?= t('Preço Unitário') ?></div>
                                             <div class="col-1 text-center"><?= t('Qtd.') ?></div>
-                                            <div class="col-2 text-center"><?= t('Taxa/IVA') ?></div>
+                                            <div style="width: 80px !important;" class="col-1 text-center"><?= t('Taxa/IVA') ?></div>
                                             <div class="col-1 text-center"><?= t('Desc.%') ?></div>
-                                            <div class="col-1 text-center"></div>
+                                            <div class="col-2 text-center"><?= t('Total') ?></div>
+                                            <div style="width: 50px !important;" class="text-center">Ações</div>
                                         </div>
                                     </div>
                                     <label for="item_select" class="form-label mt-4 mb-2"><?= t('Selecionar Item') ?></label><br>
@@ -347,24 +372,23 @@ require_once '../app/views/layout_creation.php';
                                 </div>
                             </div>
                         </div>
+
                     </div>
 
-                </div>
+                    <!-- STEP 4 (RESUMO) -->
+                    <div class="form-step bg-white shadow-sm p-3 rounded" data-step="4">
 
-                <!-- ================= RIGHT (ASIDE RESUMO) ================= -->
-                <div class="col-lg-3">
+                        <h4><?= t('Resumo da Fatura') ?></h4>
+                        <hr>
 
-                    <div class="bg-white shadow-sm p-3 rounded sticky-aside">
-
-                        <h5 class="mb-3"><?= t('Resumo da Fatura') ?></h5>
-
-                        <!-- IVA -->
                         <table class="table table-bordered mb-3">
                             <thead class="table-light">
                                 <tr>
                                     <th><?= t('Taxa/IVA') ?></th>
                                     <th><?= t('Incidência') ?></th>
-                                    <th><?= t('Valor') ?></th>
+                                    <th><?= t('Valor (IVA)') ?></th>
+                                    <th><?= t('Retenção') ?></th>
+                                    <th><?= t('Total') ?></th>
                                 </tr>
                             </thead>
                             <tbody id="tax_summary">
@@ -381,7 +405,6 @@ require_once '../app/views/layout_creation.php';
                             </tbody>
                         </table>
 
-                        <!-- SUMÁRIO -->
                         <table class="table table-bordered">
                             <tbody>
                                 <tr>
@@ -411,304 +434,38 @@ require_once '../app/views/layout_creation.php';
                             </tbody>
                         </table>
 
+                        <input type="hidden" name="total_sum">
+                        <input type="hidden" name="total_discount">
+                        <input type="hidden" name="subtotal_without_tax">
+                        <input type="hidden" name="total_tax">
+                        <input type="hidden" name="retention_value">
+                        <input type="hidden" name="final_total">
+
                     </div>
 
                 </div>
-
             </div>
 
             <!-- BOTÕES -->
             <div class="mt-4 d-flex justify-content-between">
                 <button type="button" id="prevBtn" class="btn btn-light d-none">← Anterior</button>
                 <button type="button" id="nextBtn" class="btn btn-primary">Próximo →</button>
-                <button id="saveInvoiceBtn" type="button" class="btn btn-primary d-none">
-                    <?= t('Salvar Rascunho') ?>
+                <button id="saveInvoiceBtn" type="button" class="btn btn-success d-none">
+                    <?= t('Finalizar Fatura') ?>
                 </button>
             </div>
 
         </form>
     </div>
-
-    <div class="modal fade" id="createContactModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="createContactModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-
-            <div class="modal-content">
-                <div class="modal-header modal-item">
-                    <h5 class="modal-title" id="createContactModalLabel">Novo Contacto</h5>
-                    <button type="button" class="btn-close" id="createModalCloseButton" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="contactForm">
-
-                        <div class="row g-4">
-
-                            <!-- LEFT (STEPS) -->
-                            <div class="col-lg-9">
-
-                                <!-- PROGRESS -->
-                                <div class="stepC-progress">
-                                    <div class="step-bar" id="stepCBar"></div>
-                                    <div class="step active">1</div>
-                                    <div class="step">2</div>
-                                    <div class="step">3</div>
-                                </div>
-
-                                <!-- STEP 1 -->
-                                <div class="step-contentC active">
-                                    <div class="card border-0 shadow-sm mb-4">
-                                        <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                                            <h5 class="card-title fw-bold text-primary d-flex align-items-center">
-                                                <span class="material-icons-round me-2">business</span> <?= t('Dados da Empresa') ?>
-                                            </h5>
-                                        </div>
-                                        <div class="card-body pt-3">
-                                            <div class="row g-3">
-
-                                                <div class="col-12">
-                                                    <label for="name"
-                                                        class="form-label text-muted small fw-bold required"><?= t('Nome da Empresa') ?></label>
-                                                    <input type="text" class="form-control form-control-lg" id="name" name="name"
-                                                        placeholder="Nome comercial completo" required>
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <label for="type"
-                                                        class="form-label text-muted small fw-bold"><?= t('Tipo de Cliente') ?></label>
-                                                    <select class="form-select" id="type" name="type">
-                                                        <option value="<?= t('Normal') ?>"><?= t('Normal') ?></option>
-                                                        <option value="<?= t('Autofaturação') ?>"><?= t('Autofaturação') ?></option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="contributor"
-                                                        class="form-label text-muted small fw-bold required"><?= t('NIF / Registro') ?></label>
-                                                    <input type="text" class="form-control" id="contributor" name="contributor"
-                                                        placeholder="Ex: 000000000" required>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="country"
-                                                        class="form-label text-muted small fw-bold"><?= t('País') ?></label>
-                                                    <select class="form-select" id="country" name="country">
-                                                        <option value=""><?= t('Carregando países') ?>...</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="city"
-                                                        class="form-label text-muted small fw-bold"><?= t('Cidade') ?></label>
-                                                    <select class="form-select" id="city" name="city">
-                                                        <option value=""><?= t('Escolha um país primeiro') ?></option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-12">
-                                                    <label for="address"
-                                                        class="form-label text-muted small fw-bold required"><?= t('Endereço Completo') ?></label>
-                                                    <textarea class="form-control" id="address" name="address" rows="2"
-                                                        placeholder="Rua, Número, Bairro..." required></textarea>
-                                                </div>
-
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- STEP 2 -->
-                                <div class="step-contentC">
-                                    <div class="card border-0 shadow-sm mb-4">
-                                        <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                                            <h5 class="card-title fw-bold text-primary d-flex align-items-center">
-                                                <span class="material-icons-round me-2">place</span>
-                                                <?= t('Contatos') ?>
-                                            </h5>
-                                        </div>
-                                        <div class="card-body pt-3">
-                                            <div class="row g-3">
-
-                                                <div class="col-md-4 d-none">
-                                                    <label for="po_box"
-                                                        class="form-label text-muted small fw-bold"><?= t('Caixa Postal') ?></label>
-                                                    <input type="text" class="form-control" id="po_box" name="po_box">
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <label for="email"
-                                                        class="form-label text-muted small fw-bold"><?= t('Email Corporativo') ?></label>
-                                                    <input type="email" class="form-control" id="email" name="email"
-                                                        placeholder="contato@empresa.com">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="website"
-                                                        class="form-label text-muted small fw-bold"><?= t('Website') ?></label>
-                                                    <input type="text" class="form-control" id="website" name="website"
-                                                        placeholder="www.empresa.com">
-                                                </div>
-
-                                                <div class="col-md-6">
-                                                    <label for="telephone"
-                                                        class="form-label text-muted small fw-bold required"><?= t('Telefone Fixo') ?></label>
-                                                    <div class="input-group flex-nowrap">
-                                                        <select class="form-select countryPhone tel" name="telephone_ddi"
-                                                            id="telephone_ddi" style="max-width: 90px;">
-                                                            <option selected value="">DDI</option>
-                                                        </select>
-                                                        <input type="text" name="telephone" class="form-control telnumber"
-                                                            id="telephone" placeholder="000 000 000" required>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label for="cellphone"
-                                                        class="form-label text-muted small fw-bold"><?= t('Telemóvel') ?></label>
-                                                    <div class="input-group flex-nowrap">
-                                                        <select class="form-select countryPhone tel" name="cellphone_ddi"
-                                                            id="cellphone_ddi" style="max-width: 90px;">
-                                                            <option selected value="">DDI</option>
-                                                        </select>
-                                                        <input type="text" name="cellphone" id="cellphone"
-                                                            class="form-control telnumber" placeholder="900 000 000">
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6 d-none">
-                                                    <label for="fax"
-                                                        class="form-label text-muted small fw-bold"><?= t('Fax') ?></label>
-                                                    <input type="text" class="form-control" id="fax" name="fax">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                </div>
-
-                                <!-- STEP 3 -->
-                                <div class="step-contentC">
-                                    <!-- Card: Contato Preferencial -->
-                                    <div class="card border-0 shadow-sm mb-4">
-                                        <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                                            <h5 class="card-title fw-bold text-primary d-flex align-items-center">
-                                                <span class="material-icons-round me-2">person</span> <?= t('Pessoa de Contato') ?>
-                                            </h5>
-                                        </div>
-                                        <div class="card-body pt-3">
-                                            <div class="mb-3">
-                                                <label for="pref_name"
-                                                    class="form-label text-muted small fw-bold"><?= t('Nome do Responsável') ?></label>
-                                                <input type="text" class="form-control" id="pref_name" name="pref_name">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label for="pref_email"
-                                                    class="form-label text-muted small fw-bold"><?= t('Email Pessoal') ?></label>
-                                                <input type="email" class="form-control" id="pref_email" name="pref_email">
-                                            </div>
-                                            <div class="mb-3">
-                                                <label
-                                                    class="form-label text-muted small fw-bold"><?= t('Telefone Direto') ?></label>
-                                                <div class="input-group flex-nowrap">
-                                                    <select class="form-select countryPhone tel" name="pref_telephone_ddi"
-                                                        id="pref_telephone_ddi" style="max-width: 80px;">
-                                                        <option selected value="">DDI</option>
-                                                    </select>
-                                                    <input type="text" class="form-control telnumber" name="pref_telephone"
-                                                        id="pref_telephone">
-                                                </div>
-                                            </div>
-                                            <div class="mb-3 d-none">
-                                                <label
-                                                    class="form-label text-muted small fw-bold"><?= t('Telemóvel Direto') ?></label>
-                                                <div class="input-group flex-nowrap">
-                                                    <select class="form-select countryPhone tel" name="pref_cellphone_ddi"
-                                                        id="pref_cellphone_ddi" style="max-width: 80px;">
-                                                        <option selected value="">DDI</option>
-                                                    </select>
-                                                    <input type="text" class="form-control telnumber" name="pref_cellphone"
-                                                        id="pref_cellphone">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Botões de Ação -->
-                                <div class="mt-5 pt-4 border-top d-flex justify-content-end">
-                                    <div id="divsaveContact" class="w-100 w-md-auto">
-                                        <!-- O botão de salvar será injetado aqui pelo JavaScript -->
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <!-- RIGHT (ASIDE ORIGINAL) -->
-                            <!-- Coluna Direita: Preferências e Contato Pessoal -->
-                            <div class="col-lg-3">
-                                <!-- Card: Configurações -->
-                                <div class="card border-0 shadow-sm mb-4">
-                                    <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                                        <h5 class="card-title fw-bold text-primary d-flex align-items-center">
-                                            <span class="bi bi-gear"></span>&nbsp;<?= t('Configurações') ?>
-                                        </h5>
-                                    </div>
-                                    <div class="card-body pt-3" id="side-card">
-                                        <div class="form-check form-switch mb-3">
-                                            <input class="form-check-input" checked type="checkbox" id="usar_definicoes">
-                                            <label class="form-check-label small"
-                                                for="usar_definicoes"><?= t('Usar definições padrão da conta') ?></label>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="num_copias"
-                                                class="form-label text-muted small fw-bold"><?= t('Nº de cópias') ?></label>
-                                            <?= numberCopysSelect(); ?>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="due_date"
-                                                class="form-label text-muted small fw-bold"><?= t('Vencimento Padrão') ?></label>
-                                            <?= due_dateSelect(); ?>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="language"
-                                                class="form-label text-muted small fw-bold required"><?= t('Idioma') ?></label>
-                                            <select class="form-select" name="language" required id="language">
-                                                <option value="BR">Português Brasileiro</option>
-                                                <option value="AO" selected>Português Angolano</option>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="payment_method"
-                                                class="form-label text-muted small fw-bold required"><?= t('Método de Pagamento') ?></label>
-                                            <select class="form-select" name="payment_method" required id="payment_method">
-                                                <?= getPaymentMethods(); ?>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="currency"
-                                                class="form-label text-muted small fw-bold required"><?= t('Moeda Preferencial') ?></label>
-                                            <select class="form-select" name="currency" required id="currency">
-                                                <?= currencySelects(); ?>
-                                            </select>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="observations"
-                                                class="form-label text-muted small fw-bold"><?= t('Observações Internas') ?></label>
-                                            <textarea class="form-control" id="observations" rows="3"></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <!-- ACTIONS -->
-                    <div class="stepC-actions d-flex">
-                        <button type="button" class="btn-step btn-prev" id="prevCBtn">Voltar</button>
-                        <button type="button" class="btn-step btn-next" id="nextCBtn">Próximo</button>
-                        <button type="button" class="btn-step btn-next d-none" id="saveChangesContact">Salvar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 </main>
 
+<!-- jQuery -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<!-- Select2 (se usares) -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
+    let company = null;
     let currentStep = 1;
 
     const steps = document.querySelectorAll(".form-step");
@@ -724,9 +481,15 @@ require_once '../app/views/layout_creation.php';
         const current = document.querySelector(`.form-step[data-step="${step}"]`);
         if (current) current.classList.add("active");
 
-        prevBtn.classList.toggle("d-none", step === 1);
-        step === steps.length ? saveBtn.classList.remove("d-none") : nextBtn.classList.remove("d-none");
-        step < steps.length ? saveBtn.classList.add("d-none") : nextBtn.classList.add("d-none");
+        if (prevBtn) prevBtn.classList.toggle("d-none", step === 1);
+
+        if (step === steps.length) {
+            saveBtn?.classList.remove("d-none");
+            nextBtn?.classList.add("d-none");
+        } else {
+            saveBtn?.classList.add("d-none");
+            nextBtn?.classList.remove("d-none");
+        }
 
         updateStepper();
         updateProgress();
@@ -745,15 +508,18 @@ require_once '../app/views/layout_creation.php';
 
     /* ===== PROGRESS ===== */
     function updateProgress() {
-        document.getElementById("progressBar").style.width =
-            (currentStep / steps.length) * 100 + "%";
+        const bar = document.getElementById("progressBar");
+        if (!bar || steps.length === 0) return;
+
+        bar.style.width = ((currentStep / steps.length) * 100) + "%";
     }
 
     /* ===== VALIDATION ===== */
     function validateStep() {
         const current = document.querySelector(`.form-step[data-step="${currentStep}"]`);
-        const inputs = current.querySelectorAll("[required]");
+        if (!current) return true;
 
+        const inputs = current.querySelectorAll("[required]");
         let valid = true;
 
         inputs.forEach(input => {
@@ -770,15 +536,18 @@ require_once '../app/views/layout_creation.php';
 
     /* ===== LOCAL STORAGE ===== */
     function saveDraft() {
+        if (!form) return;
+
         const data = new FormData(form);
         const obj = {};
 
         data.forEach((v, k) => obj[k] = v);
-
         localStorage.setItem("invoiceDraft", JSON.stringify(obj));
     }
 
     function loadDraft() {
+        if (!form) return;
+
         const draft = JSON.parse(localStorage.getItem("invoiceDraft"));
         if (!draft) return;
 
@@ -793,62 +562,52 @@ require_once '../app/views/layout_creation.php';
         let total = 0;
 
         document.querySelectorAll(".item-row").forEach(row => {
-            const p = parseFloat(row.querySelector(".price").value) || 0;
-            const q = parseFloat(row.querySelector(".qty").value) || 0;
+            const p = parseFloat(row.querySelector(".price")?.value) || 0;
+            const q = parseFloat(row.querySelector(".qty")?.value) || 0;
 
             total += p * q;
         });
 
-        document.getElementById("final_total").innerText = total.toFixed(2);
+        const totalField = document.getElementById("final_total");
+        if (totalField) totalField.innerText = total.toFixed(2);
     }
 
     /* ===== EVENTS ===== */
-    nextBtn.addEventListener("click", () => {
+    nextBtn?.addEventListener("click", () => {
         if (!validateStep()) return;
 
         if (currentStep < steps.length) {
             currentStep++;
             showStep(currentStep);
-        } else {
-            form.submit();
-            localStorage.removeItem("invoiceDraft");
         }
     });
 
-    prevBtn.addEventListener("click", () => {
+    prevBtn?.addEventListener("click", () => {
         if (currentStep > 1) {
             currentStep--;
             showStep(currentStep);
         }
     });
 
-    //     document.getElementById("addItem").addEventListener("click", () => {
-    //         const div = document.createElement("div");
-    //         div.className = "item-row d-flex gap-2 mb-2";
-    //         div.innerHTML = `
-    //     <input class="form-control price" placeholder="Preço">
-    //     <input class="form-control qty" placeholder="Qtd">
-    // `;
-    //         document.getElementById("items").appendChild(div);
-    //     });
-
-    /* AUTO SAVE + CALC */
-    form.addEventListener("input", () => {
+    form?.addEventListener("input", () => {
         saveDraft();
         calc();
     });
 
-    /* INIT */
+    /* ===== INIT ===== */
     document.addEventListener("DOMContentLoaded", () => {
         loadDraft();
-        showStep(1);
+        showStep(currentStep);
+        calc();
     });
 
+    /* ===== CURRENCY ===== */
     let userCurrency = "<?= $_SESSION['user']['iso_code'] ?>";
     let currencySymbol = "<?= $_SESSION['user']['symbol'] ?>";
     let currencyPosition = "<?= $_SESSION['user']['position'] ?>";
 
-    const formClient = () => {
+    /* ===== FORM CLIENT ===== */
+    function formClient() {
         let current = 0;
 
         const steps = document.querySelectorAll(".step-contentC");
@@ -857,65 +616,95 @@ require_once '../app/views/layout_creation.php';
         const prevBtn = document.getElementById("prevCBtn");
         const nextBtn = document.getElementById("nextCBtn");
         const saveBtn = document.getElementById("saveChangesContact");
-
-
-
+        const contactForm = document.getElementById("contactForm");
 
         function update() {
             const lastStep = steps.length - 1;
 
-            // STEP ACTIVE
             steps.forEach((s, i) =>
                 s.classList.toggle("active", i === current)
             );
 
-            // INDICATORS
             indicators.forEach((s, i) =>
                 s.classList.toggle("active", i <= current)
             );
 
-            // PROGRESS BAR
-            bar.style.width = (current / lastStep) * 100 + "%";
+            if (bar && lastStep > 0) {
+                bar.style.width = (current / lastStep) * 100 + "%";
+            }
 
-            // BUTTONS
-            prevBtn.style.display = current === 0 ? "none" : "block";
+            if (prevBtn) prevBtn.style.display = current === 0 ? "none" : "block";
 
-            // FINAL STEP
             const isLast = current === lastStep;
 
             if (isLast) {
-                nextBtn.classList.add("d-none");
-                saveBtn.classList.remove("d-none");
+                nextBtn?.classList.add("d-none");
+                saveBtn?.classList.remove("d-none");
             } else {
-                nextBtn.classList.remove("d-none");
-                saveBtn.classList.add("d-none");
-                nextBtn.innerText = "Próximo";
+                nextBtn?.classList.remove("d-none");
+                saveBtn?.classList.add("d-none");
             }
         }
 
-
-        nextBtn.onclick = () => {
+        nextBtn?.addEventListener("click", () => {
             if (current < steps.length - 1) {
                 current++;
                 update();
             } else {
-                contactForm.submit();
+                contactForm?.submit();
             }
-        };
+        });
 
-        prevBtn.onclick = () => {
-            current--;
-            update();
-        };
+        prevBtn?.addEventListener("click", () => {
+            if (current > 0) {
+                current--;
+                update();
+            }
+        });
 
         update();
-
     }
 
-    formClient()
+    formClient();
+
+    /* ===== SERIES FIELD ===== */
+    const seriesField = document.getElementById("series");
+
+    if (seriesField) {
+        const year = new Date().getFullYear();
+        seriesField.value = year;
+
+        ["keydown", "paste", "drop"].forEach(evt =>
+            seriesField.addEventListener(evt, e => e.preventDefault())
+        );
+    }
+
+    /* ===== FETCH COMPANY ===== */
+    async function fetchCompany() {
+        try {
+            const response = await fetch(`assets/ajax/company_data.php`);
+
+            if (!response.ok) {
+                throw new Error(`Erro HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            if (data?.data) {
+                company = data.data;
+            } else {
+                console.warn("Nenhum dado encontrado");
+            }
+
+        } catch (error) {
+            console.error("Erro ao buscar empresa:", error);
+        }
+    }
+
+    setTimeout(fetchCompany, 100);
 </script>
 
 
-<script src="create_invoices/create_invoices.js"></script>
+<script src="create_proform/create_invoices.js"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

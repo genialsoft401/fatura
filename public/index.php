@@ -325,7 +325,7 @@ require_once '../app/views/layout_creation.php';
                         <div class="d-flex justify-content-between col-12 col-sm-12">
                             <div class="tags">
                                 <a href="#" data-tag="sell" class="tag-link active btn">Vendas</a>
-                                <a href="#" data-tag="stock" class="tag-link btn">Stock</a>
+                                <a href="#" data-tag="stock" class="tag-link btn d-none">Stock</a>
                                 <a href="#" data-tag="rh" class="tag-link btn">Recursos Humanos</a>
                             </div>
                             <div class="mb-3">
@@ -480,7 +480,7 @@ require_once '../app/views/layout_creation.php';
                                         <h4 class="fw-bold mt-3" id="rh_total_employees">47</h4>
 
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Total Funcionários Activos</small>
+                                            <small class="text-muted">Total funcionários activos</small>
                                             <!-- <span id="rh_total_employees_dif" class="text-primary small fw-semibold"><i class="bi bi-arrow-up-right"></i> +2</span> -->
                                         </div>
                                     </div>
@@ -506,7 +506,7 @@ require_once '../app/views/layout_creation.php';
                                         </div>
 
                                         <h4 class="fw-bold mt-3" id="rh_pending_vacations">4</h4>
-                                        <small class="text-muted">Pedido de Férias Pendentes</small>
+                                        <small class="text-muted">Pedido de férias pendentes</small>
                                     </div>
                                 </div>
 
@@ -520,7 +520,7 @@ require_once '../app/views/layout_creation.php';
                                         <h4 class="fw-bold mt-3" id="rh_absences">12</h4>
 
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Faltas no Mês</small>
+                                            <small class="text-muted">Faltas no mês</small>
                                             <span id="rh_absences_month_dif" class="small fw-semibold"><i class="bi bi-arrow-up-right"></i> -2</span>
                                         </div>
                                     </div>

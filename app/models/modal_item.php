@@ -247,13 +247,13 @@
 
                             <div class="col-md-4 mb-2">
                                 <label class="form-label"><?= t('Preço Unitário') ?></label>
-                                <input type="number" class="form-control" name="unit_price" step="0.00" required>
+                                <input type="number" class="form-control" name="unit_price" id="unit_price" step="0.00" required>
                             </div>
 
                             <!-- IVA -->
                             <div class="col-md-4">
                                 <label class="form-label"><?= t('IVA') ?></label>
-                                <input class="form-control" name="tax" id="tax" readonly>
+                                <input class="form-control" type="number" name="tax_vat" id="tax" readonly>
                             </div>
 
                             <!-- RETENÇÃO -->

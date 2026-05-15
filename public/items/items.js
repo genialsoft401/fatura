@@ -1,4 +1,5 @@
 $(document).ready(function () {
+  let items = [];
   const modalEl = document.getElementById("itemModal");
   const modalTitle = modalEl.querySelector(".modal-title");
 
@@ -9,16 +10,24 @@ $(document).ready(function () {
     url: "items/ajax/get_items.php",
     method: "GET",
     dataType: "json",
-    success: function (data) {
-      if (data.error) {
-        console.error(data.error);
-        return;
+
+    success: function (response) {
+      console.log("RESPONSE:", response?.data);
+
+      // garante array correto
+      if (Array.isArray(response?.data)) {
+        items = response?.data;
+      } else if (Array.isArray(response)) {
+        items = response;
+      } else {
+        items = [];
       }
 
-      renderTable(data?.data || []);
+      renderTable(items);
     },
+
     error: function (xhr, status, error) {
-      console.error("❌ Erro ao buscar items:", status, error);
+      console.error("Erro:", error);
     },
   });
 
@@ -169,6 +178,189 @@ $(document).ready(function () {
     $('[data-bs-toggle="tooltip"]').tooltip("dispose");
     $('[data-bs-toggle="tooltip"]').tooltip();
   }
+
+  // ========================================
+  // FORMATA MOEDA
+  // ========================================
+
+  function formatCurrency(value) {
+    return new Intl.NumberFormat("pt-PT", {
+      style: "currency",
+      currency: "AOA",
+    }).format(Number(value || 0));
+  }
+
+  // ========================================
+  // PREPARA DADOS
+  // ========================================
+
+  function prepareData(data = []) {
+    return data.map((item) => ({
+      ID: item.id,
+      Código: item.code || "-",
+      Nome: item.name || "-",
+      Tipo: item.item_type || "-",
+      Categoria: item.category || "-",
+      Unidade: item.unit_measure || "-",
+      Preço: formatCurrency(item.unit_price),
+      PVP: formatCurrency(item.pvp),
+      Quantidade: item.quantity || 0,
+      Stock: item.stock_name || "-",
+      Estado: item.status || "-",
+      Moeda: item.currency || "AOA",
+    }));
+  }
+
+  // ========================================
+  // GERA NOME
+  // ========================================
+
+  function generateFileName(type) {
+    const date = new Date().toISOString().split("T")[0];
+
+    return `produtos_${date}.${type}`;
+  }
+
+  // ========================================
+  // EXPORTAR CSV
+  // ========================================
+
+  function exportCSV(data = []) {
+    if (!data.length) {
+      return alert("Nenhum dado encontrado");
+    }
+
+    const rows = prepareData(data);
+
+    const headers = Object.keys(rows[0]).join(";");
+
+    const csvContent = rows.map((row) =>
+      Object.values(row)
+        .map((value) => `"${String(value).replace(/"/g, '""')}"`)
+        .join(";"),
+    );
+
+    const csv = [headers, ...csvContent].join("\n");
+
+    const blob = new Blob(["\uFEFF" + csv], {
+      type: "text/csv;charset=utf-8;",
+    });
+
+    const link = document.createElement("a");
+
+    link.href = URL.createObjectURL(blob);
+
+    link.download = generateFileName("csv");
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+  }
+
+  // ========================================
+  // EXPORTAR EXCEL
+  // ========================================
+
+  function exportExcel(data = []) {
+    if (!data.length) {
+      return alert("Nenhum dado encontrado");
+    }
+
+    const rows = prepareData(data);
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+
+    // largura colunas
+    worksheet["!cols"] = [
+      { wch: 8 },
+      { wch: 20 },
+      { wch: 35 },
+      { wch: 15 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 18 },
+      { wch: 18 },
+      { wch: 12 },
+      { wch: 30 },
+      { wch: 12 },
+      { wch: 10 },
+    ];
+
+    const workbook = XLSX.utils.book_new();
+
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Produtos");
+
+    XLSX.writeFile(workbook, generateFileName("xlsx"));
+  }
+
+  // ========================================
+  // EXPORTAR PDF
+  // ========================================
+
+  function exportPDF(data = []) {
+    if (!data.length) {
+      return alert("Nenhum dado encontrado");
+    }
+
+    const rows = prepareData(data);
+
+    const { jsPDF } = window.jspdf;
+
+    const doc = new jsPDF({
+      orientation: "landscape",
+    });
+
+    doc.setFontSize(16);
+
+    doc.text("Relatório de Produtos", 14, 15);
+
+    const tableColumn = Object.keys(rows[0]);
+
+    const tableRows = rows.map((row) => Object.values(row));
+
+    doc.autoTable({
+      head: [tableColumn],
+
+      body: tableRows,
+
+      startY: 25,
+
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+      },
+
+      headStyles: {
+        fillColor: [41, 128, 185],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+
+      alternateRowStyles: {
+        fillColor: [245, 245, 245],
+      },
+    });
+
+    doc.save(generateFileName("pdf"));
+  }
+
+  // ========================================
+  // EVENTOS
+  // ========================================
+
+  document.getElementById("downloadCSV").addEventListener("click", () => {
+    exportCSV(items.data || items);
+  });
+
+  document.getElementById("downloadExcel").addEventListener("click", () => {
+    exportExcel(items.data || items);
+  });
+
+  document.getElementById("downloadPDF").addEventListener("click", () => {
+    exportPDF(items.data || items);
+  });
 
   $("#itemsTable").on("click", ".delete-btn", function () {
     const itemId = $(this).data("id");
@@ -442,7 +634,9 @@ $(document).ready(function () {
     const isProduct = row.item_type === "product";
 
     setTimeout(() => {
-      !isProduct ? $("#depot").removeClass("active") : $("#depot").addClass("active");
+      !isProduct
+        ? $("#depot").removeClass("active")
+        : $("#depot").addClass("active");
     }, 200);
   });
 
@@ -482,6 +676,8 @@ $(document).ready(function () {
   modalEl.addEventListener("hidden.bs.modal", () => {
     resetItemForm();
   });
+
+
 
   $("#saveEdit").on("click", function () {
     const form = $("#editItemForm");

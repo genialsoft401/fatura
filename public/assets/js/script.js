@@ -45,33 +45,32 @@ $(document).ready(function () {
     return true;
   }
 
-  // =========================
-  // SAVE ITEM
-  // =========================
-  const itemModal = $("#itemModal");
-  const itemForm = $("#itemForm");
-
-  // =========================
-  // SALVAR / EDITAR ITEM
-  // =========================
-  $("#saveItem").on("click", async function (e) {
+  $("#saveItem").click(function (e) {
     e.preventDefault();
 
-    if (!validateForm()) return;
-
-    const form = itemForm[0];
+    const form = $("#itemForm")[0];
     const formData = new FormData(form);
 
     // =========================
-    // VERIFICA SE É EDIÇÃO
+    // ID
     // =========================
     const itemId =
       $("#item_id").val() || $("#product_item").val() || $("#id").val();
 
-    // adiciona ID ao formData se existir
     if (itemId) {
       formData.append("id", itemId);
     }
+
+    // =========================
+    // TAX
+    // =========================
+    formData.append("tax_vat", $("#tax").val());
+
+    for (let pair of formData.entries()) {
+      console.log(pair[0], pair[1]);
+    }
+
+    console.log(formData.get("tax_vat"));
 
     // =========================
     // URL
@@ -80,104 +79,208 @@ $(document).ready(function () {
       ? "items/ajax/edit_item.php"
       : "items/ajax/save_item.php";
 
-    // =========================
-    // LOADING BUTTON
-    // =========================
-    const btn = $(this);
+    $.ajax({
+      url: url,
+      type: "POST",
+      data: formData,
+      processData: false,
+      contentType: false,
+      dataType: "json",
+      success: function (response) {
+        Swal.fire(
+          response.status || "",
+          response.message || "",
+          response.type || "info",
+        );
 
-    const originalText = btn.html();
+        $("#itemModal").modal("hide");
+        $("#itemForm")[0].reset();
+        loadItems();
+      },
+      error: function () {
+        Swal.fire(
+          "Erro!",
+          "Ocorreu um erro ao salvar o produto/serviço.",
+          "error",
+        );
+      },
+    });
+  });
 
-    btn.prop("disabled", true);
+  const loadItems = () => {
+    $.ajax({
+      url: "items/ajax/get_items.php",
+      method: "GET",
+      dataType: "json",
 
-    btn.html(`
-    <span class="spinner-border spinner-border-sm me-1"></span>
-    Salvando...
-  `);
+      success: function (response) {
+        console.log("RESPONSE:", response?.data);
 
-    try {
-      const response = await $.ajax({
-        url: url,
-        type: "POST",
-        data: formData,
-        processData: false,
-        contentType: false,
-        dataType: "json",
-      });
-
-      Swal.fire({
-        title: response.status || "Info",
-        text: response.message || "",
-        icon: response.type || "info",
-        timer: 2000,
-        showConfirmButton: false,
-      });
-
-      // =========================
-      // SUCCESS
-      // =========================
-      if (response.type === "success") {
-        // fecha modal
-        itemModal.modal("hide");
-
-        // reset formulário
-        form.reset();
-
-        // limpa IDs
-        $("#item_id").val("");
-        $("#product_item").val("");
-        $("#id").val("");
-
-        // reset selects
-        itemForm.find("select").val("").trigger("change");
-
-        // reset botão
-        btn.text("Salvar");
-
-        // reload lista
-        if (typeof loadItems === "function") {
-          loadItems();
+        // garante array correto
+        if (Array.isArray(response?.data)) {
+          items = response?.data;
+        } else if (Array.isArray(response)) {
+          items = response;
+        } else {
+          items = [];
         }
-      }
-    } catch (xhr) {
-      console.error("STATUS:", xhr.status);
-      console.error("ERROR:", xhr.statusText);
-      console.error("RESPONSE:", xhr.responseText);
 
-      Swal.fire({
-        title: "Erro",
-        text: "Erro ao salvar item.",
-        icon: "error",
-      });
-    } finally {
-      btn.prop("disabled", false);
-      btn.html(originalText);
+        renderTable(items);
+      },
+
+      error: function (xhr, status, error) {
+        console.error("Erro:", error);
+      },
+    });
+  };
+
+  function renderTable(data) {
+    const $table = $("#itemsTable");
+    const $tbody = $table.find("tbody");
+
+    // destruir DataTable antes de mexer no DOM
+    if ($.fn.DataTable.isDataTable($table)) {
+      $table.DataTable().clear().destroy();
     }
-  });
 
-  // =========================
-  // EVENTO AO FECHAR MODAL
-  // =========================
-  itemModal.on("hidden.bs.modal", function () {
-    // reset form
-    itemForm[0].reset();
+    $tbody.empty();
 
-    // limpar IDs
-    $("#item_id").val("");
-    $("#product_item").val("");
-    $("#id").val("");
+    // =========================
+    // SEM DADOS
+    // =========================
+    if (!data || !data.length) {
+      $tbody.append(`
+      <tr>
+        <td class="text-center text-muted py-4">
+          Nenhum produto ou serviço encontrado
+        </td>
+      </tr>
+    `);
+      return;
+    }
 
-    // limpar selects
-    itemForm.find("select").val("").trigger("change");
+    // =========================
+    // BUILD ROWS (mais performático)
+    // =========================
+    let rowsHtml = "";
 
-    // limpar textareas
-    itemForm.find("textarea").val("");
+    data.forEach((row) => {
+      const rowData = encodeURIComponent(JSON.stringify(row));
 
-    // reset botão
-    $("#saveItem").html("Salvar");
+      const description = row.name || row.description || "-";
 
-    // remove estados de validação
-    itemForm.find(".is-invalid, .is-valid").removeClass("is-invalid is-valid");
-  });
+      const price = row.unit_price || row.cost_price;
+
+      const tax = row.tax || 0;
+
+      rowsHtml += `
+      <tr data-id="${row.id}">
+        
+        <!-- CHECKBOX -->
+        <td>
+          <input type="checkbox" class="item-checkbox" value="${row.id}">
+        </td>
+
+        <!-- ICON -->
+        <td>
+          <i class="${
+            row.item_type === "service"
+              ? "bi bi-tag fw-bold fs-5"
+              : "bi bi-box-seam fw-bold fs-5"
+          }"></i>
+        </td>
+
+        <!-- CODE -->
+        <td>${row.code || "-"}</td>
+
+        <!-- NAME -->
+        <td class="text-truncate-custom" title="${description}">
+          ${description}
+        </td>
+
+        <!-- DESCRIPTION -->
+        <td class="text-truncate-custom" title="${row.description || ""}">
+          ${row.description || "-"}
+        </td>
+
+        <!-- PRICE -->
+        <td class="text-success fw-bold">
+          ${formatCurrency(price, row.currency, row.position)}
+        </td>
+
+        <!-- TAX -->
+        <td>
+          ${`${tax}%`}
+        </td>
+
+        <!-- PVP -->
+        <td class="text-primary fw-bold">
+          ${formatCurrency(row.pvp ?? 0, row.currency, row.position)}
+        </td>
+
+        <!-- ACTIONS -->
+        <td>
+          <div class="d-flex justify-content-center gap-2">
+
+            <button class="btn btn-sm text-dark edit-btn"
+              data-row="${rowData}"
+              data-bs-toggle="tooltip"
+              title="Editar">
+              <i class="bi bi-pencil fs-6"></i>
+            </button>
+
+            <button class="btn btn-sm text-danger delete-btn"
+              data-id="${row.id}"
+              data-bs-toggle="tooltip"
+              title="Excluir">
+              <i class="bi bi-trash fs-6"></i>
+            </button>
+
+          </div>
+        </td>
+
+      </tr>
+    `;
+    });
+
+    $tbody.html(rowsHtml);
+
+    // =========================
+    // REINICIAR DATATABLE
+    // =========================
+    $table.DataTable({
+      pageLength: 25,
+      lengthMenu: [10, 25, 50, 100],
+      destroy: true,
+      autoWidth: false,
+
+      columnDefs: [
+        { orderable: false, targets: [0, 1, 8] }, // checkbox, icon, actions
+      ],
+
+      language: {
+        search: "",
+        searchPlaceholder: "Pesquisar produtos...",
+        lengthMenu: "Mostrar _MENU_",
+        zeroRecords: "Nenhum registro encontrado",
+        info: "_START_–_END_ de _TOTAL_",
+        infoEmpty: "Sem dados",
+        infoFiltered: "(filtrado de _MAX_)",
+        paginate: {
+          first: "«",
+          last: "»",
+          next: "›",
+          previous: "‹",
+        },
+      },
+    });
+
+    // =========================
+    // TOOLTIP (fix duplicação)
+    // =========================
+    $('[data-bs-toggle="tooltip"]').tooltip("dispose");
+    $('[data-bs-toggle="tooltip"]').tooltip();
+  }
 
   // =========================
   // ACTIVE MENU

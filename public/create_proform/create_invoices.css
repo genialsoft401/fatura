@@ -1,0 +1,212 @@
+.invoice-form-card {
+    margin-bottom: 1.5rem;
+    border: none;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+
+.invoice-form-card .card-header {
+    background-color: #f8f9fa; /* Light background for header */
+    border-bottom: 1px solid #e9ecef;
+    padding: 1.25rem 1.5rem;
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.invoice-form-card .card-header h4 {
+    margin-bottom: 0;
+    font-weight: 600;
+    color: #343a40;
+}
+
+.invoice-form-card .card-body {
+    padding: 1.5rem;
+}
+
+.form-label {
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+}
+
+.material-icons-round.form-icon {
+    font-size: 1.2rem;
+    vertical-align: middle;
+    margin-right: 0.5rem;
+    color: var(--primary-color);
+}
+
+.item-box {
+    background: none !important;
+    border: 1px solid none !important;
+    border-radius: 0.5rem;
+    padding: 0rem;
+    margin-bottom: 0.75rem;
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.03);
+}
+
+.item-box .form-control, .item-box .form-select {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.9rem;
+}
+
+.remove-item {
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 1.5rem;
+    transition: color 0.2s ease-in-out;
+}
+
+.remove-item:hover {
+    color: #c82333;
+}
+
+#items_list .row.fw-bold {
+    background-color: #e9ecef;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: #343a40;
+}
+
+.summary-table-card {
+    background-color: #f0f8ff; /* Light blue background for summary */
+    border: 1px solid #cfe2ff;
+    border-radius: 0.75rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
+}
+
+.summary-table-card .card-header {
+    background-color: #d0e9ff;
+    border-bottom: 1px solid #cfe2ff;
+    padding: 1.25rem 1.5rem;
+    border-top-left-radius: 0.75rem;
+    border-top-right-radius: 0.75rem;
+}
+
+.summary-table-card .card-body {
+    padding: 1.5rem;
+}
+
+.summary-table-card table {
+    margin-bottom: 0;
+}
+
+.summary-table-card table th, .summary-table-card table td {
+    padding: 0.75rem;
+    vertical-align: middle;
+    border-top: 1px solid #e9ecef;
+}
+
+.summary-table-card table th {
+    font-weight: 600;
+    color: #343a40;
+}
+
+.summary-table-card table td {
+    color: #495057;
+}
+
+.summary-table-card table tr:last-child td {
+    border-bottom: none;
+}
+
+.summary-table-card #final_total, .summary-table-card #converted_total {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+#saveInvoiceBtn {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    margin-top: 1.5rem;
+}
+
+/* Custom styles for the toggle contact form button */
+#toggle-contact-form {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; /* Fixed width */
+    height: 40px; /* Fixed height */
+    border-radius: 50%; /* Make it circular */
+    background-color: var(--primary-color); /* Use primary color */
+    color: white;
+    font-size: 1.5rem; /* Icon size */
+    cursor: pointer;
+    transition: background-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    margin-left: 1rem; /* Space from heading */
+}
+
+#toggle-contact-form:hover {
+    background-color: #0056b3; /* Darker on hover */
+    transform: translateY(-2px); /* Slight lift effect */
+}
+
+#toggle-contact-form .material-icons-round {
+    font-size: 1.5rem; /* Ensure icon size is consistent */
+    line-height: 1; /* Align icon vertically */
+}
+
+/* Adjustments for select2 dropdowns within cards */
+.select2-container--default .select2-selection--single {
+    border-radius: 0.5rem !important;
+    min-height: 47px; /* Match form-control height */
+    display: flex;
+    align-items: center;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 1.5; /* Adjust line height */
+    padding-left: 1rem; /* Match form-control padding */
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 45px; /* Adjust arrow height */
+    right: 0.5rem;
+}
+
+.select2-container--default .select2-results__option--highlighted.select2-results__option--selectable {
+    background-color: var(--primary-color) !important;
+    color: white !important;
+}
+
+.select2-container--default .select2-results__option--selectable {
+    padding: 0.75rem 1rem;
+}
+
+/* Custom date input for "Outro" option */
+#other_date_input {
+    margin-top: 0.5rem;
+}
+
+/* Hide the default border for table in summary card */
+.summary-table-card .table-bordered {
+    border: none;
+}
+.summary-table-card .table-bordered th, .summary-table-card .table-bordered td {
+    border-color: #cfe2ff; /* Lighter border for summary table */
+}
+
+/* Ensure the main container has enough padding */
+.container.mt-5 {
+    padding-bottom: 3rem;
+}

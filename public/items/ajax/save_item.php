@@ -1,57 +1,102 @@
 <?php
 
 header('Content-Type: application/json; charset=utf-8');
+
 require_once __DIR__ . '/../../../app/config/db.php';
 
 ini_set('display_errors', 0);
 error_reporting(E_ALL);
 
+// =========================
+// VALIDAR MÉTODO
+// =========================
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+
   http_response_code(405);
+
   echo json_encode([
-    "status" => "error",
+    "status"  => "error",
     "message" => "Método inválido"
   ]);
+
   exit;
 }
 
 try {
 
+  // =========================
+  // PDO
+  // =========================
   $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
   // =========================
   // INPUTS
   // =========================
-  $item_id     = isset($_POST['product_id']) ? (int)$_POST['product_id'] : 0;
+  $item_id = isset($_POST['product_id'])
+    ? (int)$_POST['product_id']
+    : 0;
 
-  $company_id  = (int)($_POST['id_company'] ?? 0);
-  $stock_id    = !empty($_POST['stock_id']) ? (int)$_POST['stock_id'] : null;
+  $company_id = (int)($_POST['id_company'] ?? 0);
 
-  $code        = trim($_POST['codigo'] ?? '');
-  $name        = trim($_POST['name'] ?? '');
+  $stock_id = !empty($_POST['stock_id'])
+    ? (int)$_POST['stock_id']
+    : null;
+
+  $code = trim($_POST['codigo'] ?? '');
+
+  $name = trim($_POST['name'] ?? '');
+
   $description = trim($_POST['descricao'] ?? '');
 
-  $item_type    = trim($_POST['item_type'] ?? 'product');
+  $item_type = trim($_POST['item_type'] ?? 'product');
+
   $unit_measure = trim($_POST['unit_measure'] ?? 'unit');
 
-  $category = !empty($_POST['subcategory']) ? trim($_POST['subcategory']) : null;
+  $category = !empty($_POST['subcategory'])
+    ? trim($_POST['subcategory'])
+    : null;
 
   $currency = trim($_POST['currency'] ?? 'AOA');
 
-  $tax = isset($_POST['tax']) && $_POST['tax'] !== ''
-    ? (float)$_POST['tax']
-    : 14.00;
+  // =========================
+  // TAX
+  // =========================
+  $tax = 0;
 
+  $tax = '0';
+
+  if (isset($_POST['tax_vat'])) {
+
+    $tax = str_replace('%', '', $_POST['tax_vat']);
+
+    $tax = str_replace(',', '.', $tax);
+
+    $tax = trim($tax);
+  }
+
+  // =========================
+  // PREÇOS
+  // =========================
   $unit_price = (float)($_POST['unit_price'] ?? 0);
-  $cost_price = (float)($_POST['cost_price'] ?? 0);
-  $sale_price = (float)($_POST['sale_price'] ?? 0);
-  $pvp        = (float)($_POST['pvp'] ?? 0);
 
+  $cost_price = (float)($_POST['cost_price'] ?? 0);
+
+  $sale_price = (float)($_POST['sale_price'] ?? 0);
+
+  $pvp = (float)($_POST['pvp'] ?? 0);
+
+  // =========================
+  // RETENÇÃO
+  // =========================
   $retention = isset($_POST['retention'])
     ? (float)$_POST['retention']
     : 0.0;
 
+  // =========================
+  // STOCK
+  // =========================
   $quantity = (int)($_POST['quantidade'] ?? 0);
+
   $min_quantity = (int)($_POST['min_stock'] ?? 1);
 
   // =========================
@@ -70,17 +115,14 @@ try {
   }
 
   // =========================
-  // CREATE OU UPDATE
+  // UPDATE
   // =========================
   if ($item_id > 0) {
 
-    // =========================
-    // UPDATE (MESMA PROCEDURE OU OUTRA)
-    // =========================
     $sql = "CALL sp_update_item_with_stock(
-    ?,?,?,?,?,?,?,?,?,?,
-    ?,?,?,?,?,?,?,?
-)";
+      ?,?,?,?,?,?,?,?,?,?,
+      ?,?,?,?,?,?,?,?
+    )";
 
     $stmt = $pdo->prepare($sql);
 
@@ -114,8 +156,8 @@ try {
     // CREATE
     // =========================
     $sql = "CALL sp_create_item_with_stock(
-        ?,?,?,?,?,?,?,?,?,?,
-        ?,?,?,?,?,?,?
+      ?,?,?,?,?,?,?,?,?,?,
+      ?,?,?,?,?,?,?
     )";
 
     $stmt = $pdo->prepare($sql);
@@ -153,6 +195,9 @@ try {
   while ($stmt->nextRowset()) {
   }
 
+  // =========================
+  // RESPONSE
+  // =========================
   echo json_encode([
     "status"  => "success",
     "message" => $message,

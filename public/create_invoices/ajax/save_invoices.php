@@ -1,4 +1,5 @@
 <?php
+
 require_once '../../../app/config/db.php';
 require_once '../../../app/helpers/subscription.php';
 
@@ -6,7 +7,6 @@ header('Content-Type: application/json');
 
 session_start();
 
-// DEBUG (remover em produção)
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -41,11 +41,7 @@ try {
     $fatura = [];
 
     foreach ($invoiceData as $field) {
-
-        if (
-            isset($field['name']) &&
-            isset($field['value'])
-        ) {
+        if (isset($field['name'], $field['value'])) {
             $fatura[$field['name']] = $field['value'];
         }
     }
@@ -64,42 +60,26 @@ try {
     // =========================
     $pdo->beginTransaction();
 
-    // =========================
-    // VALIDAR SUBSCRIÇÃO
-    // =========================
     subscription_assert_active($pdo, $companyIdSession);
 
     if ($editInvoiceId <= 0) {
-        subscription_check_limit(
-            $pdo,
-            $companyIdSession,
-            'invoice'
-        );
+        subscription_check_limit($pdo, $companyIdSession, 'invoice');
     }
 
     // =========================
     // CONTACTO
     // =========================
     if (!empty($fatura['contact_id'])) {
-
         $contactId = (int)$fatura['contact_id'];
     } else {
 
-        if (
-            empty($fatura['name']) ||
-            empty($fatura['email'])
-        ) {
-            throw new Exception(
-                "Nome e e-mail do contato são obrigatórios."
-            );
+        if (empty($fatura['name']) || empty($fatura['email'])) {
+            throw new Exception("Nome e e-mail do contato são obrigatórios.");
         }
 
-        // verificar contacto existente
         $stmtContact = $pdo->prepare("
-            SELECT id
-            FROM contact
-            WHERE email = ?
-            AND company_id = ?
+            SELECT id FROM contact
+            WHERE email = ? AND company_id = ?
             LIMIT 1
         ");
 
@@ -117,16 +97,7 @@ try {
 
             $stmtInsertContact = $pdo->prepare("
                 INSERT INTO contact
-                (
-                    name,
-                    email,
-                    contributor,
-                    address,
-                    po_box,
-                    country,
-                    city,
-                    company_id
-                )
+                (name, email, contributor, address, po_box, country, city, company_id)
                 VALUES (?,?,?,?,?,?,?,?)
             ");
 
@@ -145,9 +116,6 @@ try {
         }
     }
 
-    // =========================
-    // REMOVER CAMPOS EXTRAS
-    // =========================
     foreach (
         [
             'contact_id',
@@ -165,7 +133,7 @@ try {
     }
 
     // =========================
-    // DADOS DA FATURA
+    // FATURA DB
     // =========================
     $invoiceDbFields = [
         'contact_id' => $contactId,
@@ -190,228 +158,124 @@ try {
     ];
 
     // =========================
-    // UPDATE FATURA
+    // UPDATE / INSERT FATURA
     // =========================
     if ($editInvoiceId > 0) {
 
-        // =========================
-        // DEVOLVER STOCK ANTIGO
-        // =========================
-        $stmtOldItems = $pdo->prepare("
-            SELECT
-                item_id,
-                quantity
-            FROM invoice_items
-            WHERE invoice_id = ?
-        ");
-
-        $stmtOldItems->execute([$editInvoiceId]);
-
-        $oldItems = $stmtOldItems->fetchAll(PDO::FETCH_ASSOC);
-
-        $stmtCheckItem = $pdo->prepare("
-            SELECT item_type, track_stock
-            FROM items
-            WHERE id = ?
-        ");
-
-        $stmtIncreaseStock = $pdo->prepare("
-            CALL sp_increase_stock(?,?,?,?)
-        ");
-
-        foreach ($oldItems as $oldItem) {
-
-            $stmtCheckItem->execute([
-                (int)$oldItem['item_id']
-            ]);
-
-            $oldInfo = $stmtCheckItem->fetch(PDO::FETCH_ASSOC);
-
-            $stmtCheckItem->closeCursor();
-
-            if (
-                $oldInfo &&
-                (int)$oldInfo['track_stock'] === 1 &&
-                $oldInfo['item_type'] !== 'service'
-            ) {
-
-                $stmtIncreaseStock->execute([
-                    $companyIdSession,
-                    (int)$oldItem['item_id'],
-                    (float)$oldItem['quantity'],
-                    $editInvoiceId
-                ]);
-
-                while ($stmtIncreaseStock->nextRowset()) {
-                }
-
-                $stmtIncreaseStock->closeCursor();
-            }
-        }
-
-        // =========================
-        // ATUALIZAR FATURA
-        // =========================
         $set = [];
         $values = [];
 
         foreach ($invoiceDbFields as $field => $value) {
-
-            if ($field === 'status') {
-                continue;
-            }
-
-            $set[] = "{$field} = ?";
+            if ($field === 'status') continue;
+            $set[] = "$field = ?";
             $values[] = $value;
         }
 
         $values[] = $editInvoiceId;
 
-        $stmtUpdateInvoice = $pdo->prepare("
+        $stmtUpdate = $pdo->prepare("
             UPDATE invoices
             SET " . implode(',', $set) . "
             WHERE id = ?
         ");
 
-        $stmtUpdateInvoice->execute($values);
+        $stmtUpdate->execute($values);
 
         $invoiceId = $editInvoiceId;
 
-        // remover itens antigos
-        $stmtDeleteItems = $pdo->prepare("
-            DELETE FROM invoice_items
-            WHERE invoice_id = ?
+        $pdo->prepare("DELETE FROM invoice_items WHERE invoice_id = ?")
+            ->execute([$invoiceId]);
+    } else {
+
+        $stmtInsert = $pdo->prepare("
+            INSERT INTO invoices (" . implode(',', array_keys($invoiceDbFields)) . ")
+            VALUES (" . implode(',', array_fill(0, count($invoiceDbFields), '?')) . ")
         ");
 
-        $stmtDeleteItems->execute([$invoiceId]);
-    }
-
-    // =========================
-    // NOVA FATURA
-    // =========================
-    else {
-
-        $stmtInsertInvoice = $pdo->prepare("
-            INSERT INTO invoices
-            (
-                " . implode(',', array_keys($invoiceDbFields)) . "
-            )
-            VALUES
-            (
-                " . implode(',', array_fill(0, count($invoiceDbFields), '?')) . "
-            )
-        ");
-
-        $stmtInsertInvoice->execute(
-            array_values($invoiceDbFields)
-        );
+        $stmtInsert->execute(array_values($invoiceDbFields));
 
         $invoiceId = (int)$pdo->lastInsertId();
     }
 
     // =========================
-    // INSERIR NOVOS ITENS
+    // ITEMS
     // =========================
-    $processedItems = [];
-
     $stmtInsertItem = $pdo->prepare("
         INSERT INTO invoice_items
-        (
-            invoice_id,
-            item_id,
-            quantity,
-            unit_price,
-            tax,
-            discount
-        )
+        (invoice_id, item_id, quantity, unit_price, tax, discount)
         VALUES (?,?,?,?,?,?)
     ");
 
     $stmtCheckStock = $pdo->prepare("
-        SELECT
-            item_type,
-            track_stock
-        FROM items
-        WHERE id = ?
+        SELECT item_type, track_stock FROM items WHERE id = ?
     ");
 
-    $stmtReduceStock = $pdo->prepare("
-        CALL sp_reduce_stock(?,?,?,?)
-    ");
+    $stmtReduceStock = $pdo->prepare("CALL sp_reduce_stock(?,?,?,?)");
+
+    $processed = [];
 
     foreach ($itemData as $item) {
 
-        if (empty($item['id'])) {
-            throw new Exception("Item inválido.");
-        }
+        if (empty($item['id'])) continue;
+
+        $key = md5(json_encode($item));
+
+        if (isset($processed[$key])) continue;
+
+        $processed[$key] = true;
 
         $itemId = (int)$item['id'];
-        $quantity = (float)($item['quantity'] ?? 0);
-        $unitPrice = (float)($item['unit_price'] ?? 0);
-        $tax = (float)($item['tax'] ?? 0);
-        $discount = (float)($item['discount'] ?? 0);
+        $qty = (float)$item['quantity'];
+        $price = (float)$item['unit_price'];
+        $tax = (float)$item['tax'];
+        $discount = (float)$item['discount'];
 
-        if ($quantity <= 0) {
-            throw new Exception(
-                "Quantidade inválida para o item ID {$itemId}."
-            );
+        if ($qty <= 0) {
+            throw new Exception("Quantidade inválida item $itemId");
         }
 
-        // evitar duplicação
-        $uniqueKey = md5(json_encode([
-            $itemId,
-            $quantity,
-            $unitPrice,
-            $tax,
-            $discount
-        ]));
-
-        if (isset($processedItems[$uniqueKey])) {
-            continue;
-        }
-
-        $processedItems[$uniqueKey] = true;
-
-        // inserir item
+        // inserir item SEMPRE
         $stmtInsertItem->execute([
             $invoiceId,
             $itemId,
-            $quantity,
-            $unitPrice,
+            $qty,
+            $price,
             $tax,
             $discount
         ]);
 
-        // verificar stock
-        $stmtCheckStock->execute([$itemId]);
+        // =========================
+        // STOCK (NUNCA BLOQUEIA)
+        // =========================
+        try {
 
-        $stockInfo = $stmtCheckStock->fetch(PDO::FETCH_ASSOC);
+            $stmtCheckStock->execute([$itemId]);
+            $info = $stmtCheckStock->fetch(PDO::FETCH_ASSOC);
 
-        $stmtCheckStock->closeCursor();
+            if (
+                $info &&
+                (int)$info['track_stock'] === 1 &&
+                $info['item_type'] !== 'service'
+            ) {
 
-        // reduzir stock
-        if (
-            $stockInfo &&
-            (int)$stockInfo['track_stock'] === 1 &&
-            $stockInfo['item_type'] !== 'service'
-        ) {
+                $stmtReduceStock->execute([
+                    $companyIdSession,
+                    $itemId,
+                    $qty,
+                    $invoiceId
+                ]);
 
-            $stmtReduceStock->execute([
-                $companyIdSession,
-                $itemId,
-                $quantity,
-                $invoiceId
-            ]);
-
-            while ($stmtReduceStock->nextRowset()) {
+                while ($stmtReduceStock->nextRowset()) {
+                }
+                $stmtReduceStock->closeCursor();
             }
-
-            $stmtReduceStock->closeCursor();
+        } catch (Throwable $e) {
+            error_log("Stock error item $itemId: " . $e->getMessage());
         }
     }
 
     // =========================
-    // FINALIZAR
+    // FINAL
     // =========================
     $pdo->commit();
 
@@ -424,8 +288,6 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-
-    error_log($e->getMessage());
 
     http_response_code(500);
 

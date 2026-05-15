@@ -5,23 +5,21 @@ session_start();
 
 try {
 
-    if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
-        throw new Exception('Método inválido.');
-    }
-
     if (!isset($_SESSION['user']['company_id'])) {
         throw new Exception('Sessão inválida.');
     }
 
     $company_id = (int) $_SESSION['user']['company_id'];
-    $stock_id   = (int) ($_GET['stock_id'] ?? 0);
-    $item_type  = $_GET['item_type'] ?? 'product';
 
-    /*
-    =========================================
-    TYPE PREFIX
-    =========================================
-    */
+    // =========================================
+    // INPUTS (TOTALMENTE TOLERANTE A ERROS)
+    // =========================================
+    $stock_id  = isset($_GET['stock_id']) ? (int) $_GET['stock_id'] : 0;
+    $item_type = $_GET['item_type'] ?? '';
+
+    // =========================================
+    // TYPE PREFIX (COM FALLBACK TOTAL)
+    // =========================================
     $typeMap = [
         'product'       => 'PROD',
         'service'       => 'SRV',
@@ -30,52 +28,44 @@ try {
         'consumable'    => 'CON'
     ];
 
+    // se item_type for inválido → fallback automático
     $typePrefix = $typeMap[$item_type] ?? 'ITM';
 
-    /*
-    =========================================
-    PREFIX BASE
-    =========================================
-    */
-    $basePrefix = 'ITM';
+    // =========================================
+    // BASE PREFIX (SEM DEPENDÊNCIAS OBRIGATÓRIAS)
+    // =========================================
+    if ($typePrefix === 'PROD' && $stock_id > 0) {
 
-    // produtos usam stock
-    if ($item_type === 'product') {
+        $stmt = $pdo->prepare("
+            SELECT id 
+            FROM stocks 
+            WHERE id = :id 
+            AND company_id = :company_id
+        ");
 
-        if ($stock_id <= 0) {
-            throw new Exception('Stock inválido.');
-        }
-
-        $stmt = $pdo->prepare("SELECT id FROM stocks WHERE id = :id AND company_id = :company_id");
         $stmt->execute([
             ':id' => $stock_id,
             ':company_id' => $company_id
         ]);
 
-        if (!$stmt->fetch()) {
-            throw new Exception('Stock não encontrado.');
+        if ($stmt->fetch()) {
+            $baseCode = 'STK' . str_pad($stock_id, 2, '0', STR_PAD_LEFT) . '-' . $typePrefix;
+        } else {
+            $baseCode = $company_id . '-' . $typePrefix;
         }
-
-        $stockPrefix = 'STK' . str_pad($stock_id, 2, '0', STR_PAD_LEFT);
-
-        $prefixLike = $stockPrefix . '-' . $typePrefix . '-%';
     } else {
-        // serviços NÃO usam stock
-        $stockPrefix = 'GEN';
-
-        $prefixLike = $company_id . '-' . $typePrefix . '-%';
+        $baseCode = $company_id . '-' . $typePrefix;
     }
 
-    /*
-    =========================================
-    BUSCAR ÚLTIMO CÓDIGO
-    =========================================
-    */
+    $prefixLike = $baseCode . '-%';
+
+    // =========================================
+    // BUSCAR ÚLTIMO CÓDIGO (SEGURO)
+    // =========================================
     $stmt = $pdo->prepare("
         SELECT code
         FROM items
         WHERE company_id = :company_id
-        AND item_type = :item_type
         AND code LIKE :prefix
         ORDER BY id DESC
         LIMIT 1
@@ -83,49 +73,44 @@ try {
 
     $stmt->execute([
         ':company_id' => $company_id,
-        ':item_type'  => $item_type,
-        ':prefix'     => $prefixLike
+        ':prefix' => $prefixLike
     ]);
 
     $last = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    /*
-    =========================================
-    SEQUENCIAL
-    =========================================
-    */
+    // =========================================
+    // SEQUÊNCIA SEGURA
+    // =========================================
     $nextNumber = 1;
 
     if (!empty($last['code'])) {
         $parts = explode('-', $last['code']);
-        $nextNumber = ((int) end($parts)) + 1;
+        $lastNumber = (int) end($parts);
+
+        $nextNumber = $lastNumber + 1;
     }
 
     $sequence = str_pad($nextNumber, 6, '0', STR_PAD_LEFT);
 
-    /*
-    =========================================
-    FINAL CODE
-    =========================================
-    */
-    if ($item_type === 'product') {
-        $generated_code = $stockPrefix . '-' . $typePrefix . '-' . $sequence;
-    } else {
-        $generated_code = $company_id . '-' . $typePrefix . '-' . $sequence;
-    }
+    // =========================================
+    // CÓDIGO FINAL
+    // =========================================
+    $generated_code = $baseCode . '-' . $sequence;
 
     echo json_encode([
         'success' => true,
         'generated_code' => $generated_code,
-        'type_prefix' => $typePrefix,
+        'type_used' => $typePrefix,
         'sequence' => $sequence
     ]);
 } catch (Exception $e) {
 
-    http_response_code(400);
+    // NUNCA bloquear frontend
+    http_response_code(200);
 
     echo json_encode([
         'success' => false,
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
+        'generated_code' => $company_id . '-ITM-000001'
     ]);
 }
