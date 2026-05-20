@@ -5,9 +5,10 @@ session_start();
 $company_id = $_SESSION['user']['company_id'];
 $term = $_GET['term'] ?? '';
 
-$sql = "SELECT id, name, salary, position FROM employees 
-        WHERE company_id = ? AND status = 'ativo' AND name LIKE ? 
-        ORDER BY name ASC LIMIT 20";
+$sql = "SELECT e.id, e.name, e.salary, e.position, p.name as position_name, p.suggested_salary, p.food_allowance, p.transport_allowance, p.vacation_subsidy_pct, p.thirteenth_subsidy_pct FROM employees as e
+        JOIN positions as p ON p.name = e.position
+        WHERE e.company_id = ? AND e.status = 'ativo' AND e.name LIKE ? 
+        ORDER BY e.name ASC LIMIT 20";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute([$company_id, "%$term%"]);
@@ -18,7 +19,12 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         'id' => $row['id'],
         'text' => $row['name'],
         'salary' => $row['salary'],
-        'position' => $row['position']
+        'position' => $row['position'],
+        'sub_suge' => $row['suggested_salary'],
+        'sub_alim' => $row['food_allowance'],
+        'sub_trans' => $row['transport_allowance'],
+        'sub_ferias' => $row['vacation_subsidy_pct'],
+        'sub_decimo' => $row['thirteenth_subsidy_pct']
     ];
 }
 

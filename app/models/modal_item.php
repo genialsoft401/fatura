@@ -253,7 +253,7 @@
                             <!-- IVA -->
                             <div class="col-md-4">
                                 <label class="form-label"><?= t('IVA') ?></label>
-                                <input class="form-control" type="number" name="tax_vat" id="tax" readonly>
+                                <input class="form-control" name="tax_vat" id="tax" readonly>
                             </div>
 
                             <!-- RETENÇÃO -->

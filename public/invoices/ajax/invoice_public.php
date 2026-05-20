@@ -307,10 +307,10 @@ if ($paid_total >= $inv['final_total']) {  // quitada
         <div class="meta-mini mt-2">
 
           <div class="vals">
-            <span class="small">Cliente:</span><span class="small opacity-75 fw-semibold" style="margin-left: -50px !important; color: black;"><?= htmlspecialchars($inv['client_name']) ?></span>
+            <span class="small">Cliente:</span><span class="small opacity-75 fw-semibold text-uppercase" style="margin-left: -50px !important; color: black;"><?= htmlspecialchars($inv['client_name']) ?></span>
           </div>
           <div class="vals">
-            <span class="mb-0 small">Contribuinte:</span><span class="small" style="margin-left: -50px !important;"><?= htmlspecialchars($inv['registration_number']) ?></span>
+            <span class="mb-0 small">Contribuinte:</span><span class="small" style="margin-left: -50px !important;"><?= htmlspecialchars($inv['client_contributor']) ?></span>
           </div>
 
           <div class="vals">
@@ -322,13 +322,13 @@ if ($paid_total >= $inv['final_total']) {  // quitada
         <!-- ===== COLUNA DIREITA – OBSERVAÇÕES ===== -->
         <div class="meta-mini mt-2">
           <div class="vals">
-            <span class="small" style="margin-left: 55px">Data de emissão:</span><span class="small" style="margin-left: 50px !important;"><?= $issueBr ?></span>
+            <span class="small" style="margin-left: 55px">Data de emissão:</span><span class="small" style="margin-left: 30px !important;"><?= $issueBr ?></span>
           </div>
           <div class="vals">
-            <span class="small" style="margin-left: 55px">Vencimento:</span><span class="small" style="margin-left: 50px !important;"><?= $dueBr ?></span>
+            <span class="small" style="margin-left: 55px">Vencimento:</span><span class="small" style="margin-left: 30px !important;"><?= $dueBr ?></span>
           </div>
           <div class="vals">
-            <span class="small" style="margin-left: 55px">Observações:</span><span class="small" style="text-wrap: wrap; margin-left: 87px !important; width: 200px !important; overflow: hidden !important;" class="lh-1"><?= $inv['observation'] ? htmlspecialchars($inv['observation']) : '-' ?></span>
+            <span class="small" style="margin-left: 55px">Observações:</span><span class="small" style="text-wrap: wrap; margin-left: 67px !important; width: 200px !important; overflow: hidden !important;" class="lh-1"><?= $inv['observation'] ? htmlspecialchars($inv['observation']) : '-' ?></span>
           </div>
         </div>
 
@@ -341,13 +341,13 @@ if ($paid_total >= $inv['final_total']) {  // quitada
 
       <!-- cabeçalho -->
       <div class="items-row items-head">
-        <span style="margin-left: -10px; opacity: .6;" class="fw-bold tag-title small">Código</span>
-        <span style="margin-left: -65px !important; font-weight: bold; opacity: .6;" class="fw-bold mt-0 tag-title small">Descrição</span>
-        <span class="fw-bold tag-title small" style="margin-left: 72px; width: 100px; opacity: .6;">Preço&nbsp;Uni.</span>
-        <span class="fw-bold tag-title small" style="margin-left: 72px; opacity: .6;">Qtd.</span>
-        <span class="fw-bold tag-title small" style="margin-left: 56px; opacity: .6;">Taxa/IVA&nbsp;</span>
-        <span class="fw-bold tag-title small" style="margin-left: 35px; opacity: .6;">Desc.&nbsp;</span>
-        <span style="float: right !important; text-align: right !important; opacity: .6;" class="fw-bold tag-title small">Total</span>
+        <span class="fw-bold tag-title" style="margin-left: -10px; opacity: .6;">Código</span>
+        <span class="fw-bold mt-0 tag-title" style="margin-left: -65px !important; font-weight: bold; opacity: .6; font-size: 10px !important;">Descrição</span>
+        <span class="fw-bold tag-title" style="margin-left: 58px; width: 100px; opacity: .6;">Preço&nbsp;Uni.</span>
+        <span class="fw-bold tag-title" style="margin-left: 72px; opacity: .6;">Qtd.</span>
+        <span class="fw-bold tag-title" style="margin-left: 56px; opacity: .6;">Taxa/IVA&nbsp;</span>
+        <span class="fw-bold tag-title" style="margin-left: 35px; opacity: .6;">Desc.&nbsp;</span>
+        <span style="float: right !important; text-align: right !important; opacity: .6;" class="fw-bold tag-title">Total</span>
       </div>
 
       <!-- linhas dinâmicas -->
@@ -357,15 +357,15 @@ if ($paid_total >= $inv['final_total']) {  // quitada
         $tax = ($base - $discount) * ($it['tax'] / 100);
         $total = $base - $discount + $tax; ?>
         <div class="items-row mb-3">
-          <span class="fw-light small lh-1 mt-1" style="width: 90px !important;"><?= htmlspecialchars($it['code']) ?></span>
-          <span class="fw-light small lh-1 mt-1" style="width: 250px !important; margin-left: 50px !important; text-wrap: wrap !important;"><?= htmlspecialchars($it['name'] ? $it['name'] : $it['description']) ?></span>
-          <span class="fw-light small lh-1 mt-1" style="margin-left: 26px;">
+          <span class="fw-light lh-1 mt-1" style="width: 90px !important; font-size: 10px !important;"><?= htmlspecialchars($it['code']) ?></span>
+          <span class="fw-light lh-1 mt-1" style="width: 250px !important; margin-left: 50px !important; text-wrap: wrap !important; font-size: 10.5px !important;"><?= htmlspecialchars($it['name'] ? $it['name'] : $it['description']) ?></span>
+          <span class="fw-light lh-1 mt-1" style="margin-left: 10px; font-size: 10px !important;">
             <?= formatCurrency($it['unit_price'], $inv['moneySymbol'], $inv['moneyPos']) ?>
           </span>
-          <span class="center fw-light lh-sm small" style="margin-left: -38px;"><?= $it['quantity'] ?></span>
-          <span class="center fw-light lh-sm small" style="margin-left: -70px;"><?= $it['tax'] ?>%</span>
-          <span class="center fw-light lh-sm small" style="margin-left: -120px;"><?= $it['discount'] ?>%</span>
-          <span class="right fw-light lh-sm small" style="margin-left: -66px; width: 100px;">
+          <span class="center fw-light lh-sm" style="margin-left: -38px; font-size: 10px !important;"><?= $it['quantity'] ?></span>
+          <span class="center fw-light lh-sm" style="margin-left: -70px; font-size: 10px !important;"><?= $it['tax'] ?>%</span>
+          <span class="center fw-light lh-sm" style="margin-left: -120px; font-size: 10px !important;"><?= $it['discount'] ?>%</span>
+          <span class="right fw-light lh-sm" style="margin-left: -66px; width: 100px; font-size: 10px !important;">
             <?= formatCurrency($total, $inv['moneySymbol'], $inv['moneyPos']) ?>
           </span>
         </div>
@@ -383,13 +383,13 @@ if ($paid_total >= $inv['final_total']) {  // quitada
 
         <div class="lh-1">
 
-          <div class="sum-row mt-1">
+          <div class="sum-row mt-2">
             <span class="small">Regime de IVA:</span>
             <span class="small" style="margin-left: -90px; width: 250px !important;"><?= match ($inv["vat_regime"]) {
-                                                                                        "geral" => "Regime Geral",
-                                                                                        "simplificado" => "Regime Simplificado",
-                                                                                        default => ""
-                                                                                      } ?>
+                "geral" => "Regime Geral",
+                "simplificado" => "Regime Simplificado",
+                default => ""
+              } ?>
             </span>
           </div>
 
@@ -398,9 +398,22 @@ if ($paid_total >= $inv['final_total']) {  // quitada
             <span class="small" style="margin-left: -90px; width: 250px !important;">Os bens e serviços foram colocados à disposição do adquirente na data do documento.</span>
           </div>
 
-          <div class="sum-row mt-1">
+          <div class="sum-row mt-2">
             <span class="small">Dados bancários:</span>
-            <span class="small" style="margin-left: -90px; width: 250px !important;"><?= $inv["iban"] ?>
+            <span
+              class="small"
+              style="margin-left: -90px; width: 250px !important;"
+              id="ibanNumber">
+              <?php
+              $iban = preg_replace('/[.\s]/', '', $inv["iban"]);
+
+              $prefix = substr($iban, 0, 4);
+              $rest = substr($iban, 4);
+
+              $formatted = trim(chunk_split($rest, 4, ' '));
+
+              echo $prefix . ' ' . $formatted;
+              ?>
             </span>
           </div>
 
@@ -440,7 +453,7 @@ if ($paid_total >= $inv['final_total']) {  // quitada
 
           <div class="sum-row mt-1">
             <span class="small">Total ílíquido:</span>
-            <span class="right small"> <?= formatCurrency($inv['total_sum'] - $inv['total_discount'], $inv['moneySymbol'], $inv['moneyPos']) ?>
+            <span class="right small"> <?= formatCurrency($inv['total_sum'], $inv['moneySymbol'], $inv['moneyPos']) ?>
             </span>
           </div>
 
@@ -533,7 +546,7 @@ if ($paid_total >= $inv['final_total']) {  // quitada
       </div>
 
       <div class="inv-footer" style="font-size: 8pt; margin-top: -4px; border: 0px solid none !important;">
-        <span id="address" class="opacity-50">Processado por programa validado n.º XXXXXXXXXX | BXpert</span>
+        <span id="address" class="opacity-50">Powered By BXpert</span>
       </div>
       <br><br>
     </footer>
@@ -548,5 +561,34 @@ if ($paid_total >= $inv['final_total']) {  // quitada
 
   </main>
 </body>
+
+<script>
+  // =========================
+  // MÁSCARA CARTÃO DE CRÉDITO
+  // =========================
+
+  // =========================
+  // FORMATAÇÃO IBAN ANGOLA
+  // AO06.0006.0000.1234.5678.9012.1
+  // =========================
+
+  const ibanElement = document.getElementById("ibanNumber");
+
+  let value = ibanElement.textContent.trim();
+
+
+  // remove espaços e pontos
+  value = value.replace(/[.\s]/g, "");
+
+  // separa prefixo AO06
+  const prefix = value.substring(0, 4);
+  const rest = value.substring(4);
+
+  // agrupa em blocos de 4
+  const formatted = rest.match(/.{1,4}/g)?.join(".") || "";
+
+  // resultado final
+  ibanElement.textContent = `${prefix}.${formatted}`;
+</script>
 
 </html>

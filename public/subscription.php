@@ -298,10 +298,23 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
               </div>
 
               <?php
-              $invoicePct = $limInv === '∞' ? 0 : min(100, ($usage['invoice_count'] / $limInv) * 100);
-              $userPct    = $limUsers === '∞' ? 0 : min(100, ($usage['user_count'] / $limUsers) * 100);
-              $rhPct      = $limRh === '∞' ? 0 : min(100, ($usage['employee_count'] / $limRh) * 100);
-              $stockPct   = $limStock === '∞' ? 0 : min(100, ($usage['stock_item_count'] / $limStock) * 100);
+
+              $invoicePct = ($limInv === '∞' || empty($limInv))
+                ? 0
+                : min(100, (($usage['invoice_count'] ?? 0) / $limInv) * 100);
+
+              $userPct = ($limUsers === '∞' || empty($limUsers))
+                ? 0
+                : min(100, (($usage['user_count'] ?? 0) / $limUsers) * 100);
+
+              $rhPct = ($limRh === '∞' || empty($limRh))
+                ? 0
+                : min(100, (($usage['employee_count'] ?? 0) / $limRh) * 100);
+
+              $stockPct = ($limStock === '∞' || empty($limStock))
+                ? 0
+                : min(100, (($usage['stock_item_count'] ?? 0) / $limStock) * 100);
+
               ?>
 
               <div class="d-flex col-md-12 justify-content-between">

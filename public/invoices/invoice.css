@@ -299,7 +299,9 @@
   .inv-right {
     float: right;
     width: 38%;
+    margin-top: -6000px !important;
   }
+
   .inv-header:after {
     content: "";
     display: block;

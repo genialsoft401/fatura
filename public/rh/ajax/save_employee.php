@@ -1,99 +1,356 @@
 <?php
+
 require_once '../../../app/config/db.php';
+
 session_start();
 
-$company_id = $_SESSION['user']['company_id'];
-$name = $_POST['name'] ?? '';
-$bi = $_POST['bi'] ?? '';
-$position = $_POST['position'] ?? '';
-$salary = $_POST['salary'] ?? 0;
-$status = $_POST['status'] ?? 'ativo';
-$id = $_POST['id'] ?? null;
-$document_type = $_POST['document_type'] ?? null;
-$birth_date = $_POST['birth_date'] ?? null;
-$marital_status = $_POST['marital_status'] ?? null;
-$academic_level = $_POST['academic_level'] ?? null;
-$contract_type = $_POST['contract_type'] ?? null;
-$admission_date = $_POST['admission_date'] ?? null;
-$iban = $_POST['iban'] ?? null;
+/*
+|--------------------------------------------------------------------------
+| SESSION
+|--------------------------------------------------------------------------
+*/
 
-// Uploads
+$company_id = $_SESSION['user']['company_id'] ?? null;
+
+if (!$company_id) {
+    http_response_code(401);
+    exit('Sessão inválida.');
+}
+
+/*
+|--------------------------------------------------------------------------
+| INPUTS
+|--------------------------------------------------------------------------
+*/
+
+$id = $_POST['id'] ?? $_POST['editid'] ?? null;
+$id = !empty($id) ? (int)$id : null;
+
+$name            = trim($_POST['employee_name'] ?? '');
+$bi              = trim($_POST['bi'] ?? '');
+$position        = trim($_POST['position'] ?? '');
+$salary          = (float)($_POST['salary'] ?? 0);
+$status          = trim($_POST['status'] ?? 'ativo');
+
+$document_type   = trim($_POST['document_type'] ?? '');
+$birth_date      = $_POST['birth_date'] ?? null;
+$marital_status  = trim($_POST['marital_status'] ?? '');
+$academic_level  = trim($_POST['academic_level'] ?? '');
+$contract_type   = trim($_POST['contract_type'] ?? '');
+$admission_date  = $_POST['admission_date'] ?? null;
+$iban            = trim($_POST['iban'] ?? '');
+
+/*
+|--------------------------------------------------------------------------
+| VALIDATIONS
+|--------------------------------------------------------------------------
+*/
+
+if (empty($name)) {
+    http_response_code(400);
+    exit('Nome obrigatório.');
+}
+
+if (empty($position)) {
+    http_response_code(400);
+    exit('Cargo obrigatório.');
+}
+
+/*
+|--------------------------------------------------------------------------
+| UPLOAD PATHS
+|--------------------------------------------------------------------------
+*/
+
 $uploadImgDir = __DIR__ . '/../../assets/img/employees/';
 $uploadDocDir = __DIR__ . '/../../assets/docs/employees/';
-if (!is_dir($uploadImgDir)) @mkdir($uploadImgDir, 0775, true);
-if (!is_dir($uploadDocDir)) @mkdir($uploadDocDir, 0775, true);
 
-function saveUpload($fileKey, $destDir, $allowedExts) {
-    if (!isset($_FILES[$fileKey]) || $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK) return null;
+if (!is_dir($uploadImgDir)) {
+    mkdir($uploadImgDir, 0775, true);
+}
 
-    $tmp = $_FILES[$fileKey]['tmp_name'];
-    $orig = (string)($_FILES[$fileKey]['name'] ?? 'file');
+if (!is_dir($uploadDocDir)) {
+    mkdir($uploadDocDir, 0775, true);
+}
+
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
+
+function saveUpload($fileKey, $destDir, array $allowedExts)
+{
+    if (
+        !isset($_FILES[$fileKey]) ||
+        $_FILES[$fileKey]['error'] !== UPLOAD_ERR_OK
+    ) {
+        return null;
+    }
+
+    $tmp  = $_FILES[$fileKey]['tmp_name'];
+    $orig = $_FILES[$fileKey]['name'];
+
     $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+
     if (!in_array($ext, $allowedExts, true)) {
-        throw new Exception("Formato inválido para $fileKey");
+        throw new Exception("Formato inválido para {$fileKey}");
     }
 
     $fileName = uniqid($fileKey . '_', true) . '.' . $ext;
+
     $dest = rtrim($destDir, '/') . '/' . $fileName;
+
     if (!move_uploaded_file($tmp, $dest)) {
-        throw new Exception("Falha ao salvar upload: $fileKey");
+        throw new Exception("Erro ao salvar {$fileKey}");
     }
+
     return $fileName;
 }
 
+function removeFileIfExists($dir, $file)
+{
+    if (!$file) return;
+
+    $path = rtrim($dir, '/') . '/' . basename($file);
+
+    if (is_file($path)) {
+        @unlink($path);
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| TRANSACTION
+|--------------------------------------------------------------------------
+*/
+
 try {
-    $photo = saveUpload('photo', $uploadImgDir, ['png','jpg','jpeg','webp','gif']);
-    $doc1 = saveUpload('doc1', $uploadDocDir, ['pdf','png','jpg','jpeg','webp','gif']);
-    $doc2 = saveUpload('doc2', $uploadDocDir, ['pdf','png','jpg','jpeg','webp','gif']);
+
+    $pdo->beginTransaction();
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPLOADS
+    |--------------------------------------------------------------------------
+    */
+
+    $newPhoto = saveUpload(
+        'photo',
+        $uploadImgDir,
+        ['png', 'jpg', 'jpeg', 'webp', 'gif']
+    );
+
+    $newDoc1 = saveUpload(
+        'doc1',
+        $uploadDocDir,
+        ['pdf', 'png', 'jpg', 'jpeg', 'webp']
+    );
+
+    $newDoc2 = saveUpload(
+        'doc2',
+        $uploadDocDir,
+        ['pdf', 'png', 'jpg', 'jpeg', 'webp']
+    );
+
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE
+    |--------------------------------------------------------------------------
+    */
 
     if ($id) {
-        // mantém arquivos antigos se não vier novo upload
-        $stmtOld = $pdo->prepare("SELECT photo_url, doc1_url, doc2_url FROM employees WHERE id = ? AND company_id = ?");
+
+        $stmtOld = $pdo->prepare("
+            SELECT 
+                photo_url,
+                doc1_url,
+                doc2_url
+            FROM employees
+            WHERE id = ?
+            AND company_id = ?
+        ");
+
         $stmtOld->execute([$id, $company_id]);
-        $old = $stmtOld->fetch(PDO::FETCH_ASSOC) ?: [];
 
-        $photoUrl = $photo ?: ($old['photo_url'] ?? null);
-        $doc1Url  = $doc1  ?: ($old['doc1_url'] ?? null);
-        $doc2Url  = $doc2  ?: ($old['doc2_url'] ?? null);
+        $old = $stmtOld->fetch(PDO::FETCH_ASSOC);
 
-        // Se substituiu por novo arquivo, remove o antigo do disco
-        if ($photo && !empty($old['photo_url'])) {
-            $p = $uploadImgDir . basename($old['photo_url']);
-            if (is_file($p)) @unlink($p);
-        }
-        if ($doc1 && !empty($old['doc1_url'])) {
-            $p = $uploadDocDir . basename($old['doc1_url']);
-            if (is_file($p)) @unlink($p);
-        }
-        if ($doc2 && !empty($old['doc2_url'])) {
-            $p = $uploadDocDir . basename($old['doc2_url']);
-            if (is_file($p)) @unlink($p);
+        if (!$old) {
+            throw new Exception('Funcionário não encontrado.');
         }
 
-        $stmt = $pdo->prepare("UPDATE employees SET 
-            name = ?, bi = ?, position = ?, salary = ?, status = ?, document_type = ?, birth_date = ?, marital_status = ?, academic_level = ?, contract_type = ?, admission_date = ?, iban = ?, photo_url = ?, doc1_url = ?, doc2_url = ?
-            WHERE id = ? AND company_id = ?");
+        $photoUrl = $newPhoto ?: $old['photo_url'];
+        $doc1Url  = $newDoc1 ?: $old['doc1_url'];
+        $doc2Url  = $newDoc2 ?: $old['doc2_url'];
+
+        /*
+        |--------------------------------------------------------------------------
+        | REMOVE OLD FILES
+        |--------------------------------------------------------------------------
+        */
+
+        if ($newPhoto && $old['photo_url']) {
+            removeFileIfExists($uploadImgDir, $old['photo_url']);
+        }
+
+        if ($newDoc1 && $old['doc1_url']) {
+            removeFileIfExists($uploadDocDir, $old['doc1_url']);
+        }
+
+        if ($newDoc2 && $old['doc2_url']) {
+            removeFileIfExists($uploadDocDir, $old['doc2_url']);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | UPDATE QUERY
+        |--------------------------------------------------------------------------
+        */
+
+        $stmt = $pdo->prepare("
+            UPDATE employees SET
+
+                name = :name,
+                bi = :bi,
+                position = :position,
+                salary = :salary,
+                status = :status,
+
+                document_type = :document_type,
+                birth_date = :birth_date,
+                marital_status = :marital_status,
+                academic_level = :academic_level,
+                contract_type = :contract_type,
+                admission_date = :admission_date,
+                iban = :iban,
+
+                photo_url = :photo_url,
+                doc1_url = :doc1_url,
+                doc2_url = :doc2_url
+
+            WHERE id = :id
+            AND company_id = :company_id
+        ");
+
         $stmt->execute([
-            $name, $bi, $position, $salary, $status, $document_type, $birth_date,
-            $marital_status, $academic_level,
-            $contract_type, $admission_date, $iban,
-            $photoUrl, $doc1Url, $doc2Url,
-            $id, $company_id
-        ]);
-    } else {
-        $stmt = $pdo->prepare("INSERT INTO employees (
-            company_id, name, bi, position, salary, status, document_type, birth_date, marital_status, academic_level, contract_type, admission_date, iban, photo_url, doc1_url, doc2_url
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->execute([
-            $company_id, $name, $bi, $position, $salary, $status, $document_type, $birth_date,
-            $marital_status, $academic_level,
-            $contract_type, $admission_date, $iban,
-            $photo, $doc1, $doc2
+
+            ':name'            => $name,
+            ':bi'              => $bi,
+            ':position'        => $position,
+            ':salary'          => $salary,
+            ':status'          => $status,
+
+            ':document_type'   => $document_type,
+            ':birth_date'      => $birth_date,
+            ':marital_status'  => $marital_status,
+            ':academic_level'  => $academic_level,
+            ':contract_type'   => $contract_type,
+            ':admission_date'  => $admission_date,
+            ':iban'            => $iban,
+
+            ':photo_url'       => $photoUrl,
+            ':doc1_url'        => $doc1Url,
+            ':doc2_url'        => $doc2Url,
+
+            ':id'              => $id,
+            ':company_id'      => $company_id
+
         ]);
     }
 
-    echo 'ok';
+    /*
+    |--------------------------------------------------------------------------
+    | INSERT
+    |--------------------------------------------------------------------------
+    */ else {
+
+        $stmt = $pdo->prepare("
+            INSERT INTO employees (
+
+                company_id,
+                name,
+                bi,
+                position,
+                salary,
+                status,
+
+                document_type,
+                birth_date,
+                marital_status,
+                academic_level,
+                contract_type,
+                admission_date,
+                iban,
+
+                photo_url,
+                doc1_url,
+                doc2_url
+
+            ) VALUES (
+
+                :company_id,
+                :name,
+                :bi,
+                :position,
+                :salary,
+                :status,
+
+                :document_type,
+                :birth_date,
+                :marital_status,
+                :academic_level,
+                :contract_type,
+                :admission_date,
+                :iban,
+
+                :photo_url,
+                :doc1_url,
+                :doc2_url
+
+            )
+        ");
+
+        $stmt->execute([
+
+            ':company_id'      => $company_id,
+            ':name'            => $name,
+            ':bi'              => $bi,
+            ':position'        => $position,
+            ':salary'          => $salary,
+            ':status'          => $status,
+
+            ':document_type'   => $document_type,
+            ':birth_date'      => $birth_date,
+            ':marital_status'  => $marital_status,
+            ':academic_level'  => $academic_level,
+            ':contract_type'   => $contract_type,
+            ':admission_date'  => $admission_date,
+            ':iban'            => $iban,
+
+            ':photo_url'       => $newPhoto,
+            ':doc1_url'        => $newDoc1,
+            ':doc2_url'        => $newDoc2
+
+        ]);
+
+        $id = $pdo->lastInsertId();
+    }
+
+    $pdo->commit();
+
+    echo json_encode([
+        'success' => true,
+        'id'      => $id,
+        'message' => $id ? 'Funcionário salvo com sucesso.' : 'Erro.'
+    ]);
 } catch (Exception $e) {
+
+    $pdo->rollBack();
+
     http_response_code(400);
-    echo $e->getMessage();
+
+    echo json_encode([
+        'success' => false,
+        'message' => $e->getMessage()
+    ]);
 }

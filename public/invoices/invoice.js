@@ -298,8 +298,8 @@ $(function () {
             pdf.setFont("helvetica", "normal");
             pdf.setFontSize(8);
 
-            const footerText =
-              "Processado por programa validado n.º XXXXXXXXXX | BXpert";
+              const footerText =
+                "Powered By BXpert";
 
             for (let i = 1; i <= pageCount; i++) {
               pdf.setPage(i);

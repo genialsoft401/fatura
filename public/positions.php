@@ -201,7 +201,7 @@ require_once '../app/views/layout_creation.php';
         const table = $('#positionsTable').DataTable({
             ajax: 'rh/ajax/list_positions.php',
             language: {
-                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json'
+                url: 'https://cdn.datatables.net/plug-ins/1.13.6/i18n/pt-PT.json'
             },
             columns: [{
                     data: 'name'

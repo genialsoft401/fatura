@@ -105,13 +105,39 @@ require_once '../app/views/layout_creation.php';
         display: block;
         color: #6b7280;
     }
+
+    .modal-content {
+        backdrop-filter: blur(10px);
+    }
+
+    .form-floating>.form-control,
+    .form-floating>.form-select {
+        border-radius: 12px;
+        background: #fff;
+        transition: all 0.2s ease;
+    }
+
+    .form-floating>.form-control:focus,
+    .form-floating>.form-select:focus {
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, .15);
+        border-color: #0d6efd;
+        transform: translateY(-1px);
+    }
+
+    .shadow-sm {
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .modal-header.bg-gradient-primary {
+        background: linear-gradient(135deg, #0d6efd, #6610f2);
+    }
 </style>
 
 <main class="main-content">
     <div class="container-fluid mt-5">
         <div class="mb-3 d-flex align-items-center">
             <input type="month" id="inputMesReferencia" class="form-control w-auto me-2" />
-            <button class="btn btn-danger" id="btnExportarPDF">
+            <button class="btn btn-sm d-flex gap-1 btn-outline-danger rounded-pill" id="btnExportarPDF">
                 <i class="material-icons-round">picture_as_pdf</i> Exportar PDF Geral
             </button>
         </div>
@@ -120,13 +146,15 @@ require_once '../app/views/layout_creation.php';
                 <div class="">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Folha de Pagamento</h5>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalPayroll">
-                            <i class="material-icons-round">attach_money</i>
-                            Registrar Pagamento
-                        </button>
-                        <a href="rh/export/folha_export.php" class="btn btn-success">
-                            <i class="material-icons-round">download</i> Exportar Folha
-                        </a>
+                        <div class="d-flex gap-2 mb-3">
+                            <button class="btn btn-sm rounded-pill d-flex gap-1 align-items-center btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalPayroll">
+                                <i class="material-icons-round">attach_money</i>
+                                Registrar Pagamento
+                            </button>
+                            <a href="rh/export/folha_export.php" class="btn btn-sm rounded-pill d-flex gap-1 align-items-center btn-outline-success">
+                                <i class="material-icons-round">download</i> Exportar Folha
+                            </a>
+                        </div>
                     </div>
 
                     <div class="card-body">
@@ -141,6 +169,7 @@ require_once '../app/views/layout_creation.php';
                                         <th>Adicionais</th>
                                         <th>Descontos</th>
                                         <th>Salário Líquido</th>
+                                        <th>IBAN</th>
                                         <th>Status</th>
                                         <th>Ações</th>
                                     </tr>
@@ -157,88 +186,162 @@ require_once '../app/views/layout_creation.php';
 
 <!-- Modal Registro de Pagamento -->
 <div class="modal fade" id="modalPayroll" tabindex="-1" aria-labelledby="modalPayrollLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
             <form id="formPayroll">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalPayrollLabel">Registrar Pagamento</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                <!-- HEADER -->
+                <div class="modal-header bg-gradient-primary text-white py-3">
+                    <div>
+                        <h5 class="modal-title fw-bold mb-0" id="modalPayrollLabel">
+                            <i class="bi bi-cash-stack"></i> Registrar Pagamento
+                        </h5>
+                        <small class="opacity-75">Preencha os dados do processamento salarial</small>
+                    </div>
+
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-12 mb-3">
-                            <label>Funcionário</label>
-                            <select name="employee_id" id="employee_id_payroll" class="form-control"></select>
+
+                <!-- BODY -->
+                <div class="modal-body p-4 bg-light">
+
+                    <div class="row g-3">
+
+                        <!-- Employee -->
+                        <div class="col-md-12">
+                            <div class="form-floating shadow-sm col-12">
+                                <select name="employee_id" id="employee_id_payroll" class="form-select border-0 col-12"></select>
+                                <label><i class="bi bi-person"></i> Funcionário</label>
+                            </div>
                         </div>
+
+                        <!-- Month -->
                         <div class="col-md-4">
-                            <label>Referente a (MM/AAAA)</label>
-                            <input type="month" name="reference_month" class="form-control" required>
+                            <div class="form-floating shadow-sm">
+                                <input type="month" name="reference_month" class="form-control border-0" required>
+                                <label><i class="bi bi-calendar2"></i> Referente a</label>
+                            </div>
                         </div>
+
+                        <!-- Base Salary -->
                         <div class="col-md-4">
-                            <label>Salário Base</label>
-                            <input type="number" name="base_salary" step="0.01" class="form-control" required>
+                            <div class="form-floating shadow-sm">
+                                <input type="number" name="base_salary" step="0.01" class="form-control border-0" required>
+                                <label><i class="bi bi-cash"></i> Salário Base</label>
+                            </div>
                         </div>
+
+                        <!-- Bonuses -->
                         <div class="col-md-4">
-                            <label>Bônus</label>
-                            <input type="number" name="bonuses" step="0.01" class="form-control" value="0">
+                            <div class="form-floating shadow-sm">
+                                <input type="number" name="bonuses" step="0.01" class="form-control border-0" value="0">
+                                <label> Bônus</label>
+                            </div>
                         </div>
+
+                        <!-- Allowances -->
                         <div class="col-md-4">
-                            <label>Subs. alimentação</label>
-                            <input type="number" name="food_allowance" step="0.01" class="form-control" value="0">
+                            <div class="form-floating shadow-sm">
+                                <input type="number" name="food_allowance" step="0.01" class="form-control border-0" value="0">
+                                <label> Subs. alimentação</label>
+                            </div>
                         </div>
+
                         <div class="col-md-4">
-                            <label>Subs. transporte</label>
-                            <input type="number" name="transport_allowance" step="0.01" class="form-control" value="0">
+                            <div class="form-floating shadow-sm">
+                                <input type="number" name="transport_allowance" step="0.01" class="form-control border-0" value="0">
+                                <label><i class="bi bi-car"></i> Subs. transporte</label>
+                            </div>
                         </div>
+
+                        <!-- Percent Selects -->
                         <div class="col-md-4">
-                            <label>Subsídio de férias</label>
-                            <select name="vacation_subsidy_pct" class="form-control">
-                                <option value="0">0%</option>
-                                <option value="50">50%</option>
-                                <option value="100">100%</option>
-                            </select>
+                            <div class="form-floating shadow-sm">
+                                <select name="vacation_subsidy_pct" class="form-select border-0">
+                                    <option value="0">0%</option>
+                                    <option value="50">50%</option>
+                                    <option value="100">100%</option>
+                                </select>
+                                <label> Férias</label>
+                            </div>
                         </div>
+
                         <div class="col-md-4">
-                            <label>Subsídio de 13º</label>
-                            <select name="thirteenth_subsidy_pct" class="form-control">
-                                <option value="0">0%</option>
-                                <option value="50">50%</option>
-                                <option value="100">100%</option>
-                            </select>
+                            <div class="form-floating shadow-sm">
+                                <select name="thirteenth_subsidy_pct" class="form-select border-0">
+                                    <option value="0">0%</option>
+                                    <option value="50">50%</option>
+                                    <option value="100">100%</option>
+                                </select>
+                                <label> 13º Subsídio</label>
+                            </div>
                         </div>
+
+                        <!-- Sales / Commission -->
                         <div class="col-md-4">
-                            <label>Comissões/Vendas (bônus)</label>
-                            <input type="number" name="commissions" step="0.01" class="form-control" value="0">
+                            <div class="form-floating shadow-sm">
+                                <input type="number" name="commissions" step="0.01" class="form-control border-0" value="0">
+                                <label> Comissões</label>
+                            </div>
                         </div>
+
                         <div class="col-md-4">
-                            <label>Vendas (referência)</label>
-                            <input type="number" name="sales" step="0.01" class="form-control" value="0">
+                            <div class="form-floating shadow-sm">
+                                <input type="number" name="sales" step="0.01" class="form-control border-0" value="0">
+                                <label> Vendas</label>
+                            </div>
                         </div>
+
+                        <!-- Discounts -->
                         <div class="col-md-4">
-                            <label>Descontos</label>
-                            <input type="number" name="discounts" step="0.01" class="form-control" value="0">
+                            <div class="form-floating shadow-sm">
+                                <input type="number" name="discounts" step="0.01" class="form-control border-0" value="0">
+                                <label><i class="bi bi-percent"></i> Descontos</label>
+                            </div>
                         </div>
+
+                        <!-- Date -->
                         <div class="col-md-4">
-                            <label>Data de Pagamento (opcional)</label>
-                            <input type="date" name="payment_date" class="form-control">
+                            <div class="form-floating shadow-sm">
+                                <input type="date" name="payment_date" class="form-control border-0">
+                                <label><i class="bi bi-calendar2"></i> Data Pagamento</label>
+                            </div>
                         </div>
+
+                        <!-- Status -->
                         <div class="col-md-4">
-                            <label>Status</label>
-                            <select name="status" class="form-control">
-                                <option value="Pendente">Pendente</option>
-                                <option value="Pago">Pago</option>
-                            </select>
+                            <div class="form-floating shadow-sm">
+                                <select name="status" class="form-select border-0">
+                                    <option value="Pendente">🟡 Pendente</option>
+                                    <option value="Pago">🟢 Pago</option>
+                                </select>
+                                <label>Status</label>
+                            </div>
                         </div>
+
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Salvar</button>
+
+                <!-- FOOTER -->
+                <div class="modal-footer bg-white border-0 px-4 py-3">
+
+                    <button type="button" class="btn btn-light px-4 rounded-pill" data-bs-dismiss="modal">
+                        Cancelar
+                    </button>
+
+                    <button type="submit" class="btn btn-primary px-5 rounded-pill shadow-sm fw-bold">
+                        Salvar Pagamento →
+                    </button>
+
                 </div>
+
             </form>
         </div>
     </div>
 </div>
+
+
 <!-- jsPDF PRIMEIRO -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -295,13 +398,17 @@ require_once '../app/views/layout_creation.php';
                     render: data => `Kz ${parseFloat(data).toLocaleString('pt-AO', { minimumFractionDigits: 2 })}`
                 },
                 {
+                    data: 'iban',
+                    // render: data => 'iban'
+                },
+                {
                     data: 'status',
                     render: status => `<span class="badge bg-${status === 'Pago' ? 'success' : 'warning'}">${status}</span>`
                 },
                 {
                     data: null,
                     render: row => `
-                        <button class='btn btn-sm text-warning'><i class="bi bi-pencil"></i></button>
+                        <button class='btn btn-sm btn-edit-employee text-warning' data-id='${row.id}'><i class="bi bi-pencil"></i></button>
                         <button class='btn btn-sm text-danger openReceipt'
                             data-id='${row.id}'><i class="bi bi-file-pdf"></i></button>`
                 }
@@ -322,19 +429,47 @@ require_once '../app/views/layout_creation.php';
                     term: params.term
                 }),
                 processResults: data => ({
-                    results: data
+                    results: data,
                 }),
                 templateResult: function(item) {
+                    console.log(data)
                     if (!item.id) return item.text;
                     return `${item.text} - ${item.salary ? 'Salário: Kz ' + parseFloat(item.salary).toLocaleString('pt-AO') : ''}`;
                 }
             }
         });
+
         $('#employee_id_payroll').on('select2:select', function(e) {
-            const salario = e.params.data.salary;
-            if (salario) {
-                $('[name=base_salary]').val(parseFloat(salario).toFixed(2));
-            }
+
+            const data = e.params.data;
+
+            const salario = parseFloat(data.salary || 0);
+            const subAlim = parseFloat(data.sub_alim || 0);
+            const subTrans = parseFloat(data.sub_trans || 0);
+            const subDecimo = parseFloat(data.sub_decimo || 0);
+            const subFerias = parseFloat(data.sub_ferias || 0);
+
+            console.log(data);
+
+            // INPUTS
+            $('#formPayroll [name="base_salary"]')
+                .val(salario.toFixed(2));
+
+            $('#formPayroll [name="food_allowance"]')
+                .val(subAlim.toFixed(2));
+
+            $('#formPayroll [name="transport_allowance"]')
+                .val(subTrans.toFixed(2));
+
+            // SELECTS
+            $('#formPayroll select[name="vacation_subsidy_pct"]')
+                .val(subFerias)
+                .trigger('change');
+
+            $('#formPayroll select[name="thirteenth_subsidy_pct"]')
+                .val(subDecimo)
+                .trigger('change');
+
         });
 
         $('#formPayroll').on('submit', function(e) {
@@ -362,7 +497,7 @@ require_once '../app/views/layout_creation.php';
             });
         });
 
-        $('#payrollTable').on('click', '.btn-warning', function() {
+        $('#payrollTable').on('click', '.btn-edit-employee', function() {
             const row = table.row($(this).parents('tr')).data();
             $('#formPayroll select[name=employee_id]').html(`<option value="${row.employee_id}" selected>${row.employee_name}</option>`);
             $('#formPayroll input[name=reference_month]').val(row.reference_month);

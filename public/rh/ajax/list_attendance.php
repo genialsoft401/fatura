@@ -1,33 +1,46 @@
 <?php
+session_start();
+
 require_once '../../../app/config/db.php';
 
+$company_id = $_SESSION['user']['company_id'] ?? null;
+
+if (!$company_id) {
+    echo json_encode([
+        'data' => [],
+        'error' => 'Empresa não definida.'
+    ]);
+    exit;
+}
+
 $query = "
-    SELECT a.*, e.name AS employee_name
+    SELECT 
+        a.*, 
+        e.name AS employee_name
     FROM attendance a
     JOIN employees e ON a.employee_id = e.id
+    WHERE a.company_id = ?
 ";
 
-$conditions = [];
-$params = [];
+$params = [$company_id];
 
 if (!empty($_REQUEST['mes'])) {
-    $conditions[] = "DATE_FORMAT(a.date, '%Y-%m') = ?";
+    $query .= " AND DATE_FORMAT(a.date, '%Y-%m') = ?";
     $params[] = $_REQUEST['mes'];
 }
 
 if (!empty($_REQUEST['funcionario'])) {
-    $conditions[] = "a.employee_id = ?";
+    $query .= " AND a.employee_id = ?";
     $params[] = $_REQUEST['funcionario'];
-}
-
-if (count($conditions) > 0) {
-    $query .= " WHERE " . implode(' AND ', $conditions);
 }
 
 $query .= " ORDER BY a.date DESC";
 
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
+
 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-echo json_encode(['data' => $data]);
+echo json_encode([
+    'data' => $data
+]);

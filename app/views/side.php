@@ -260,14 +260,14 @@
 
         </div>
 
-        <!-- <button class="nav-item" data-submenu="#stock">
+        <button class="nav-item d-none" data-submenu="#stock">
             <span><i data-lucide="boxes"></i> Stock</span>
             <i class="text-white" data-lucide="chevron-down"></i>
         </button>
-        <div class="submenu" id="stock">
+        <div class="submenu d-none" id="stock">
             <a href="stock.php" data-link><i data-lucide="database"></i> Inventário</a>
             <a href="purchases.php" data-link><i data-lucide="shopping-cart"></i> Compras</a>
-        </div> -->
+        </div>
 
         <button class="nav-item" data-submenu="#rh">
             <span><i data-lucide="users"></i> Recursos Humanos</span>

@@ -1,13 +1,24 @@
 <?php
+
+session_start();
+
 require_once '../app/config/db.php';
 require_once '../app/helpers/authentication.php';
 require_once '../app/helpers/subscription.php';
 
+$company_id = (int)($_SESSION['user']['company_id'] ?? 0);
+
+if ($company_id <= 0) {
+    header('Location: login.php');
+    exit;
+}
+
 try {
-    subscription_require_feature($pdo, (int)($_SESSION['user']['company_id'] ?? 0), 'rh');
-} catch (Exception $e) {
-    $cid = (int)($_SESSION['user']['company_id'] ?? 0);
-    header('Location: subscription.php?company_id=' . $cid . '&upgrade=rh');
+
+    subscription_require_feature($pdo, $company_id, 'rh');
+} catch (Throwable $e) {
+
+    header('Location: subscription.php?company_id=' . urlencode($company_id) . '&upgrade=rh');
     exit;
 }
 
@@ -417,7 +428,7 @@ require_once '../app/views/layout_creation.php';
                             <div class="row">
                                 <div class="col-md-6">
                                     <label>Cargo</label>
-                                    <select name="position" class="form-control"></select>
+                                    <select name="position" id="positionSelect" class="form-select"></select>
                                 </div>
 
                                 <div class="col-md-6">
@@ -427,7 +438,7 @@ require_once '../app/views/layout_creation.php';
 
                                 <div class="col-md-6 mt-3">
                                     <label>Status</label>
-                                    <select name="status" class="form-control">
+                                    <select name="status" class="form-select">
                                         <option>Ativo</option>
                                         <option>Inativo</option>
                                     </select>
@@ -435,7 +446,11 @@ require_once '../app/views/layout_creation.php';
 
                                 <div class="col-md-6 mt-3">
                                     <label>Tipo de vínculo</label>
-                                    <input type="text" name="contract_type" class="form-control">
+                                    <select type="text" name="contract_type" class="form-select">
+                                        <option selected>Selecione o tipo</option>
+                                        <option value="efetivo">Efetivo</option>
+                                        <option value="atermo">A Termo</option>
+                                    </select>
                                 </div>
 
                                 <div class="col-md-6 mt-3">
@@ -509,6 +524,8 @@ require_once '../app/views/layout_creation.php';
 
             <form id="formEditEmployee" enctype="multipart/form-data">
 
+                <input type="hidden" name="id" id="editId">
+
                 <div class="row g-0">
 
                     <!-- SIDEBAR -->
@@ -531,6 +548,10 @@ require_once '../app/views/layout_creation.php';
                             <p><strong class="opacity-50">Status:</strong> <span id="previewStatus" class="text-capitalize">Ativo</span></p>
                             <p><strong class="opacity-50">Salário:</strong> <span id="previewSalary" class="text-capitalize">0 Kz</span></p>
                             <p><strong class="opacity-50">Admissão:</strong> <span id="previewAdmission" class="text-capitalize">--</span></p>
+                        </div>
+
+                        <div class="col-md-12 align-items-center">
+                            <button type="submit" class="btn btn-success p-2" style="width: 160px !important;">Salvar</button>
                         </div>
 
                     </div>
@@ -557,7 +578,7 @@ require_once '../app/views/layout_creation.php';
 
                                 <div class="bg-white p-3 rounded mb-3 shadow-sm">
                                     <label>Nome Completo</label>
-                                    <input type="text" name="name" class="form-control">
+                                    <input type="text" name="employee_name" class="form-control">
                                 </div>
 
                                 <div class="bg-white p-3 rounded mb-3 shadow-sm">
@@ -569,12 +590,14 @@ require_once '../app/views/layout_creation.php';
 
                                         <div class="col-12 col-md-6 mb-3">
                                             <label>Cargo</label>
-                                            <select name="position" class="form-select"></select>
+                                            <select name="position" id="selectPosition" class="form-select">
+                                                <option value="" selected>Selecione o cargo</option>
+                                            </select>
                                         </div>
 
                                         <div class="col-12 col-md-6 mb-3">
                                             <label>Salário</label>
-                                            <input type="number" name="salary" class="form-control">
+                                            <input type="number" name="salary" id="salary1" class="form-control">
                                         </div>
 
                                         <div class="col-12 col-md-6 mb-3">
@@ -609,7 +632,11 @@ require_once '../app/views/layout_creation.php';
 
                                         <div class="col-12 col-md-6 mb-3">
                                             <label>Tipo de vínculo</label>
-                                            <input type="text" name="contract_type" class="form-control">
+                                            <select type="text" name="contract_type" class="form-select">
+                                                <option selected>Selecione o tipo</option>
+                                                <option value="efetivo">Efetivo</option>
+                                                <option value="atermo">A Termo</option>
+                                            </select>
                                         </div>
 
                                         <div class="col-12 col-md-6 mb-3">
@@ -667,12 +694,6 @@ require_once '../app/views/layout_creation.php';
 
                         </div>
 
-                        <!-- BOTÕES -->
-                        <div class="text-end mt-3">
-                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary">Salvar</button>
-                        </div>
-
                     </div>
 
                 </div>
@@ -685,6 +706,7 @@ require_once '../app/views/layout_creation.php';
 
 <script>
     let currentStep = 0;
+    let isEditing = false;
 
     const steps = document.querySelectorAll(".step");
     const contents = document.querySelectorAll(".step-content");
@@ -746,7 +768,6 @@ require_once '../app/views/layout_creation.php';
 
 
     $(document).ready(function() {
-        let isEditing = false;
         const table = $('#employeesTable').DataTable({
             ajax: 'rh/ajax/list_employees.php',
             language: {
@@ -798,25 +819,6 @@ require_once '../app/views/layout_creation.php';
         });
 
 
-        $('.positionSelect').on('change', function() {
-            if (isEditing) return;
-            const salario = $(this).find(':selected').data('salary');
-            if (salario) {
-                $('input[name=salary]').val(parseFloat(salario).toFixed(2));
-            }
-        });
-
-
-        // Preenche salário sugerido ao selecionar cargo
-        $('#positionSelect').on('change', function() {
-            if (isEditing) return;
-            const salario = $(this).find(':selected').data('salary');
-            if (salario) {
-                $('input[name=salary]').val(parseFloat(salario).toFixed(2));
-            }
-        });
-
-
         // Submit do formulário
         $('#formEmployee').on('submit', function(e) {
             e.preventDefault();
@@ -831,14 +833,42 @@ require_once '../app/views/layout_creation.php';
                 processData: false,
                 contentType: false,
                 success: function() {
+                    table.ajax.reload();
+                    Swal.fire('Sucesso', 'Funcionário salvo com sucesso!', 'success');
                     $('#modalEmployee').modal('hide');
+                    form.reset();
+                    $('#positionSelect').val('').trigger('change');
+                },
+                error: function(xhr) {
+                    console.log(xhr.responseText);
+                    Swal.fire('Erro', 'Falha ao salvar funcionário', 'error');
+                }
+            });
+        });
+
+
+        // Submit do formulário
+        $('#formEditEmployee').on('submit', function(e) {
+            e.preventDefault();
+
+            const form = document.getElementById('formEditEmployee');
+            const fd = new FormData(form);
+
+            $.ajax({
+                url: 'rh/ajax/save_employee.php',
+                method: 'POST',
+                data: fd,
+                processData: false,
+                contentType: false,
+                success: function() {
                     table.ajax.reload();
                     Swal.fire('Sucesso', 'Funcionário salvo com sucesso!', 'success');
                     $('#editId').remove();
-                    $('modalEmployee').modal("modal-backdrop", "show")
+                    $('#modalEditEmployee').modal('hide');
+                    $('#modalEditEmployee').modal("modal-backdrop", "hide")
                     // limpa arquivos
                     form.reset();
-                    $('#positionSelect').val('').trigger('change');
+                    $('#selectPosition').val('').trigger('change');
                 }
             });
         });
@@ -925,7 +955,8 @@ require_once '../app/views/layout_creation.php';
             // =========================
             // PREENCHER CAMPOS
             // =========================
-            form.find('[name=name]').val(get('name'));
+            form.find('[name=id]').val(get('id'));
+            form.find('[name=employee_name]').val(get('name'));
             form.find('[name=bi]').val(get('bi'));
             form.find('[name=salary]').val(get('salary'));
             form.find('[name=status]').val(get('status'));
@@ -934,6 +965,7 @@ require_once '../app/views/layout_creation.php';
             form.find('[name=contract_type]').val(get('contract_type'));
             form.find('[name=admission_date]').val(get('admission_date'));
             form.find('[name=iban]').val(get('iban'));
+            form.find('[name=position]').val(get('position'));
             form.find('[name=marital_status]').val(get('marital_status'));
             form.find('[name=academic_level]').val(get('academic_level'));
 
@@ -1075,6 +1107,105 @@ require_once '../app/views/layout_creation.php';
             });
         });
     }
+
+    $(document).ready(function() {
+
+        const positionsSelects = $('#positionSelect, #selectPosition');
+
+        $.ajax({
+
+            url: "rh/ajax/list_positions.php",
+            method: "GET",
+            dataType: "json",
+
+            success: function(response) {
+
+                const data = response?.data || [];
+
+                console.log(data);
+
+                const options = data.map(r => {
+                    return `
+                    <option 
+                        data-salary="${r.suggested_salary}" 
+                        value="${r.name}">
+                        ${r.name}
+                    </option>
+                `;
+                }).join('');
+
+                positionsSelects.each(function() {
+
+                    $(this).html(`
+                    <option value="">Selecione</option>
+                    ${options}
+                `);
+
+                });
+
+            },
+
+            error: function(xhr, status, error) {
+
+                console.log(error);
+
+            }
+
+        });
+
+    });
+
+    document.addEventListener('change', function(e) {
+
+        // IDs suportados
+        if (
+            !e.target.matches('#positionSelect') &&
+            !e.target.matches('#selectPosition')
+        ) {
+            return;
+        }
+
+        if (isEditing) return;
+
+        const selectedOption =
+            e.target.options[e.target.selectedIndex];
+
+        const salario =
+            selectedOption.dataset.salary;
+
+        // Inputs de salário
+        const salary1 =
+            document.querySelector('input[name="salary"]');
+
+        const salary2 =
+            document.querySelector('#salary1');
+
+        if (salario !== undefined && salario !== '') {
+
+            const formatted =
+                parseFloat(salario).toFixed(2);
+
+            if (salary1) {
+                salary1.value = formatted;
+            }
+
+            if (salary2) {
+                salary2.value = formatted;
+            }
+
+        } else {
+
+            if (salary1) {
+                salary1.value = '';
+            }
+
+            if (salary2) {
+                salary2.value = '';
+            }
+
+        }
+
+    });
 </script>
 
 <?php require_once '../app/views/footer.php'; ?>

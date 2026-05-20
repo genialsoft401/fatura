@@ -1,4 +1,5 @@
 <?php
+
 require_once '../../../app/config/db.php';
 require_once '../../../vendor/autoload.php';
 
@@ -123,7 +124,7 @@ if (!empty($empresa['logo_url'])) {
         $logoHtml = "
             <img 
                 src='data:$mime;base64,$data'
-                style='height:75px; object-fit:contain; border-radius:10px;'
+                style='height:80px; object-fit:contain; border-radius:12px;'
             >
         ";
     }
@@ -159,13 +160,14 @@ $html = "
 <style>
 
 @page{
-    margin: 22px 25px;
+    margin:18px 22px;
 }
 
 body{
     font-family: DejaVu Sans, Arial, sans-serif;
     font-size:11px;
     color:#1e293b;
+    zoom:0.95;
 }
 
 /*
@@ -177,8 +179,8 @@ body{
 .header{
     width:100%;
     border-bottom:2px solid #dbeafe;
-    padding-bottom:15px;
-    margin-bottom:20px;
+    padding-bottom:16px;
+    margin-bottom:24px;
 }
 
 .header-table{
@@ -198,7 +200,7 @@ body{
 }
 
 .company-name{
-    font-size:24px;
+    font-size:26px;
     font-weight:bold;
     color:#0f172a;
     margin-bottom:6px;
@@ -208,21 +210,21 @@ body{
     font-size:30px;
     font-weight:bold;
     color:#2563eb;
-    margin-bottom:5px;
+    margin-bottom:6px;
     text-transform:uppercase;
 }
 
 .company-info{
     color:#64748b;
     font-size:11px;
-    line-height:1.6;
+    line-height:1;
 }
 
 .badge{
     display:inline-block;
     background:#eff6ff;
     color:#2563eb;
-    padding:5px 12px;
+    padding:6px 14px;
     border-radius:20px;
     font-size:10px;
     font-weight:bold;
@@ -237,27 +239,27 @@ body{
 
 .summary{
     width:100%;
-    margin-bottom:18px;
+    margin-bottom:22px;
 }
 
 .summary-box{
-    width:48%;
+    width:46%;
     display:inline-block;
     background:#f8fafc;
-    border:1px solid #e2e8f0;
+    border:1px solid #dbeafe;
     border-radius:10px;
-    padding:14px;
+    padding:16px;
     box-sizing:border-box;
 }
 
 .summary-title{
     color:#64748b;
     font-size:11px;
-    margin-bottom:6px;
+    margin-bottom:8px;
 }
 
 .summary-value{
-    font-size:22px;
+    font-size:24px;
     font-weight:bold;
     color:#0f172a;
 }
@@ -272,21 +274,26 @@ body{
     width:100%;
     border-collapse:collapse;
     margin-top:10px;
+    table-layout:fixed;
 }
 
 .table thead th{
     background:#2563eb;
-    color:#fff;
-    padding:10px;
+    color:#ffffff;
+    padding:12px 10px;
     border:1px solid #dbeafe;
     font-size:11px;
     text-transform:uppercase;
+    letter-spacing:0.3px;
+    white-space:nowrap;
 }
 
 .table tbody td{
     border:1px solid #e2e8f0;
-    padding:9px;
+    padding:11px 10px;
     font-size:11px;
+    color:#1e293b;
+    word-wrap:break-word;
 }
 
 .table tbody tr:nth-child(even){
@@ -301,22 +308,52 @@ body{
     text-align:center;
 }
 
+/*
+|--------------------------------------------------------------------------
+| STATUS
+|--------------------------------------------------------------------------
+*/
+
 .status-active{
     background:#dcfce7;
     color:#166534;
-    padding:4px 10px;
+    padding:5px 12px;
     border-radius:20px;
     font-size:10px;
     font-weight:bold;
+    display:inline-block;
+    min-width:70px;
 }
 
 .status-inactive{
     background:#fee2e2;
     color:#991b1b;
-    padding:4px 10px;
+    padding:5px 12px;
     border-radius:20px;
     font-size:10px;
     font-weight:bold;
+    display:inline-block;
+    min-width:70px;
+}
+
+/*
+|--------------------------------------------------------------------------
+| TABLE IMPROVEMENTS
+|--------------------------------------------------------------------------
+*/
+
+.table td,
+.table th{
+    overflow:hidden;
+}
+
+.table td:nth-child(1){
+    font-weight:bold;
+}
+
+.table td:nth-child(4){
+    font-weight:bold;
+    color:#0f172a;
 }
 
 /*
@@ -419,12 +456,12 @@ body{
     <thead>
 
         <tr>
-            <th width='24%'>Nome</th>
-            <th width='16%'>BI</th>
+            <th width='24%'>Nome Completo</th>
+            <th width='15%'>BI</th>
             <th width='20%'>Cargo</th>
-            <th width='15%'>Salário</th>
+            <th width='13%'>Salário</th>
+            <th width='18%'>IBAN</th>
             <th width='10%'>Status</th>
-            <th width='15%'>IBAN</th>
         </tr>
 
     </thead>
@@ -467,14 +504,15 @@ foreach ($rows as $r) {
             " . kz($r['salary']) . "
         </td>
 
+        
+        <td>
+        " . h($r['iban']) . "
+        </td>
+
         <td class='center'>
             <span class='{$statusClass}'>
                 " . h($r['status']) . "
             </span>
-        </td>
-
-        <td>
-            " . h($r['iban']) . "
         </td>
 
     </tr>
@@ -518,7 +556,13 @@ $dompdf = new Dompdf($options);
 
 $dompdf->loadHtml($html, 'UTF-8');
 
-$dompdf->setPaper('A4', 'portrait');
+/*
+|--------------------------------------------------------------------------
+| HORIZONTAL
+|--------------------------------------------------------------------------
+*/
+
+$dompdf->setPaper('A4', 'landscape');
 
 $dompdf->render();
 

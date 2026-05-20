@@ -9,9 +9,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const codigoInput = document.getElementById("codigo");
   const stockSelect = document.getElementById("stock_id");
 
-  const taxField = document.getElementById("tax");
-  const retentionField = document.getElementById("retention_tax");
+  // CAMPOS FISCAIS
+  const taxField = document.querySelector("input[name=tax]");
 
+  if(taxField){
+    alert("TaxField existe!")
+  }
+
+  const retentionField =
+    document.getElementById("retention_tax") ||
+    document.getElementById("retention");
+
+  // PREÇOS
   const unitPriceInput = document.querySelector("[name='unit_price']");
   const costPriceInput = document.querySelector("[name='cost_price']");
   const salePriceInput = document.querySelector("[name='sale_price']");
@@ -19,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let ivaRegime = "geral";
 
-  if (!categorySelect || !depotCard || !codigoInput) {
+  if (!categorySelect || !codigoInput) {
     console.error("Elementos essenciais não encontrados.");
     return;
   }
@@ -27,17 +36,12 @@ document.addEventListener("DOMContentLoaded", () => {
   // =========================
   // UI TOGGLE
   // =========================
-  function toggleUI({
-    categorySelect,
-    depotCard,
-    stockSelect,
-    codigoInput,
-  } = {}) {
-    if (!categorySelect || !depotCard) return;
-
+  function toggleUI() {
     const isProduct = categorySelect.value === "product";
 
-    depotCard.classList.toggle("active", isProduct);
+    if (depotCard) {
+      depotCard.classList.toggle("active", isProduct);
+    }
 
     if (stockSelect) {
       stockSelect.required = isProduct;
@@ -50,200 +54,110 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // =========================
-  // STATE ENGINE (ÚNICO)
+  // BLOCO FINANCEIRO
   // =========================
-  function syncUI() {
-    toggleUI({
-      categorySelect,
-      depotCard,
-      stockSelect,
-      codigoInput,
-    });
+  function toggleFinance() {
+    if (!financeBlock) return;
 
-    toggleFinance();
-    updateFiscal();
-    generateCode();
+    const hide = ["product", "service"].includes(categorySelect.value);
+
+    financeBlock.style.display = hide ? "none" : "block";
+
+    if (hide) {
+      if (costPriceInput) costPriceInput.value = "";
+      if (salePriceInput) salePriceInput.value = "";
+      if (pvpInput) pvpInput.value = "";
+    }
   }
 
   // =========================
-  // PROTEÇÃO INPUT TAX
-  // =========================
-  if (taxField) {
-    ["keydown", "paste", "drop"].forEach((evt) =>
-      taxField.addEventListener(evt, (e) => e.preventDefault()),
-    );
-  }
-
-  // =========================
-  // LOAD COMPANY
+  // CARREGAR EMPRESA
   // =========================
   async function loadCompany() {
     try {
-      const id = document.querySelector("input[name='id_company']")?.value;
-      if (!id) return;
+      const companyId = document.querySelector(
+        "input[name='id_company']",
+      )?.value;
+
+      if (!companyId) return;
 
       const res = await fetch(
-        `assets/ajax/get_company.php?id=${encodeURIComponent(id)}`,
+        `assets/ajax/get_company.php?id=${encodeURIComponent(companyId)}`,
       );
 
       const data = await res.json();
 
       if (data?.success) {
         ivaRegime = data.data?.vat_regime || "geral";
+
         updateFiscal();
+        calculatePrice();
       }
     } catch (error) {
-      console.error("Erro empresa:", error);
+      console.error("Erro ao carregar empresa:", error);
     }
   }
 
   // =========================
-  // FISCAL (CORRIGIDO)
+  // FISCAL
   // =========================
   function updateFiscal() {
-    const taxField = document.getElementById("tax");
-    const categorySelect = document.getElementById("item_type");
-    const subcategorySelect = document.getElementById("subcategory");
-    const unitPriceInput = document.getElementById("unit_price");
-    const retentionField = document.getElementById("retention");
-    const ivaRegimeField = document.getElementById("iva_regime"); // assumido
+    if (!taxField || !retentionField) return;
 
-    if (!taxField || !categorySelect || !unitPriceInput) return;
+    const category = categorySelect.value;
+    const subcategory = subcategorySelect?.value || "";
 
-    const unitPrice = parseFloat(unitPriceInput.value) || 0;
+    const unitPrice = parseFloat(unitPriceInput?.value) || 0;
 
-    const subcat = subcategorySelect?.value || "";
-    const category = categorySelect?.value || "";
-    const ivaRegime = ivaRegimeField?.value || "geral";
+    let taxVal = 0;
 
     // =========================
-    // TAX LOGIC
+    // IVA
     // =========================
-    let tax = 0;
 
-    if (subcat === "essential" || subcat === "agriculture") {
-      tax = 5;
+    // Produtos essenciais/agricultura
+    if (subcategory === "essential" || subcategory === "agriculture") {
+      taxVal = 5;
     } else {
       switch (ivaRegime) {
         case "geral":
-          tax = 14;
+          taxVal = 14;
           break;
+
         case "simplificado":
-          tax = 7;
+          taxVal = 7;
           break;
+
+        case "exempt":
+        case "isento":
+          taxVal = 0;
+          break;
+
         default:
-          tax = 0;
+          taxVal = 14;
       }
     }
 
-    taxField.value = String(tax);
-
-    taxField.dispatchEvent(new Event("input", { bubbles: true }));
-    taxField.dispatchEvent(new Event("change", { bubbles: true }));
+    taxField.value = taxVal;
 
     // =========================
-    // RETENTION LOGIC
+    // RETENÇÃO
     // =========================
-    if (retentionField) {
-      const applyRetention = category === "service" && unitPrice >= 20000;
+    let retentionVal = 0;
 
-      retentionField.value = applyRetention ? "6.5" : "0";
-
-      retentionField.dispatchEvent(new Event("input", { bubbles: true }));
-      retentionField.dispatchEvent(new Event("change", { bubbles: true }));
+    // Serviços acima de 20.000
+    if (category === "service" && unitPrice >= 20000) {
+      retentionVal = 6.5;
     }
+
+    retentionField.value = retentionVal;
+
+    // RECALCULAR PVP
+    calculatePrice();
   }
 
   // =========================
-  // FINANCE BLOCK
-  // =========================
-  function toggleFinance() {
-    if (!financeBlock || !categorySelect) return;
-
-    const hide = ["product", "service"].includes(categorySelect.value);
-    financeBlock.style.display = hide ? "none" : "block";
-
-    if (hide) {
-      costPriceInput && (costPriceInput.value = "");
-      salePriceInput && (salePriceInput.value = "");
-      pvpInput && (pvpInput.value = "");
-    }
-  }
-
-  // =========================
-  // CODE GENERATION
-  // =========================
-  async function generateCode() {
-    const stockId = stockSelect?.value;
-    const itemType = categorySelect.value;
-
-    try {
-      const res = await fetch(
-        `items/ajax/generate_code.php?stock_id=${encodeURIComponent(
-          stockId || "",
-        )}&item_type=${itemType}`,
-      );
-
-      const data = await res.json();
-
-      if (data.success && data.generated_code) {
-        codigoInput.value = data.generated_code;
-      }
-    } catch (err) {
-      console.error("Erro ao gerar código:", err);
-    }
-  }
-
-  // =========================
-  // VALIDATE CODE
-  // =========================
-  async function validateCode() {
-    const codigo = codigoInput.value.trim();
-    if (!codigo) return;
-
-    try {
-      const res = await fetch("items/ajax/check_code.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ codigo }),
-      });
-
-      const data = await res.json();
-
-      if (data.exists) {
-        alert("Este código já existe.");
-        codigoInput.value = "";
-        codigoInput.focus();
-      }
-    } catch (err) {
-      console.error("Erro ao validar código:", err);
-    }
-  }
-
-  // =========================
-  // STOCKS
-  // =========================
-  async function fetchStocks() {
-    if (!stockSelect) return;
-
-    try {
-      const res = await fetch("index/ajax/fetch_stocks.php");
-      const data = await res.json();
-
-      if (Array.isArray(data?.data)) {
-        stockSelect.innerHTML =
-          `<option value="">Selecione um stock</option>` +
-          data.data
-            .map((s) => `<option value="${s.id}">${s.name}</option>`)
-            .join("");
-      }
-    } catch (err) {
-      console.error("Erro stocks:", err);
-    }
-  }
-
-  // =========================
-  // PRICE CALC
+  // CALCULAR PREÇO FINAL
   // =========================
   function calculatePrice() {
     if (!pvpInput) return;
@@ -255,26 +169,159 @@ document.addEventListener("DOMContentLoaded", () => {
     const tax = parseFloat(taxField?.value) || 0;
     const retention = parseFloat(retentionField?.value) || 0;
 
-    const base = costPrice + (salePrice || unitPrice);
+    // BASE
+    let base = 0;
 
-    const iva = (base * tax) / 100;
-    const subtotal = base + iva;
-    const reten = (subtotal * retention) / 100;
+    if (salePrice > 0) {
+      base = costPrice + salePrice;
+    } else {
+      base = costPrice + unitPrice;
+    }
 
-    pvpInput.value = (subtotal - reten).toFixed(2);
+    // IVA
+    const ivaAmount = (base * tax) / 100;
+
+    // SUBTOTAL
+    const subtotal = base + ivaAmount;
+
+    // RETENÇÃO
+    const retentionAmount = (subtotal * retention) / 100;
+
+    // TOTAL FINAL
+    const total = subtotal - retentionAmount;
+
+    pvpInput.value = total.toFixed(2);
+  }
+
+  // =========================
+  // GERAR CÓDIGO
+  // =========================
+  async function generateCode() {
+    try {
+      const stockId = stockSelect?.value || "";
+      const itemType = categorySelect.value;
+
+      const res = await fetch(
+        `items/ajax/generate_code.php?stock_id=${encodeURIComponent(
+          stockId,
+        )}&item_type=${encodeURIComponent(itemType)}`,
+      );
+
+      const data = await res.json();
+
+      if (data?.success && data?.generated_code) {
+        codigoInput.value = data.generated_code;
+      }
+    } catch (err) {
+      console.error("Erro ao gerar código:", err);
+    }
+  }
+
+  // =========================
+  // VALIDAR CÓDIGO
+  // =========================
+  async function validateCode() {
+    try {
+      const codigo = codigoInput.value.trim();
+
+      if (!codigo) return;
+
+      const res = await fetch("items/ajax/check_code.php", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ codigo }),
+      });
+
+      const data = await res.json();
+
+      if (data?.exists) {
+        alert("Este código já existe.");
+
+        codigoInput.value = "";
+        codigoInput.focus();
+      }
+    } catch (err) {
+      console.error("Erro ao validar código:", err);
+    }
+  }
+
+  // =========================
+  // CARREGAR STOCKS
+  // =========================
+  async function fetchStocks() {
+    if (!stockSelect) return;
+
+    try {
+      const res = await fetch("index/ajax/fetch_stocks.php");
+
+      const data = await res.json();
+
+      if (Array.isArray(data?.data)) {
+        stockSelect.innerHTML =
+          `<option value="">Selecione um stock</option>` +
+          data.data
+            .map(
+              (stock) => `<option value="${stock.id}">${stock.name}</option>`,
+            )
+            .join("");
+      }
+    } catch (err) {
+      console.error("Erro ao carregar stocks:", err);
+    }
+  }
+
+  // =========================
+  // SINCRONIZAÇÃO
+  // =========================
+  function syncUI() {
+    toggleUI();
+    toggleFinance();
+    updateFiscal();
+    generateCode();
+  }
+
+  // =========================
+  // PROTEÇÃO IVA
+  // =========================
+  if (taxField) {
+    ["keydown", "paste", "drop"].forEach((evt) => {
+      taxField.addEventListener(evt, (e) => {
+        e.preventDefault();
+      });
+    });
   }
 
   // =========================
   // EVENTS
   // =========================
+
+  // Categoria
   categorySelect.addEventListener("change", syncUI);
 
-  subcategorySelect?.addEventListener("change", updateFiscal);
-  stockSelect?.addEventListener("change", generateCode);
-  codigoInput?.addEventListener("blur", validateCode);
+  // Subcategoria
+  if (subcategorySelect) {
+    subcategorySelect.addEventListener("change", () => {
+      updateFiscal();
+    });
+  }
 
+  // Stock
+  if (stockSelect) {
+    stockSelect.addEventListener("change", generateCode);
+  }
+
+  // Código
+  if (codigoInput) {
+    codigoInput.addEventListener("blur", validateCode);
+  }
+
+  // Inputs de preço
   [unitPriceInput, costPriceInput, salePriceInput].forEach((input) => {
-    input?.addEventListener("input", () => {
+    if (!input) return;
+
+    input.addEventListener("input", () => {
       updateFiscal();
       calculatePrice();
     });
@@ -286,5 +333,4 @@ document.addEventListener("DOMContentLoaded", () => {
   syncUI();
   fetchStocks();
   loadCompany();
-  calculatePrice();
 });

@@ -25,6 +25,7 @@ try {
     }
 
     $company_id = (int)$_SESSION['user']['company_id'];
+    echo $company_id;
 
     // =====================================================
     // GRÁFICOS

@@ -4,7 +4,7 @@ session_start();
 
 $company_id = $_SESSION['user']['company_id'];
 
-$sql = "SELECT p.*, e.name AS employee_name
+$sql = "SELECT p.*, e.name AS employee_name, e.iban
         FROM payroll p
         JOIN employees e ON e.id = p.employee_id";
 
@@ -24,3 +24,4 @@ $stmt->execute($params);
 
 $dados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 echo json_encode(['data' => $dados]);
+

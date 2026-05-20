@@ -2,7 +2,8 @@
 require_once '../../../app/config/db.php';
 require_once '../../../vendor/autoload.php';
 
-use Dompdf\{Dompdf, Options};
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 session_start();
 
@@ -10,11 +11,18 @@ $id = $_GET['id'] ?? null;
 $company_id = $_SESSION['user']['company_id'] ?? null;
 
 if (!$id) {
-  die('Parâmetros inválidos.');
+    die('Parâmetros inválidos.');
 }
 
-$sql = "SELECT 
-    p.*, 
+/*
+|--------------------------------------------------------------------------
+| BUSCAR DADOS
+|--------------------------------------------------------------------------
+*/
+
+$sql = "
+SELECT 
+    p.*,
     e.id AS employee_id,
     e.name AS employee_name,
     e.position,
@@ -22,21 +30,18 @@ $sql = "SELECT
     e.iban,
     e.bi,
     comp.name AS company_name,
-    comp.logo_url,
-    comp.phone AS company_phone,
-    comp.email AS company_email,
-    comp.registration_number,
-    comp.address AS company_address
+    comp.logo_url
 FROM payroll p
 JOIN employees e ON e.id = p.employee_id
 JOIN companies comp ON comp.id = p.company_id
-WHERE p.id = ?";
+WHERE p.id = ?
+";
 
 $params = [$id];
 
 if (!empty($company_id)) {
-  $sql .= " AND p.company_id = ?";
-  $params[] = $company_id;
+    $sql .= " AND p.company_id = ?";
+    $params[] = $company_id;
 }
 
 $stmt = $pdo->prepare($sql);
@@ -45,7 +50,7 @@ $stmt->execute($params);
 $dados = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$dados) {
-  die('Registro não encontrado.');
+    die('Registro não encontrado.');
 }
 
 /*
@@ -71,13 +76,67 @@ $stmt = $pdo->prepare("
 ");
 
 $stmt->execute([
-  $dados['employee_id'],
-  $company_id,
-  $firstDay,
-  $lastDay
+    $dados['employee_id'],
+    $company_id,
+    $firstDay,
+    $lastDay
 ]);
 
 $absences = (int)$stmt->fetchColumn();
+
+/*
+|--------------------------------------------------------------------------
+| VALORES
+|--------------------------------------------------------------------------
+*/
+
+$base  = (float)$dados['base_salary'];
+
+$inss = (float)($dados['inss_value'] ?? 0);
+$irt  = (float)($dados['irt_value'] ?? 0);
+
+$discountsTotal = (float)($dados['discounts'] ?? 0);
+
+$otherDiscounts = max(
+    0,
+    $discountsTotal - $inss - $irt
+);
+
+$netSalary = (float)$dados['net_salary'];
+
+/*
+|--------------------------------------------------------------------------
+| HELPERS
+|--------------------------------------------------------------------------
+*/
+
+function kz($v)
+{
+    return 'Kz ' . number_format((float)$v, 2, ',', '.');
+}
+
+function esc($s)
+{
+    return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
+}
+
+/*
+|--------------------------------------------------------------------------
+| LOGO
+|--------------------------------------------------------------------------
+*/
+
+$baseUrl = '';
+
+if (!empty($_SERVER['HTTP_HOST'])) {
+    $baseUrl = 'http://' . $_SERVER['HTTP_HOST'];
+}
+
+$logoSrc = '';
+
+if (!empty($dados['logo_url']) && $baseUrl) {
+    $logoSrc = $baseUrl . '/assets/img/companies/' . $dados['logo_url'];
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -92,457 +151,510 @@ $dompdf = new Dompdf($options);
 
 /*
 |--------------------------------------------------------------------------
-| VALORES
-|--------------------------------------------------------------------------
-*/
-
-$base  = (float)$dados['base_salary'];
-$bon   = (float)($dados['bonuses'] ?? 0);
-$food  = (float)($dados['food_allowance'] ?? 0);
-$trans = (float)($dados['transport_allowance'] ?? 0);
-$comm  = (float)($dados['commissions'] ?? 0);
-$sales = (float)($dados['sales'] ?? 0);
-
-$vacPct = (int)($dados['vacation_subsidy_pct'] ?? 0);
-$t13Pct = (int)($dados['thirteenth_subsidy_pct'] ?? 0);
-
-$vacSub = $base * ($vacPct / 100);
-$t13Sub = $base * ($t13Pct / 100);
-
-$gross = $base + $bon + $food + $trans + $comm + $sales + $vacSub + $t13Sub;
-
-$discountsTotal = (float)($dados['discounts'] ?? 0);
-
-$inss = (float)($dados['inss_value'] ?? 0);
-$irt  = (float)($dados['irt_value'] ?? 0);
-
-$otherDiscounts = max(0, $discountsTotal - $inss - $irt);
-
-/*
-|--------------------------------------------------------------------------
-| HELPERS
-|--------------------------------------------------------------------------
-*/
-
-function kz($v)
-{
-  return 'Kz ' . number_format((float)$v, 2, ',', '.');
-}
-
-function esc($s)
-{
-  return htmlspecialchars((string)$s, ENT_QUOTES, 'UTF-8');
-}
-
-/*
-|--------------------------------------------------------------------------
-| LOGO
-|--------------------------------------------------------------------------
-*/
-
-$baseUrl = '';
-
-if (!empty($_SERVER['HTTP_HOST'])) {
-  $baseUrl = 'http://' . $_SERVER['HTTP_HOST'];
-}
-
-$logoSrc = '';
-
-if (!empty($dados['logo_url']) && $baseUrl) {
-  $logoSrc = $baseUrl . '/assets/img/companies/' . $dados['logo_url'];
-}
-
-/*
-|--------------------------------------------------------------------------
 | HTML
 |--------------------------------------------------------------------------
 */
 
 $html = "
+<!DOCTYPE html>
+<html lang='pt'>
+<head>
+<meta charset='UTF-8'>
+
 <style>
 
 @page{
-    margin:25px;
+    margin:22px;
 }
 
 body{
     font-family: DejaVu Sans, sans-serif;
-    color:#1f2937;
     font-size:11px;
+    color:#1e293b;
 }
 
-.container{
-    border:1px solid #d1d5db;
-    padding:25px;
-}
-
-.header{
+.wrapper{
     width:100%;
-    margin-bottom:18px;
 }
 
-.header td{
+/* =========================================================
+HEADER
+========================================================= */
+
+.top{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.top td{
     vertical-align:top;
 }
 
 .logo{
-    width:85px;
-    height:85px;
+    width:78px;
+    height:78px;
     border-radius:50%;
+}
+
+.logo-placeholder{
+    width:78px;
+    height:78px;
+    border:1px solid #cbd5e1;
+    border-radius:50%;
+    text-align:center;
+    line-height:78px;
+    color:#94a3b8;
 }
 
 .company{
     text-align:right;
 }
 
-.company h1{
-    margin:0;
-    font-size:28px;
-    color:#1d4ed8;
+.company-title{
+    font-size:24px;
+    font-weight:bold;
+    color:#1e293b;
+    margin-bottom:6px;
 }
 
-.company h2{
-    margin:0;
-    font-size:16px;
-    color:#111827;
+.receipt-title{
+    font-size:13px;
+    color:#64748b;
 }
 
-.company p{
-    margin:2px 0;
-    color:#6b7280;
-    font-size:10px;
-}
-
-.separator{
-    border-bottom:2px solid #111827;
-    margin:10px 0 18px 0;
-}
-
-.employee{
-    width:100%;
-    margin-bottom:20px;
-}
-
-.employee td{
-    padding:4px 0;
+.badge{
+    display:inline-block;
+    margin-top:8px;
+    background:#dbeafe;
+    color:#2563eb;
+    padding:5px 14px;
+    border-radius:14px;
     font-size:11px;
-}
-
-.label{
-    width:140px;
-    font-weight:bold;
-    color:#374151;
-}
-
-.section{
-    margin-top:18px;
-    margin-bottom:8px;
-    font-size:14px;
     font-weight:bold;
 }
 
-.table{
+.hr{
+    margin-top:14px;
+    margin-bottom:16px;
+    border-bottom:2px solid #dbeafe;
+}
+
+/* =========================================================
+EMPLOYEE BOX
+========================================================= */
+
+.info-box{
+    border:1px solid #dbeafe;
+    border-radius:8px;
+    padding:14px;
+    margin-bottom:16px;
+}
+
+.info-table{
     width:100%;
     border-collapse:collapse;
 }
 
-.table th{
-    background:#5b7ecb;
-    color:#fff;
-    padding:8px;
-    border:1px solid #d1d5db;
+.info-table td{
+    padding:5px 0;
     font-size:11px;
 }
 
-.table td{
-    padding:8px;
-    border:1px solid #e5e7eb;
+.label{
+    font-weight:bold;
+    color:#334155;
+    width:130px;
+}
+
+.value{
+    color:#1e293b;
+}
+
+/* =========================================================
+TABLE
+========================================================= */
+
+.salary-table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.salary-table th{
+    background:#2563eb;
+    color:#ffffff;
+    padding:10px;
+    border:1px solid #cbd5e1;
     font-size:11px;
+    text-transform:uppercase;
+}
+
+.salary-table td{
+    border:1px solid #dbeafe;
+    padding:9px;
+    font-size:11px;
+}
+
+.center{
+    text-align:center;
 }
 
 .right{
     text-align:right;
 }
 
-.total{
-    background:#f3f4f6;
+.total-row{
+    background:#dbeafe;
     font-weight:bold;
 }
 
-.net-box{
-    margin-top:20px;
-    background:#eef2ff;
-    border:1px solid #c7d2fe;
+.net-row{
+    background:#2563eb;
+    color:#ffffff;
+    font-weight:bold;
+    font-size:12px;
+}
+
+.net-row td{
     padding:12px;
 }
 
-.net-title{
-    font-size:13px;
-    color:#1d4ed8;
+/* =========================================================
+SUMMARY BOX
+========================================================= */
+
+.summary{
+    width:280px;
+    float:right;
+    margin-top:18px;
+    border:1px solid #cbd5e1;
+    border-radius:8px;
+    overflow:hidden;
+}
+
+.summary table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+.summary td{
+    padding:11px;
+    border-bottom:1px solid #e2e8f0;
+    font-size:11px;
+}
+
+.summary tr:last-child td{
+    border-bottom:none;
+    background:#eff6ff;
     font-weight:bold;
 }
 
-.net-value{
-    font-size:22px;
-    font-weight:bold;
-    margin-top:5px;
-}
+/* =========================================================
+SIGNATURE
+========================================================= */
 
 .signature{
-    margin-top:60px;
     width:250px;
     float:right;
+    margin-left: 200px;
+    margin-top:210px;
     text-align:center;
+    
 }
 
 .signature-line{
-    border-top:1px solid #111827;
-    padding-top:6px;
+    border-top:1px solid #64748b;
+    margin-bottom:8px;
+    width:100%;
 }
 
+/* =========================================================
+FOOTER
+========================================================= */
+
 .footer{
-    margin-top:80px;
+    clear:both;
+    margin-top:120px;
     text-align:center;
-    color:#6b7280;
+    color:#94a3b8;
     font-size:10px;
 }
 
 </style>
+</head>
 
-<div class='container'>
+<body>
+
+<div class='wrapper'>
 
     <!-- HEADER -->
-    <table class='header'>
+    <table class='top'>
         <tr>
 
             <td width='20%'>
 
                 " . (
-  $logoSrc
-  ? "<img src='" . esc($logoSrc) . "' class='logo'>"
-  : "<div style='width:85px;height:85px;border-radius:50%;background:#4f6fbf;color:#fff;text-align:center;line-height:85px;'>LOGO</div>"
+    $logoSrc
+    ? "<img src='" . esc($logoSrc) . "' class='logo'>"
+    : "<div class='logo-placeholder'>LOGO</div>"
 ) . "
 
             </td>
 
             <td width='80%' class='company'>
 
-                <h2>" . esc($dados['company_name']) . "</h2>
+                <div class='company-title'>
+                    " . esc($dados['company_name']) . "
+                </div>
 
-                <h1>RECÍBO DE SALÁRIO</h1>
+                <div class='receipt-title'>
+                    RECIBO DE SALÁRIO • " . esc($dados['reference_month']) . "
+                </div>
 
-                <p>NIF: " . esc($dados['registration_number']) . "</p>
-                <p>" . esc($dados['company_address']) . "</p>
-                <p>" . esc($dados['company_phone']) . "</p>
-                <p>" . esc($dados['company_email']) . "</p>
+                <div class='badge'>
+                    Funcionário: " . esc($dados['employee_name']) . "
+                </div>
 
             </td>
 
         </tr>
     </table>
 
-    <div class='separator'></div>
+    <div class='hr'></div>
 
-    <!-- EMPLOYEE -->
-    <table class='employee'>
+    <!-- INFO -->
+    <div class='info-box'>
 
-        <tr>
-            <td class='label'>Mês:</td>
-            <td>" . esc($dados['reference_month']) . "</td>
-
-            <td class='label'>Funcionário:</td>
-            <td>" . esc($dados['employee_name']) . "</td>
-        </tr>
-
-        <tr>
-            <td class='label'>Funcionário ID:</td>
-            <td>" . esc(str_pad($dados['employee_id'], 5, '0', STR_PAD_LEFT)) . "</td>
-
-            <td class='label'>Função:</td>
-            <td>" . esc($dados['position']) . "</td>
-        </tr>
-
-        <tr>
-            <td class='label'>BI:</td>
-            <td>" . esc($dados['bi']) . "</td>
-
-            <td class='label'>IBAN:</td>
-            <td>" . esc($dados['iban']) . "</td>
-        </tr>
-
-        <tr>
-            <td class='label'>Admissão:</td>
-            <td>" . (
-  !empty($dados['admission_date'])
-  ? date('d/m/Y', strtotime($dados['admission_date']))
-  : ''
-) . "</td>
-
-            <td class='label'>Pagamento:</td>
-            <td>Transferência Bancária</td>
-        </tr>
-
-    </table>
-
-    <!-- EARNINGS -->
-    <div class='section'>Proventos</div>
-
-    <table class='table'>
-
-        <thead>
-            <tr>
-                <th>Descrição</th>
-                <th width='180'>Valor</th>
-            </tr>
-        </thead>
-
-        <tbody>
+        <table class='info-table'>
 
             <tr>
-                <td>Salário Base</td>
-                <td class='right'>" . kz($base) . "</td>
-            </tr>
 
-            " . ($bon > 0 ? "
-            <tr>
-                <td>Bónus</td>
-                <td class='right'>" . kz($bon) . "</td>
-            </tr>
-            " : "") . "
-
-            " . ($food > 0 ? "
-            <tr>
-                <td>Subsídio de Alimentação</td>
-                <td class='right'>" . kz($food) . "</td>
-            </tr>
-            " : "") . "
-
-            " . ($trans > 0 ? "
-            <tr>
-                <td>Subsídio de Transporte</td>
-                <td class='right'>" . kz($trans) . "</td>
-            </tr>
-            " : "") . "
-
-            " . ($comm > 0 ? "
-            <tr>
-                <td>Comissões</td>
-                <td class='right'>" . kz($comm) . "</td>
-            </tr>
-            " : "") . "
-
-            " . ($sales > 0 ? "
-            <tr>
-                <td>Vendas</td>
-                <td class='right'>" . kz($sales) . "</td>
-            </tr>
-            " : "") . "
-
-            " . ($vacSub > 0 ? "
-            <tr>
-                <td>Subsídio de Férias ({$vacPct}%)</td>
-                <td class='right'>" . kz($vacSub) . "</td>
-            </tr>
-            " : "") . "
-
-            " . ($t13Sub > 0 ? "
-            <tr>
-                <td>Subsídio 13º ({$t13Pct}%)</td>
-                <td class='right'>" . kz($t13Sub) . "</td>
-            </tr>
-            " : "") . "
-
-            <tr class='total'>
-                <td>Total de Proventos</td>
-                <td class='right'>" . kz($gross) . "</td>
-            </tr>
-
-        </tbody>
-
-    </table>
-
-    <!-- DESCONTOS -->
-    <div class='section'>Descontos</div>
-
-    <table class='table'>
-
-        <thead>
-            <tr>
-                <th>Descrição</th>
-                <th width='180'>Valor</th>
-            </tr>
-        </thead>
-
-        <tbody>
-
-            " . ($otherDiscounts > 0 ? "
-            <tr>
-                <td>
-                    Ausências / Outros Descontos
-                    " . ($absences > 0 ? "({$absences} dias)" : "") . "
+                <td class='label'>Funcionário</td>
+                <td class='value'>
+                    " . esc($dados['employee_name']) . "
                 </td>
-                <td class='right'>" . kz($otherDiscounts) . "</td>
-            </tr>
-            " : "") . "
 
-            " . ($inss > 0 ? "
+                <td class='label'>Função</td>
+                <td class='value'>
+                    " . esc($dados['position']) . "
+                </td>
+
+            </tr>
+
             <tr>
-                <td>INSS</td>
-                <td class='right'>" . kz($inss) . "</td>
-            </tr>
-            " : "") . "
 
-            " . ($irt > 0 ? "
+                <td class='label'>BI</td>
+                <td class='value'>
+                    " . esc($dados['bi']) . "
+                </td>
+
+                <td class='label'>Contrato</td>
+                <td class='value'>
+                    efetivo
+                </td>
+
+            </tr>
+
             <tr>
-                <td>IRT</td>
-                <td class='right'>" . kz($irt) . "</td>
+
+                <td class='label'>IBAN</td>
+                <td class='value'>
+                    " . esc($dados['iban']) . "
+                </td>
+
+                <td class='label'>Admissão</td>
+                <td class='value'>
+                    " . (
+    !empty($dados['admission_date'])
+    ? date('d/m/Y', strtotime($dados['admission_date']))
+    : ''
+) . "
+                </td>
+
             </tr>
-            " : "") . "
 
-            <tr class='total'>
-                <td>Total de Descontos</td>
-                <td class='right'>" . kz($discountsTotal) . "</td>
-            </tr>
-
-        </tbody>
-
-    </table>
-
-    <!-- NET -->
-    <div class='net-box'>
-
-        <div class='net-title'>
-            Salário Líquido
-        </div>
-
-        <div class='net-value'>
-            " . kz($dados['net_salary']) . "
-        </div>
+        </table>
 
     </div>
 
-    <!-- SIGN -->
+    <!-- TABLE -->
+    <table class='salary-table'>
+
+        <thead>
+
+            <tr>
+                <th width='90'>CÓDIGO</th>
+                <th>DESCRIÇÃO</th>
+                <th width='110'>REFERÊNCIA</th>
+                <th width='120'>PROVENTOS</th>
+                <th width='120'>DESCONTOS</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            <tr>
+
+                <td class='center'>001</td>
+
+                <td>Salário Base</td>
+
+                <td class='center'>-</td>
+
+                <td class='right'>
+                    " . kz($base) . "
+                </td>
+
+                <td class='right'>-</td>
+
+            </tr>
+
+            <tr>
+
+                <td class='center'>201</td>
+
+                <td>INSS (3%)</td>
+
+                <td class='center'>3%</td>
+
+                <td class='right'>-</td>
+
+                <td class='right'>
+                    " . kz($inss) . "
+                </td>
+
+            </tr>
+
+            <tr>
+
+                <td class='center'>202</td>
+
+                <td>IRT</td>
+
+                <td class='center'>Tabela</td>
+
+                <td class='right'>-</td>
+
+                <td class='right'>
+                    " . kz($irt) . "
+                </td>
+
+            </tr>
+
+            <tr>
+
+                <td class='center'>203</td>
+
+                <td>Faltas</td>
+
+                <td class='center'>
+                    " . $absences . "
+                </td>
+
+                <td class='right'>-</td>
+
+                <td class='right'>
+                    Kz 0,00
+                </td>
+
+            </tr>
+
+            <tr>
+
+                <td class='center'>204</td>
+
+                <td>Outros Descontos</td>
+
+                <td class='center'>-</td>
+
+                <td class='right'>-</td>
+
+                <td class='right'>
+                    " . kz($otherDiscounts) . "
+                </td>
+
+            </tr>
+
+            <tr class='total-row'>
+
+                <td colspan='3' class='right'>
+                    TOTAL
+                </td>
+
+                <td class='right'>
+                    " . kz($base) . "
+                </td>
+
+                <td class='right'>
+                    " . kz($discountsTotal) . "
+                </td>
+
+            </tr>
+
+            <tr class='net-row'>
+
+                <td colspan='4'>
+                    SALÁRIO LÍQUIDO
+                </td>
+
+                <td class='right'>
+                    " . kz($netSalary) . "
+                </td>
+
+            </tr>
+
+        </tbody>
+
+    </table>
+
+    <!-- SUMMARY -->
+    <div class='summary'>
+
+        <table>
+
+            <tr>
+                <td><strong>Total Bruto</strong></td>
+                <td class='right'>" . kz($base) . "</td>
+            </tr>
+
+            <tr>
+                <td><strong>Total Descontos</strong></td>
+                <td class='right'>" . kz($discountsTotal) . "</td>
+            </tr>
+
+            <tr>
+                <td><strong>Líquido a Receber</strong></td>
+                <td class='right'>" . kz($netSalary) . "</td>
+            </tr>
+
+        </table>
+
+    </div>
+
+    <!-- SIGNATURE -->
     <div class='signature'>
 
         <div class='signature-line'></div>
 
-        Finance Manager - Company
+        <strong>Assinatura</strong>
 
     </div>
-
-    <div style='clear:both'></div>
 
     <!-- FOOTER -->
     <div class='footer'>
-        Documento processado automaticamente por sistema informático
+        Documento processado automaticamente por computador • 
+        " . esc($dados['company_name']) . "
     </div>
 
 </div>
+
+</body>
+</html>
 ";
 
 /*
 |--------------------------------------------------------------------------
-| RENDER PDF
+| GERAR PDF
 |--------------------------------------------------------------------------
 */
 
@@ -553,6 +665,6 @@ $dompdf->setPaper('A4', 'portrait');
 $dompdf->render();
 
 $dompdf->stream(
-  "recibo_salario_" . $dados['id'] . ".pdf",
-  ['Attachment' => false]
+    'recibo_salario_' . $dados['id'] . '.pdf',
+    ['Attachment' => false]
 );
