@@ -117,41 +117,45 @@ require_once '../app/views/layout_creation.php';
         <aside class="action-panel shadow-sm">
 
             <!-- topo verde -->
-            <button class="btn text-center d-flex align-items-center align-content-center btn-success w-100 mb-2 fw-semibold" id="btnRecibo">
+            <button class="btn text-center align-items-center align-content-center btn-success w-100 mb-2 fw-semibold" id="btnRecibo">
                 <span class="material-icons-outlined">paid</span>
                 Pagamento / Recibo
             </button>
 
-            <button class="btn text-center d-flex align-items-center align-content-center btn-primary w-100 mb-2 d-none" id="btnEditar">
+            <button class="d-none btn text-center align-items-center align-content-center btn-primary w-100 mb-2" id="btnEditar">
                 <span class="material-icons-outlined">edit</span>
                 Editar 
             </button>
 
-            <button class="btn btn-warning w-100 mb-2" id="btnFinalizar">
+            <button class="d-none btn btn-warning w-100 mb-2" id="btnFinalizar">
                 <span class="material-icons-outlined">check_circle</span>
                 Finalizar 
             </button>
 
+            <button class="d-none btn btn-warning w-100 mb-2" id="btnCloneToInvoice">
+                <span class="material-icons-outlined">copy</span>
+                Clonar Factura
+            </button>
+
             <!-- <h6 class="section-title">Documento</h6> -->
 
-            <button class="btn text-center d-none align-items-center align-content-center btn-outline-dark w-100 mb-2" id="btnNotaCredito">
+            <button class="d-none btn text-center align-items-center align-content-center btn-dark w-100 mb-2" id="btnNotaCredito">
                 <span class="material-icons-outlined">assignment_return</span>
                 Nota de Crédito
             </button>
 
             <!-- grupo Documento -->
 
-            <button class="btn text-center d-none align-items-center align-content-center btn-danger w-100 mb-2" id="generatePdf">
+            <button class="d-none btn text-center d-none align-items-center align-content-center btn-danger w-100 mb-2" id="generatePdf">
                 <span class="material-icons-outlined">picture_as_pdf</span>
                 Baixar PDF
             </button>
 
-            <button class="btn text-center d-none align-items-center align-content-center btn-primary text-white w-100 mb-2" id="btnEnviar"
+            <button class="d-none btn text-center d-none align-items-center align-content-center btn-primary text-white w-100 mb-2" id="btnEnviar"
                 data-bs-toggle="modal" data-bs-target="#modalEnviarEmail">
                 <span class="material-icons-outlined">send</span>
                 Enviar fatura
             </button>
-
 
         </aside>
     </div>
@@ -231,7 +235,119 @@ require_once '../app/views/layout_creation.php';
         </div>
     </div>
 
+    <div class="modal fade" id="modalReceipts" tabindex="-1" aria-labelledby="modalReceiptsLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow border-0">
 
+                <!-- Header -->
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-semibold" id="modalReceiptsLabel">
+                        <i class="bi bi-receipt me-2"></i>Recibos
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Fechar">
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body">
+
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <button
+                            type="button"
+                            class="btn btn-success"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalPagamento">
+
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Novo Recibo
+                        </button>
+                    </div>
+
+                    <!-- Receipts List -->
+                    <div id="receiptsList" class="receipts-list">
+                        <div class="text-center text-muted py-4">
+                            Nenhum recibo encontrado.
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                        Fechar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalNotes" tabindex="-1" aria-labelledby="modalReceiptsLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow border-0">
+
+                <!-- Header -->
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-semibold" id="modalReceiptsLabel">
+                        <i class="bi bi-receipt me-2"></i>Recibos
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Fechar">
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body">
+
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <button
+                            type="button"
+                            class="btn btn-success"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalNotes">
+
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Nova nota credito
+                        </button>
+                    </div>
+
+                    <!-- Receipts List -->
+                    <div id="receiptsList" class="receipts-list">
+                        <div class="text-center text-muted py-4">
+                            Nenhuma nota de credito encontrado.
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                        Fechar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
 
 
     <!-- Modal :: Enviar fatura por e‑mail -->
@@ -318,6 +434,6 @@ require_once '../app/views/layout_creation.php';
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="invoices/invoice.js"></script>
+<script src="invoices/invoice.js?v=2.6"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

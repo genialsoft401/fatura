@@ -58,21 +58,12 @@ try {
 
   $currency = trim($_POST['currency'] ?? 'AOA');
 
+
   // =========================
   // TAX
   // =========================
-  $tax = 0;
+  $tax = trim($_POST['tax_vat'] ?? 0);
 
-  $tax = '0';
-
-  if (isset($_POST['tax_vat'])) {
-
-    $tax = str_replace('%', '', $_POST['tax_vat']);
-
-    $tax = str_replace(',', '.', $tax);
-
-    $tax = trim($tax);
-  }
 
   // =========================
   // PREÇOS

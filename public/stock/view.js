@@ -654,7 +654,7 @@ function saveAutomaticamente() {
     return;
   }
 
-  // 🔥 UI feedback imediato
+  //  UI feedback imediato
   if (typeof mostrarStatusSalvando === "function") {
     mostrarStatusSalvando();
   }

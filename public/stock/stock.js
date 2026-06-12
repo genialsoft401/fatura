@@ -370,7 +370,7 @@ $(document).ready(function () {
 //        Carregar Estoques           //
 // =============================================== //
 
-// 🔥 GLOBAL (fora da função)
+//  GLOBAL (fora da função)
 let selectedStock = null;
 let pieChartInstance = null;
 let barChartInstance = null;
@@ -382,7 +382,7 @@ function carregarEstoques() {
     function (res) {
       const container = $("#estoquesContainer");
 
-      // 🔥 validação correta da resposta
+      //  validação correta da resposta
       if (!res || !res.success) {
         container.html(`<p class="text-danger">Erro ao carregar stocks</p>`);
         return;

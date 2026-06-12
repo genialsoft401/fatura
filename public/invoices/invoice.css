@@ -269,6 +269,21 @@
   line-height: 1.3;
 }
 
+.page-break {
+  page-break-before: always;
+}
+
+table,
+tr,
+td,
+th {
+  page-break-inside: avoid;
+}
+
+.invoice-section {
+  break-inside: avoid;
+}
+
 /* Na impressão: controla margens do PDF e evita "empurrar" conteúdo para baixo */
 @media print {
   @page {

@@ -98,11 +98,11 @@ require_once '../app/views/layout_creation.php';
             <div class="invoice-header pagea4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <span class="mb-0">Factura nº <span id="fatura-id"></span></span>
+                        <span class="mb-0">Proforma nº <span id="fatura-id"></span></span>
                         <span class="subtitle" id="subtitle-client"></span>
                     </div>
                     <div>
-                        <span id="status-invoice"></span>
+                        <span id="status-invoice" class="d-none"></span>
                     </div>
                 </div>
             </div>
@@ -116,41 +116,27 @@ require_once '../app/views/layout_creation.php';
         <!-- ③ –– Painel -->
         <aside class="action-panel shadow-sm">
 
-            <!-- 🔹 Ações principais -->
-            <button class="btn btn-success w-100 mb-2 fw-semibold d-flex align-items-center gap-2" id="btnRecibo">
-                <span class="material-icons-outlined">paid</span>
-                Pagamento / Recibo
-            </button>
-
-            <button class="btn btn-primary w-100 mb-2 d-none d-flex align-items-center gap-2" id="btnEditar">
+            <button class="btn text-center align-items-center align-content-center btn-primary w-100 mb-2" id="btnEditar">
                 <span class="material-icons-outlined">edit</span>
-                Editar Proforma
+                Editar 
             </button>
 
-            <button class="btn btn-warning w-100 mb-2 d-flex align-items-center gap-2" id="btnFinalizar">
+            <button class="btn btn-warning w-100 mb-2" id="btnChangeToInvoice">
                 <span class="material-icons-outlined">check_circle</span>
-                Converter em Factura
+                Emitir Factura
             </button>
 
-            <hr>
+            <!-- grupo Documento -->
 
-            <!-- 🔹 Documentos -->
-            <button class="btn btn-outline-dark w-100 mb-2 d-none d-flex align-items-center gap-2" id="btnNotaCredito">
-                <span class="material-icons-outlined">assignment_return</span>
-                Nota de Crédito
-            </button>
-
-            <button class="btn btn-danger w-100 mb-2 d-none d-flex align-items-center gap-2" id="generatePdf">
+            <button class="btn text-center d-none align-items-center align-content-center btn-danger w-100 mb-2" id="generatePdf">
                 <span class="material-icons-outlined">picture_as_pdf</span>
-                Baixar PDF
+                Baixar PDF
             </button>
 
-            <button class="btn btn-primary text-white w-100 mb-2 d-none d-flex align-items-center gap-2"
-                id="btnEnviar"
-                data-bs-toggle="modal"
-                data-bs-target="#modalEnviarEmail">
+            <button class="btn text-center d-none align-items-center align-content-center btn-primary text-white w-100 mb-2" id="btnEnviar"
+                data-bs-toggle="modal" data-bs-target="#modalEnviarEmail">
                 <span class="material-icons-outlined">send</span>
-                Enviar Documento
+               Enviar Proforma
             </button>
 
         </aside>
@@ -167,36 +153,38 @@ require_once '../app/views/layout_creation.php';
 
                 <div class="modal-body">
                     <!-- Valor -->
-                    <div class="mb-3">
-                        <label class="form-label">Valor</label>
-                        <div class="input-group">
-                            <input type="number" step="0.01" min="0" id="pg_valor"
-                                name="amount" class="form-control" required>
-                            <span class="input-group-text" id="pg_saldo"></span>
+                    <div class="p-3 bg-white rounded shadow-sm mb-2">
+                        <div class="mb-3">
+                            <label class="form-label">Valor</label>
+                            <div class="input-group d-flex gap-0">
+                                <input type="number" step="0.01" min="0" id="pg_valor"
+                                    name="amount" class="form-control" required>
+                                <span class="input-group-text" id="pg_saldo"></span>
+                            </div>
+                            <!-- o .invalid-feedback será inserido aqui quando necessário -->
                         </div>
-                        <!-- o .invalid-feedback será inserido aqui quando necessário -->
-                    </div>
 
 
-                    <!-- Data -->
-                    <div class="mb-3">
-                        <label class="form-label">Data</label>
-                        <input type="date" id="pg_data" name="pay_date"
-                            class="form-control" required>
                     </div>
 
                     <!-- Série -->
-                    <div class="mb-3">
-                        <label class="form-label">Série</label>
-                        <select id="pg_serie" name="serie" class="form-select" required>
-                            <option value="2025">2025</option>
-                            <option value="A">A</option>
-                            <!-- … -->
-                        </select>
+                    <div class="p-3 bg-white rounded shadow-sm mb-2 d-flex gap-2">
+                        <!-- Data -->
+                        <div class="mb-3 col-6">
+                            <label class="form-label">Data</label>
+                            <input type="date" id="pg_data" name="pay_date"
+                                class="form-control" required>
+                        </div>
+
+                        <div class="mb-3 col-6">
+                            <label class="form-label">Série</label>
+                            <input id="pg_serie" name="serie" class="form-control" required placeholder="EX: 12/2026">
+                        </div>
+
+                        <!-- Meio de pagamento -->
                     </div>
 
-                    <!-- Meio de pagamento -->
-                    <div class="mb-3">
+                    <div class="mb-3 p-3 bg-white rounded shadow-sm mb-2">
                         <label class="form-label">Meio de pagamento</label>
                         <select id="pg_meio" name="payment_method" class="form-select" required>
                             <option>Transferência bancária</option>
@@ -207,14 +195,17 @@ require_once '../app/views/layout_creation.php';
                     </div>
 
                     <!-- Observações -->
-                    <div class="mb-3">
-                        <label class="form-label">Observações</label>
-                        <textarea id="pg_obs" name="notes" rows="2"
-                            class="form-control"></textarea>
-                    </div>
+                    <div class="p-3 bg-white rounded shadow-sm mb-2">
 
-                    <!-- campo oculto com ID da fatura -->
-                    <input type="hidden" name="invoice_id" value="">
+                        <div class="mb-3">
+                            <label class="form-label">Observações</label>
+                            <textarea id="pg_obs" name="notes" rows="2"
+                                class="form-control"></textarea>
+                        </div>
+
+                        <!-- campo oculto com ID da fatura -->
+                        <input type="hidden" name="invoice_id" value="">
+                    </div>
                 </div>
 
                 <div class="modal-footer">
@@ -226,7 +217,119 @@ require_once '../app/views/layout_creation.php';
         </div>
     </div>
 
+    <div class="modal fade" id="modalReceipts" tabindex="-1" aria-labelledby="modalReceiptsLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow border-0">
 
+                <!-- Header -->
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-semibold" id="modalReceiptsLabel">
+                        <i class="bi bi-receipt me-2"></i>Recibos
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Fechar">
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body">
+
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <button
+                            type="button"
+                            class="btn btn-success"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalPagamento">
+
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Novo Recibo
+                        </button>
+                    </div>
+
+                    <!-- Receipts List -->
+                    <div id="receiptsList" class="receipts-list">
+                        <div class="text-center text-muted py-4">
+                            Nenhum recibo encontrado.
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                        Fechar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalNotes" tabindex="-1" aria-labelledby="modalReceiptsLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow border-0">
+
+                <!-- Header -->
+                <div class="modal-header bg-light">
+                    <h5 class="modal-title fw-semibold" id="modalReceiptsLabel">
+                        <i class="bi bi-receipt me-2"></i>Recibos
+                    </h5>
+
+                    <button
+                        type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Fechar">
+                    </button>
+                </div>
+
+                <!-- Body -->
+                <div class="modal-body">
+
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-end mb-3">
+                        <button
+                            type="button"
+                            class="btn btn-success"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modalNotes">
+
+                            <i class="bi bi-plus-circle me-1"></i>
+                            Nova nota credito
+                        </button>
+                    </div>
+
+                    <!-- Receipts List -->
+                    <div id="receiptsList" class="receipts-list">
+                        <div class="text-center text-muted py-4">
+                            Nenhuma nota de credito encontrado.
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Footer -->
+                <div class="modal-footer">
+                    <button
+                        type="button"
+                        class="btn btn-secondary"
+                        data-bs-dismiss="modal">
+                        Fechar
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
 
 
     <!-- Modal :: Enviar fatura por e‑mail -->
@@ -312,6 +415,7 @@ require_once '../app/views/layout_creation.php';
     </div>
 </main>
 
-<script src="proform/invoice.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="proform/invoice.js?v=0.1"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

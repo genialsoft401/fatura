@@ -1,98 +1,209 @@
 $(document).ready(function () {
   // Configuração do DataTable
+
   $("#invoicesTable").DataTable({
     ajax: {
-      url: "invoices/ajax/fetch_invoices.php",
-      dataSrc: "",
+      url: "proform/ajax/fetch_proforms.php",
+      type: "GET",
+      dataType: "json",
+
+      dataSrc: function (json) {
+        console.log("AJAX RESPONSE:", json);
+
+        if (Array.isArray(json)) return json;
+        if (json?.data && Array.isArray(json.data)) return json.data;
+        if (json?.invoices && Array.isArray(json.invoices))
+          return json.invoices;
+
+        console.error("Formato inválido do backend:", json);
+        return [];
+      },
     },
+
     language: {
       url: "https://cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json",
-      lengthMenu: "Mostrar  _MENU_",
+      lengthMenu: "Mostrar _MENU_",
+      emptyTable: "Nenhuma fatura encontrada",
     },
+
     columns: [
       {
         data: null,
         orderable: false,
+        searchable: false,
+
         render: function (data, type, row) {
           return `
-                    <div class="d-flex flex-wrap justify-content-evenly">
-                        <input 
-                            name="${row.id}" 
-                            data-id="${row.id}" 
-                            type="checkbox" 
-                            value="${row.id}">
-                        <div 
-                            class="px-2 icon-statusFatura" 
-                            style="background-color:${row.color};color:${row.text_color};font-weight:900; cursor: default;" 
-                            data-bs-title="${row.status_invoice}" 
-                            data-bs-toggle="tooltip" data-bs-placement="top">
-                            ${row.status_invoice.trim().charAt(0)}
-                        </div>
-                    </div>
-                    `;
+          <div class="d-flex flex-wrap justify-content-evenly align-items-center">
+
+            <input
+              type="checkbox"
+              class="invoice-check"
+              data-id="${row.id}"
+              value="${row.id}"
+            />
+
+            <div
+              class="px-2 icon-statusFatura"
+              style="
+                background-color:${row.color || "#ccc"};
+                color:${row.text_color || "#000"};
+                font-weight:900;
+                cursor:default;
+              "
+              data-bs-toggle="tooltip"
+              data-bs-title="${row.status_invoice || ""}"
+            >
+              ${(row.status_invoice || "?").trim().charAt(0).toUpperCase()}
+            </div>
+
+          </div>
+        `;
         },
       },
-      { data: "codigo" },
-      { data: "cliente" },
+
+      { data: "codigo", defaultContent: "-" },
+      { data: "cliente", defaultContent: "-" },
+
       {
         data: "issue_date",
         render: function (data) {
-          const date = new Date(data);
-          return date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
+          if (!data) return "-";
+
+          const d = new Date(data);
+          if (isNaN(d)) return "-";
+
+          return d.toLocaleDateString("pt-BR");
         },
       },
+
       {
         data: null,
         render: function (data, type, row) {
-          const hoje = new Date();
-          const date = new Date(row.due_date);
-          return `<span style="color: ${date < hoje ? "red" : "inherit"};" ${date < hoje && row.status_invoice == "Rascunho" ? ' data-bs-title="Aguardando Finalizar Fatura"  data-bs-toggle="tooltip"  ' : ""}>${date.toLocaleDateString("pt-BR", { timeZone: "UTC" })}</span>`;
+          if (!row.due_date) return "-";
+
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const due = new Date(row.due_date);
+          due.setHours(0, 0, 0, 0);
+
+          const isLate = due < today;
+
+          return `
+          <span style="color:${isLate ? "red" : "inherit"}">
+            ${due.toLocaleDateString("pt-BR")}
+          </span>
+        `;
         },
       },
-      { data: "currency" },
+
+      { data: "currency", defaultContent: "-" },
+
       {
         data: null,
         render: function (data, type, row) {
-          return formatCurrency(row.final_total, row.symbol, row.position);
+          return formatCurrency(
+            row.final_total || 0,
+            row.symbol || "",
+            row.position || "left",
+          );
         },
       },
+
       {
         data: null,
+        orderable: false,
+        searchable: false,
+
         render: function (data, type, row) {
-          let btns = `<button  data-bs-toggle="tooltip" title="Ver detalhes" class="btn text-primary btn-sm" onclick="window.location.href='invoice.php?id=${data.issue_date.replace("-", "").replace("-", "")}/${data.company_id}/${data.id}'; event.stopPropagation();"><i class="bi bi-card-list"></i></button>`;
-          if (row.status_invoice === "Rascunho") {
-            btns += ` <button  data-bs-toggle="tooltip" title="Editar" class="btn text-danger btn-sm ms-1" onclick="window.location.href='create_invoices.php?edit_id=${row.id}'; event.stopPropagation();"><i class="bi bi-pencil"></i></button>`;
-            btns += ` <button  data-bs-toggle="tooltip" title="Eliminar" class="btn text-danger btn-sm ms-1" onclick="deleteInvoice(${row.id}, ${row.company_id}); event.stopPropagation();"><i class="bi bi-trash"></i></button>`;
+          const id = row.id;
+          const company = row.company_id;
+
+          const invoiceUrl =
+            `proform.php?id=` +
+            `${String(row.issue_date || "").replaceAll("-", "")}` +
+            `/${company}/${id}`;
+
+          let html = `
+          <button
+            class="btn btn-sm text-primary"
+            title="Ver detalhes"
+            onclick="event.stopPropagation(); window.location.href='${invoiceUrl}'"
+          >
+            <i class="bi bi-card-list"></i>
+          </button>
+        `;
+
+          const isDraft =
+            (row.status_invoice || "").toLowerCase() === "rascunho";
+
+          if (isDraft) {
+            html += `
+            <button
+              class="btn btn-sm text-warning ms-1"
+              title="Editar"
+              onclick="event.stopPropagation(); window.location.href='create_invoices.php?edit_id=${id}'"
+            >
+              <i class="bi bi-pencil"></i>
+            </button>
+
+            <button
+              class="btn btn-sm text-danger ms-1"
+              title="Eliminar"
+              onclick="event.stopPropagation(); deleteInvoice(${id}, ${company})"
+            >
+              <i class="bi bi-trash"></i>
+            </button>
+          `;
           } else {
-            btns += ` <button  data-bs-toggle="tooltip" title="Baixar PDF" class="btn text-success btn-sm ms-1" onclick="downloadPDF(${row.id}); event.stopPropagation();"><i class="bi bi-file-earmark-pdf"></i></button>`;
+            html += `
+            <button
+              class="btn btn-sm text-success ms-1"
+              title="PDF"
+              onclick="event.stopPropagation(); downloadPDF(${id})"
+            >
+              <i class="bi bi-file-earmark-pdf"></i>
+            </button>
+          `;
           }
-          return btns;
+
+          return html;
         },
       },
     ],
+
     paging: true,
     searching: true,
     ordering: true,
     responsive: true,
     destroy: true,
     pageLength: 25,
-    lengthMenu: [
-      [10, 25, 50, 100, -1],
-      ["10 linhas", "25 linhas", "50 linhas", "100 linhas", "Tudo"],
-    ],
-    order: [[1, "desc"]],
-    rowCallback: function (row, data) {
-      $(row).css("cursor", "pointer");
-      $(row).on("click", function (event) {
-        const cellIndex = $(event.target).closest("td").index();
 
-        if (cellIndex === 0) {
-          const checkbox = $(row).find('input[type="checkbox"]');
-          checkbox.prop("checked", !checkbox.prop("checked"));
-        } else if (cellIndex !== 7) {
-          window.location.href = `invoice.php?id=${data.issue_date.replace("-", "").replace("-", "")}/${data.company_id}/${data.id}`;
-        }
-      });
+    order: [[1, "desc"]],
+
+    rowCallback: function (row, data) {
+      $(row)
+        .off("click")
+        .on("click", function (e) {
+          const $target = $(e.target);
+
+          if (
+            $target.closest("button").length ||
+            $target.closest("input").length
+          )
+            return;
+
+          const id = data.id;
+          const company = data.company_id;
+
+          const url =
+            `proform.php?id=` +
+            `${String(data.issue_date || "").replaceAll("-", "")}` +
+            `/${company}/${id}`;
+
+          window.location.href = url;
+        });
     },
 
     drawCallback: function () {
@@ -109,7 +220,7 @@ $(document).ready(function () {
 
 function downloadPDF(invoiceId) {
   $.ajax({
-    url: "invoices/ajax/get_invoice.php",
+    url: "proform/ajax/get_proform.php",
     type: "GET",
     data: { id: invoiceId },
     dataType: "json",
@@ -162,7 +273,7 @@ function downloadPDF(invoiceId) {
       const qrX = 150; // Posição no lado direito
       const qrY = Math.max(currentY - 15, 35); // Alinha o QR Code abaixo do texto
       const qrBase64 = generateQRCode(
-        "../public/invoice_public.php?id=" +
+        "../public/proform_public.php?id=" +
           generateRandomHash() +
           "_" +
           response.company_id +
@@ -464,7 +575,7 @@ $("#confirmDelete")
     if (!invoiceToDelete) return;
 
     $.ajax({
-      url: "invoices/ajax/delete_invoice.php",
+      url: "proform/ajax/delete_invoice.php",
       type: "POST",
       data: { invoice_id: invoiceToDelete, company_id: invoice_companyId },
 
@@ -524,7 +635,7 @@ function renderInvoiceHTML(data) {
             .map(
               (item) => `
               <tr>
-                <td>${item.name || item.description}</td>
+                <td>${item.description}</td>
                 <td>${item.quantity}</td>
                 <td>${item.unit_price}</td>
                 <td>${item.unit_price * item.quantity}</td>
@@ -584,6 +695,6 @@ function exportFile(format) {
 
   // Aguarda um pequeno tempo para garantir que o progresso começou
   setTimeout(() => {
-    window.location.href = `invoices/ajax/faturas_export.php?formato=${format}`;
+    window.location.href = `proform/ajax/faturas_export.php?formato=${format}`;
   }, 2000);
 }

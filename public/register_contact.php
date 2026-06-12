@@ -601,7 +601,7 @@ require_once '../app/views/layout_creation.php';
 
         // ================= EVENTS =================
         nextBtn.onclick = () => {
-            // 🔥 VALIDA ANTES DE AVANÇAR
+            //  VALIDA ANTES DE AVANÇAR
             if (!validateStep(current)) return;
 
             if (current < steps.length - 1) {

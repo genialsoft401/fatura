@@ -34,7 +34,7 @@ try {
     $zip_code = trim($_POST['zip_code'] ?? '');
 
     // =============================
-    // 🔥 FISCAL (CORRIGIDO)
+    //  FISCAL (CORRIGIDO)
     // =============================
     $vat_regime = $_POST['vat_regime'] ?? 'geral';
 

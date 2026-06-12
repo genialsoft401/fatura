@@ -4,16 +4,16 @@ header('Content-Type: application/json');
 session_start();
 
 try { 
-    $sql = "SELECT i.id, i.company_id, ivs.name as status_invoice, ivs.color, ivs.text_color,
-     concat(YEAR(i.issue_date),'/',i.id) as codigo, c.name as cliente, i.issue_date, 
-     i.due_date, case when i.converted_total > 0 then round(i.converted_total,2) else i.final_total end as final_total,
+    $sql = "SELECT p.id, p.company_id, ps.name as status_invoice, ps.color, ps.text_color,
+     concat(YEAR(p.issue_date),'/',p.id) as codigo, c.name as cliente, p.issue_date, 
+     p.due_date, case when p.converted_total > 0 then round(p.converted_total,2) else p.final_total end as final_total,
       cr.symbol, cr.position, concat(cr.currency, ' (',cr.iso_code,')') as currency 
-    FROM invoices i
-    join contact c on c.id = i.contact_id
-    join currencies cr on cr.iso_code = i.currency
-    join invoice_status ivs on ivs.id = i.status
-    where i.company_id = :company_id 
-    order by i.id DESC";
+    FROM proformas p
+    join contact c on c.id = p.contact_id
+    join currencies cr on cr.iso_code = 'AOA'
+    join proforma_status ps on ps.id = p.status
+    where p.company_id = :company_id
+    order by p.id DESC";
     $stmt = $pdo->prepare($sql);
     $stmt->bindParam(":company_id", $_SESSION['user']['company_id'], PDO::PARAM_INT);
     $stmt->execute();

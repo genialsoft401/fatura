@@ -246,7 +246,7 @@
             </button>
             <div class="submenu" id="proformas">
                 <a href="create_proform.php" data-link><i data-lucide="plus"></i> Emitir</a>
-                <a href="proformas.php" data-link><i data-lucide="list"></i> Listar</a>
+                <a href="list_proforms.php" data-link><i data-lucide="list"></i> Listar</a>
             </div>
 
             <button class="nav-item" data-submenu="#facturas">

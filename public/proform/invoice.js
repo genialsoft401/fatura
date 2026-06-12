@@ -18,15 +18,15 @@ $(function () {
   // 2. CARREGAR DADOS JSON
   // =========================
   function loadInvoice() {
-    $.getJSON("proform/ajax/get_invoice.php", { id: invoiceId })
+    $.get("proform/ajax/get_proform.php", { id: invoiceId })
       .done((inv) => {
-        currentInvoice = inv;
+        currentInvoice = inv?.data;
 
-        $("#fatura-id").text(`PROFORMA #${inv.series}/${inv.id}`);
+        $("#fatura-id").text(`${inv.data?.reference}`);
         $("#status-invoice").text("PROFORMA");
-        $("#subtitle-client").text(inv.client_name);
+        $("#subtitle-client").text(inv.data?.client_name);
 
-        setupButtons(inv);
+        setupButtons(inv?.data);
       })
       .fail(() => {
         alert("Erro ao carregar factura proforma");
@@ -37,7 +37,7 @@ $(function () {
   // 3. CARREGAR HTML VISUAL
   // =========================
   $("#fatura-container").load(
-    `proform/ajax/invoice_public.php?id=${invoiceId}`,
+    `proform/ajax/proform_public.php?id=${invoiceId}`,
   );
 
   // =========================
@@ -46,10 +46,10 @@ $(function () {
   function setupButtons(inv) {
     if (inv.status_invoice === "Rascunho") {
       $("#btnFinalizar, #btnEditar").removeClass("d-none");
-    } else {
-      $("#btnPdf, #generatePdf, #btnEnviar").removeClass("d-none");
-      $("#btnNotaCredito").removeClass("d-none");
     }
+
+    $("#btnPdf, #generatePdf, #btnEnviar").removeClass("d-none");
+    $("#btnNotaCredito").removeClass("d-none");
   }
 
   // =========================
@@ -62,7 +62,7 @@ $(function () {
 
     const opt = {
       margin: 10,
-      filename: `Proforma_${currentInvoice.codigo}.pdf`,
+      filename: `${currentInvoice.reference}.pdf`,
       image: { type: "jpeg", quality: 1 },
       html2canvas: { scale: 3, useCORS: true },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
@@ -76,28 +76,95 @@ $(function () {
   // =========================
   // 6. FINALIZAR PROFORMA -> FACTURA
   // =========================
-  $("#btnFinalizar").on("click", function () {
+  $("#btnChangeToInvoice").on("click", function () {
+    const proformaId = currentInvoice?.id;
+
+    if (!proformaId) {
+      return Swal.fire({
+        icon: "error",
+        title: "Erro",
+        text: "Proforma não encontrada.",
+      });
+    }
+
     Swal.fire({
-      title: "Converter em Factura?",
-      text: "A Proforma será convertida em factura oficial.",
+      title: "Converter em Factura Recibo?",
+      text: "A Proforma será convertida numa Factura Recibo oficial.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Sim",
+      confirmButtonText: "Sim, converter",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true,
     }).then((result) => {
       if (!result.isConfirmed) return;
 
-      $.post("proform/ajax/update_status.php", {
-        invoice_id: currentInvoice.id,
-        new_status: "Emitida",
-      })
-        .done(() => {
-          Swal.fire("Sucesso", "Factura emitida!", "success").then(() =>
-            location.reload(),
-          );
-        })
-        .fail(() => {
-          Swal.fire("Erro", "Falha ao converter", "error");
-        });
+      $.ajax({
+        url: "proform/ajax/convert_proforma.php",
+        type: "POST",
+        dataType: "json",
+        data: {
+          invoice_id: proformaId,
+        },
+
+        beforeSend: function () {
+          $("#btnChangeToInvoice").prop("disabled", true).html(`
+            <span class="spinner-border spinner-border-sm"></span>
+            Convertendo...
+          `);
+        },
+
+        success: function (response) {
+          if (!response.success) {
+            Swal.fire({
+              icon: "error",
+              title: "Erro",
+              text: response.error || "Falha ao converter a Proforma.",
+            });
+            return;
+          }
+
+          // Já existe uma factura gerada
+          if (response.already_converted) {
+            Swal.fire({
+              icon: "info",
+              title: "Factura já existente",
+              text: `A Factura Recibo ${response.reference} já foi emitida anteriormente.`,
+              confirmButtonText: "Abrir Factura",
+            }).then(() => {
+              window.location.href = `invoice.php?id=${response.new_invoice_id}`;
+            });
+
+            return;
+          }
+
+          // Nova factura criada
+          Swal.fire({
+            icon: "success",
+            title: "Sucesso",
+            text: `Factura Recibo ${response.reference} criada com sucesso.`,
+            confirmButtonText: "Abrir Factura",
+          }).then(() => {
+            window.location.href = `invoice.php?id=${response.new_invoice_id}`;
+          });
+        },
+
+        error: function (xhr) {
+          Swal.fire({
+            icon: "error",
+            title: "Erro",
+            text:
+              xhr.responseJSON?.error ||
+              "Erro interno ao converter a Proforma.",
+          });
+        },
+
+        complete: function () {
+          $("#btnChangeToInvoice").prop("disabled", false).html(`
+            <span class="material-icons-outlined">receipt_long</span>
+            Emitir Factura Recibo
+          `);
+        },
+      });
     });
   });
 
@@ -105,18 +172,7 @@ $(function () {
   // 7. EDITAR PROFORMA
   // =========================
   $("#btnEditar").on("click", function () {
-    window.location.href = `create_invoices.php?edit_id=${currentInvoice.id}`;
-  });
-
-  // =========================
-  // 8. NOTA DE CRÉDITO (DESABILITADO EM PROFORMA)
-  // =========================
-  $("#btnNotaCredito").on("click", function () {
-    Swal.fire(
-      "Atenção",
-      "Notas de crédito só podem ser emitidas após factura oficial.",
-      "info",
-    );
+    window.location.href = `create_proform.php?edit_id=${currentInvoice.id}`;
   });
 
   // =========================

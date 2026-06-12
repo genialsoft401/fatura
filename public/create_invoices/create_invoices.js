@@ -44,7 +44,7 @@ $(document).ready(function () {
 
           $("#contact-form").show();
 
-          console.log("✅ Formulário agora está visível.");
+          console.log(" Formulário agora está visível.");
         },
         error: function (xhr, status, error) {
           console.error("❌ Erro ao buscar dados do contato:", status, error);
@@ -213,29 +213,66 @@ $(document).ready(function () {
     let price = parseFloat(row.find(".field_price").val()) || 0;
     let qtd = parseFloat(row.find(".field_qtd").val()) || 0;
     let discount = parseFloat(row.find(".field_desc").val()) || 0;
-    let tax = row.find(".field_tax").val();
+    let tax = parseFloat(row.find(".field_tax").val()) || 0;
 
-    let subtotal = price * qtd - discount;
+    // =====================================
+    // SUBTOTAL
+    // =====================================
+    console.log(discount);
+
+    let subtotal = price * qtd;
+
+    // =====================================
+    // IVA
+    // =====================================
 
     let taxValue = 0;
-    if (tax == 14) {
+
+    if (tax === 14) {
       taxValue = subtotal * 0.14;
     }
 
-    let total = subtotal + taxValue;
+    // total com IVA
+    let totalWithTax = subtotal + taxValue;
 
-    row.find(".row-total").text(total.toFixed(2));
+    // =====================================
+    // DESCONTO (%)
+    // =====================================
+
+    let totalDiscount = (discount / 100) * totalWithTax;
+
+    // =====================================
+    // TOTAL FINAL
+    // =====================================
+
+    let totalFinal = totalWithTax - totalDiscount;
+
+    row.find(".row-total").text(totalFinal.toFixed(2));
   }
 
   function calculateGrandTotal() {
     let grandTotal = 0;
 
     $(".row-item").each(function () {
-      let rowTotal = parseFloat($(this).find(".row-total").text()) || 0;
+      let value = $(this).find(".row-total").text().trim();
+
+      // remove separadores de milhares
+      value = value.replace(/\./g, "");
+
+      // troca vírgula por ponto
+      value = value.replace(",", ".");
+
+      let rowTotal = parseFloat(value) || 0;
+
       grandTotal += rowTotal;
     });
 
-    $("#grand_total").text(grandTotal.toFixed(2));
+    $("#grand_total").text(
+      grandTotal.toLocaleString("pt-PT", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }),
+    );
   }
 
   // Adicionar item ao selecionar
@@ -246,8 +283,11 @@ $(document).ready(function () {
       // $(this).val('').trigger('change'); // Opcional: limpar seleção
     }
   });
+
   function addItemRow(item) {
     const itemId = item.id || item.item_id;
+
+    console.log(item);
 
     if (!itemId) return;
 
@@ -271,23 +311,7 @@ $(document).ready(function () {
     /**
      * IVA
      */
-    let taxVal = 0;
-
-    if (typeof company !== "undefined" && company?.vat_regime === "geral") {
-      taxVal = 14;
-    } else {
-      taxVal = item?.tax_raw ?? item?.tax ?? 0;
-    }
-
-    /**
-     * Normalizar IVA
-     */
-    taxVal = String(taxVal).replace("%", "").replace(",", ".").trim();
-
-    if (!taxVal) {
-      taxVal = "0";
-    }
-
+    let taxVal = item?.tax ?? 0;
     /**
      * Quantidade máxima
      */
@@ -522,70 +546,59 @@ $(document).ready(function () {
 
   function resetInvoiceSummary() {
     // =========================
-    // VALORES
+    // VALORES ZERO PADRÃO
     // =========================
-    const zero = formatCurrency(0, currencySymbol, currencyPosition);
+    const zeroValue = 0;
+    const zeroFormatted = formatCurrency(0, currencySymbol, currencyPosition);
 
     // =========================
     // UI PRINCIPAL
     // =========================
-    $("#total_sum").text(zero);
-
-    $("#total_discount").text(zero);
-
-    $("#subtotal_without_tax").text(zero);
-
-    $("#total_tax").text(zero);
-
-    $("#retention_value").text(zero);
-
-    $("#final_total").text(zero);
+    $("#total_sum").text(zeroFormatted);
+    $("#total_discount").text(zeroFormatted);
+    $("#subtotal_without_tax").text(zeroFormatted);
+    $("#total_tax").text(zeroFormatted);
+    $("#retention_value").text(zeroFormatted);
+    $("#final_total").text(zeroFormatted);
 
     // =========================
-    // TABELA DE IMPOSTOS
+    // TABELA IMPOSTOS
     // =========================
     $("#tax_summary").html(`
-    <tr>
-      <td colspan="5" class="text-center text-muted">
-        Nenhum item adicionado
-      </td>
-    </tr>
-  `);
+        <tr>
+            <td colspan="5" class="text-center text-muted">
+                Nenhum item adicionado
+            </td>
+        </tr>
+    `);
 
     // =========================
-    // INPUTS HIDDEN IDS
+    // INPUTS HIDDEN (IDs)
     // =========================
-    $("#total_sumInput").val("0.00");
-
-    $("#total_discountInput").val("0.00");
-
-    $("#subtotal_without_taxInput").val("0.00");
-
-    $("#total_taxInput").val("0.00");
-
-    $("#retention_valueInput").val("0.00");
-
-    $("#final_totalInput").val("0.00");
+    $("#total_sumInput").val(zeroValue.toFixed(2));
+    $("#total_discountInput").val(zeroValue.toFixed(2));
+    $("#subtotal_without_taxInput").val(zeroValue.toFixed(2));
+    $("#total_taxInput").val(zeroValue.toFixed(2));
+    $("#retention_valueInput").val(zeroValue.toFixed(2));
+    $("#final_totalInput").val(zeroValue.toFixed(2));
 
     // =========================
-    // INPUTS HIDDEN NAMES
+    // INPUTS HIDDEN (NAME)
     // =========================
-    $("input[name='total_sum']").val("0.00");
-
-    $("input[name='total_discount']").val("0.00");
-
-    $("input[name='subtotal_without_tax']").val("0.00");
-
-    $("input[name='total_tax']").val("0.00");
-
-    $("input[name='retention_value']").val("0.00");
-
-    $("input[name='final_total']").val("0.00");
+    $("input[name='total_sum']").val(zeroValue.toFixed(2));
+    $("input[name='total_discount']").val(zeroValue.toFixed(2));
+    $("input[name='subtotal_without_tax']").val(zeroValue.toFixed(2));
+    $("input[name='total_tax']").val(zeroValue.toFixed(2));
+    $("input[name='retention_value']").val(zeroValue.toFixed(2));
+    $("input[name='final_total']").val(zeroValue.toFixed(2));
 
     // =========================
-    // RETENÇÃO
+    // RETENÇÃO (IMPORTANTE)
     // =========================
-    updateRetention(0, 0, 0);
+    // NÃO forçar recalculo interno
+    if (typeof updateRetention === "function") {
+      updateRetention(zeroValue, zeroValue, zeroValue);
+    }
   }
 
   let finalTotal = 0;
@@ -617,52 +630,78 @@ $(document).ready(function () {
     itemList.forEach((row) => {
       const $row = $(row);
 
-      const price = parseFloat($row.find(".field_price").val()) || 0;
-      const qtd = parseFloat($row.find(".field_qtd").val()) || 0;
-      const discount = parseFloat($row.find(".field_desc").val()) || 0;
+      // =========================
+      // SAFE PARSING HELPERS
+      // =========================
+      const toNumber = (value) =>
+        parseFloat(
+          String(value || "0")
+            .replace(",", ".")
+            .replace("%", "")
+            .trim(),
+        ) || 0;
 
       // =========================
+      // VALUES
+      // =========================
+      const price = toNumber($row.find(".field_price").val());
+      const qtd = toNumber($row.find(".field_qtd").val());
+
+      // desconto em %
+      const discountPercent = toNumber($row.find(".field_desc").val());
+
       // IVA
-      // =========================
-      let taxRaw = $row.find(".field_tax").val() || "0";
-      taxRaw = String(taxRaw).replace("%", "").replace(",", ".").trim();
-      const taxNum = parseFloat(taxRaw) || 0;
+      const taxNum = toNumber($row.find(".field_tax").val());
 
-      // =========================
-      // RETENÇÃO (SEGURO)
-      // =========================
-      let retentionRaw = $row.find(".field_retention").val();
-      const retentionRate = Number(retentionRaw) || 0;
+      // retenção %
+      const retentionRate = toNumber($row.find(".field_retention").val());
 
       // =========================
       // BASE DA LINHA
       // =========================
       const lineTotal = price * qtd;
-      const safeDiscount = discount > lineTotal ? lineTotal : discount;
+
+      // desconto calculado em %
+      const discountValue = (lineTotal * discountPercent) / 100;
+
+      // evita desconto maior que o total
+      const safeDiscount = Math.min(discountValue, lineTotal);
+
       const lineSubtotal = lineTotal - safeDiscount;
 
       totalSum += lineTotal;
       totalDiscount += safeDiscount;
 
+      // =========================
+      // IVA
+      // =========================
+      const ivaValue = (lineSubtotal * taxNum) / 100;
+
+      // =========================
+      // RETENÇÃO
+      // =========================
+      const retentionValue = (lineSubtotal * retentionRate) / 100;
+
+      totalRetention += retentionValue;
+
+      // =========================
+      // TOTAL FINAL DA LINHA
+      // =========================
+      const net = lineSubtotal + ivaValue - retentionValue;
+
+      // =========================
+      // INCIDÊNCIA IVA
+      // =========================
       if (taxNum === 14) {
         tax14Incidence += lineSubtotal;
       } else {
         taxExemptIncidence += lineSubtotal;
       }
 
-      // =========================
-      // CÁLCULOS
-      // =========================
-      const ivaValue = (lineSubtotal * taxNum) / 100;
-      const retentionValue = (lineSubtotal * retentionRate) / 100;
-
-      totalRetention += retentionValue;
-
-      const gross = lineSubtotal + ivaValue;
-      const net = gross - retentionValue;
+      totalTax += ivaValue;
 
       // =========================
-      // AGRUPAMENTO
+      // AGRUPAMENTO POR TAXA
       // =========================
       if (!grouped[taxNum]) {
         grouped[taxNum] = {
@@ -680,14 +719,12 @@ $(document).ready(function () {
     });
 
     // =========================
-    // NORMALIZAÇÃO
+    // NORMALIZAÇÃO FINAL
     // =========================
     totalSum = +totalSum.toFixed(2);
     totalDiscount = +totalDiscount.toFixed(2);
-    tax14Incidence = +tax14Incidence.toFixed(2);
+    totalTax = +totalTax.toFixed(2);
     totalRetention = +totalRetention.toFixed(2);
-
-    totalTax = +(tax14Incidence * 0.14).toFixed(2);
 
     const subtotalWithoutTax = +(totalSum - totalDiscount).toFixed(2);
 
@@ -698,7 +735,7 @@ $(document).ready(function () {
     if (finalTotal < 0) finalTotal = 0;
 
     // =========================
-    // UI PRINCIPAL
+    // UI
     // =========================
     $("#total_sum").text(
       formatCurrency(totalSum, currencySymbol, currencyPosition),
@@ -712,57 +749,55 @@ $(document).ready(function () {
     $("#total_tax").text(
       formatCurrency(totalTax, currencySymbol, currencyPosition),
     );
-
     $("#retention_value").text(
       formatCurrency(totalRetention, currencySymbol, currencyPosition),
     );
-
     $("#final_total").text(
       formatCurrency(finalTotal, currencySymbol, currencyPosition),
     );
 
     // =========================
-    // TABELA DE IMPOSTOS
+    // TAX SUMMARY
     // =========================
     const tax_summary = $("#tax_summary");
-
     let html = "";
 
     Object.keys(grouped).forEach((tax) => {
       const g = grouped[tax];
 
       html += `
-      <tr>
-        <td>${tax}%</td>
-        <td>${formatCurrency(g.base, currencySymbol, currencyPosition)}</td>
-        <td>${formatCurrency(g.iva, currencySymbol, currencyPosition)}</td>
-        <td>${formatCurrency(g.retention, currencySymbol, currencyPosition)}</td>
-        <td>${formatCurrency(g.net, currencySymbol, currencyPosition)}</td>
-      </tr>
-    `;
+            <tr>
+                <td>${tax}%</td>
+                <td>${formatCurrency(g.base, currencySymbol, currencyPosition)}</td>
+                <td>${formatCurrency(g.iva, currencySymbol, currencyPosition)}</td>
+                <td>${formatCurrency(g.retention, currencySymbol, currencyPosition)}</td>
+                <td>${formatCurrency(g.net, currencySymbol, currencyPosition)}</td>
+            </tr>
+        `;
     });
 
     tax_summary.html(html);
 
     // =========================
-    // linhas HIDDEN (CRÍTICO)
+    // INPUTS HIDDEN
     // =========================
+    const setVal = (name, value) => {
+      $(`input[name='${name}']`).val(value.toFixed(2));
+    };
+
+    setVal("total_sum", totalSum);
+    setVal("total_discount", totalDiscount);
+    setVal("subtotal_without_tax", subtotalWithoutTax);
+    setVal("total_tax", totalTax);
+    setVal("retention_value", totalRetention);
+    setVal("final_total", finalTotal);
+
     $("#total_sumInput").val(totalSum.toFixed(2));
     $("#total_discountInput").val(totalDiscount.toFixed(2));
     $("#subtotal_without_taxInput").val(subtotalWithoutTax.toFixed(2));
     $("#total_taxInput").val(totalTax.toFixed(2));
     $("#retention_valueInput").val(totalRetention.toFixed(2));
     $("#final_totalInput").val(finalTotal.toFixed(2));
-
-    // =========================
-    // INPUTS HIDDEN (CRÍTICO)
-    // =========================
-    $("input[name='total_sum']").val(totalSum.toFixed(2));
-    $("input[name='total_discount']").val(totalDiscount.toFixed(2));
-    $("input[name='subtotal_without_tax']").val(subtotalWithoutTax.toFixed(2));
-    $("input[name='total_tax']").val(totalTax.toFixed(2));
-    $("input[name='retention_value']").val(totalRetention.toFixed(2));
-    $("input[name='final_total']").val(finalTotal.toFixed(2));
 
     updateRetention(subtotalWithoutTax, totalTax, totalRetention);
   }
@@ -801,7 +836,7 @@ $(document).ready(function () {
       formatCurrency(final, currencySymbol, currencyPosition),
     );
 
-    $("#final_totalInput").val(final.toFixed(2));
+    // $("#final_totalInput").val(final.toFixed(2));
 
     updateConvertedTotal?.();
   }
@@ -1141,7 +1176,7 @@ $(document).ready(function () {
           confirmButtonColor: "#007abd",
         }).then((result) => {
           if (result.isConfirmed) {
-            // ✅ usar ID dinâmico vindo do backend
+            //  usar ID dinâmico vindo do backend
             window.location.href = `invoice.php?id=${response.invoice_id}`;
           }
         });
@@ -1160,70 +1195,142 @@ $(document).ready(function () {
     });
   });
 
+
   function loadInvoiceForEdit(id) {
-    $.getJSON("invoices/ajax/get_invoice.php", { id: id }, function (data) {
-      if (data.error) {
-        Swal.fire("Erro", data.error, "error");
-        return;
-      }
+    $.getJSON("invoices/ajax/get_invoice.php", { id: id })
 
-      // Definir ID da fatura para edição
-      $("#edit_invoice_id").val(id);
+      .done(function (response) {
+        // Caso o PHP retorne {success:true,data:{}}
+        const data = response.data || response;
 
-      // Preencher campos
-      $("#contact-select").val(data.contact_id).trigger("change");
-      $("#issue_date").val(data.issue_date);
+        if (!data || data.error) {
+          Swal.fire(
+            "Erro",
+            data?.error || "Não foi possível carregar a fatura.",
+            "error",
+          );
+          return;
+        }
 
-      // Verificar se a data de vencimento existe no select, se não, adicionar
-      if ($("#due_date option[value='" + data.due_date + "']").length === 0) {
-        $("#due_date").append(new Option(data.due_date, data.due_date));
-      }
-      $("#due_date").val(data.due_date);
+        // =====================================================
+        // ID DA FATURA
+        // =====================================================
 
-      $("#reference").val(data.reference);
-      $("#observation").val(data.observation);
+        $("#edit_invoice_id").val(data.id || id);
 
-      // Verificar se a série existe no select, se não, adicionar
-      if ($("#series option[value='" + data.series + "']").length === 0) {
-        $("#series").append(new Option(data.series, data.series));
-      }
-      $("#series").val(data.series);
+        // =====================================================
+        // DADOS PRINCIPAIS
+        // =====================================================
 
-      $("#retention").val(data.retention);
+        $("#contact-select").val(data.contact_id).trigger("change");
 
-      // moeda: prioriza a da própria fatura; fallback para moeda da empresa; default AOA
-      $("#currency")
-        .val(
+        $("#issue_date").val(data.issue_date || "");
+
+        // =====================================================
+        // DATA DE VENCIMENTO
+        // =====================================================
+
+        if (data.due_date) {
+          if (
+            $("#due_date option").filter(function () {
+              return this.value === data.due_date;
+            }).length === 0
+          ) {
+            $("#due_date").append(new Option(data.due_date, data.due_date));
+          }
+
+          $("#due_date").val(data.due_date);
+        }
+
+        // =====================================================
+        // OUTROS CAMPOS
+        // =====================================================
+
+        $("#reference").val(data.reference || "");
+
+        $("#observation").val(data.observation || "");
+
+        // =====================================================
+        // SÉRIE
+        // =====================================================
+
+        if (data.series) {
+          if (
+            $("#series option").filter(function () {
+              return this.value === data.series;
+            }).length === 0
+          ) {
+            $("#series").append(new Option(data.series, data.series));
+          }
+
+          $("#series").val(data.series);
+        }
+
+        // =====================================================
+        // RETENÇÃO
+        // =====================================================
+
+        $("#retention").val(data.retention || 0);
+
+        // =====================================================
+        // MOEDA
+        // =====================================================
+
+        const currency =
           data.currency ||
-            data.currency_items ||
-            data.currency_company ||
-            "AOA",
-        )
-        .trigger("change");
-      if (data.manual_exchange_rate) {
-        $("#manual_exchange_rate").val(data.manual_exchange_rate);
-      }
+          data.currency_items ||
+          data.currency_company ||
+          "AOA";
 
-      // Limpar itens existentes
-      $("#items_list .item-list").remove();
+        $("#currency").val(currency).trigger("change");
 
-      // Preencher itens
-      if (data.items && data.items.length > 0) {
-        data.items.forEach((item) => {
-          addItemRow({
-            id: item.item_id || item.id,
-            code: item.code,
-            description: item.description,
-            unit_price: item.unit_price,
-            quantity: item.quantity,
-            tax: item.tax,
-            discount: item.discount,
+        // =====================================================
+        // TAXA DE CÂMBIO MANUAL
+        // =====================================================
+
+        $("#manual_exchange_rate").val(data.manual_exchange_rate || "");
+
+        // =====================================================
+        // LIMPAR ITENS
+        // =====================================================
+
+        $("#items_list").find(".item-list").remove();
+
+        // =====================================================
+        // CARREGAR ITENS
+        // =====================================================
+
+        if (Array.isArray(data.items) && data.items.length) {
+          data.items.forEach((item) => {
+            addItemRow({
+              id: item.item_id || item.id || null,
+
+              code: item.code || "",
+
+              description: item.description || "",
+
+              unit_price: parseFloat(item.unit_price || 0),
+
+              quantity: parseFloat(item.quantity || 1),
+
+              tax: parseFloat(item.tax || 0),
+
+              discount: parseFloat(item.discount || 0),
+            });
           });
-        });
-      }
-      updateInvoiceSummary();
+        }
 
-      $("#saveInvoiceBtn").text("Atualizar Fatura");
-    });
+        // Atualizar totais
+        updateInvoiceSummary();
+
+        // Alterar botão
+        $("#saveInvoiceBtn").text("Atualizar Fatura");
+      })
+
+      .fail(function (xhr) {
+        console.error(xhr.responseText);
+
+        Swal.fire("Erro", "Falha na comunicação com o servidor.", "error");
+      });
   }
 });

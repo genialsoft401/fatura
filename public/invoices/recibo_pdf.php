@@ -33,6 +33,7 @@ SELECT
     r.amount_paid,
     r.payment_method,
     r.notes,
+    r.pending_amount,
 
     i.id AS invoice_id,
     i.issue_date,
@@ -164,7 +165,7 @@ $pago = (float)$d['amount_paid'];
 $retencaoPercent = 6.5;
 $retencaoValor = ($facturado * $retencaoPercent) / 100;
 
-$valorPendente = 0;
+$valorPendente = (float)$d['pending_amount'];
 
 /*
 |--------------------------------------------------------------------------

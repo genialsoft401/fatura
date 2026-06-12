@@ -361,8 +361,8 @@ $(document).ready(function () {
       .addClass("btn-primary");
 
     $("#filterArchived")
-      .removeClass("btn-secondary")
-      .addClass("btn-outline-secondary");
+      .removeClass("btn-primary")
+      .addClass("btn-outline-primary");
 
     initializeDataTable(currentFilter);
   });
@@ -375,8 +375,8 @@ $(document).ready(function () {
     currentFilter = "archived";
 
     $("#filterArchived")
-      .removeClass("btn-outline-secondary")
-      .addClass("btn-secondary");
+      .removeClass("btn-outline-primary")
+      .addClass("btn-primary");
 
     $("#filterActive")
       .removeClass("btn-primary")

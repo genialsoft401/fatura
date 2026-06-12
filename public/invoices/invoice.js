@@ -2,7 +2,7 @@ const currentYear = new Date().getFullYear();
 const pg_serie = document.getElementById("pg_serie");
 const get = new URLSearchParams(window.location.search).get("id");
 const invoiceId = get.substring(get.lastIndexOf("/") + 1);
-const document_type = "FT";
+let document_type = "FT";
 
 if (!invoiceId) {
   alert("Fatura não encontrada!");
@@ -62,70 +62,229 @@ $(function () {
 
   // ---------- 2) carrega JSON da fatura ----------
   $.getJSON("invoices/ajax/get_invoice.php", { id: invoiceId })
-    .done((inv) => {
-      if (!inv || !inv.id) {
-        console.error("Resposta inválida:", inv);
-        alert("Erro ao carregar fatura");
-        return;
+    .done((response) => {
+      // Se os dados vêm dentro de response.data
+      const inv = response.data;
+
+      if (!inv) {
+        throw new Error("Dados da fatura não encontrados.");
       }
 
-      currentInvoice = inv;
+      currentInvoice = inv; // guarda para modal
 
-      // Preencher dados básicos
+      // Esconde todos os botões antes
+      $(
+        "#btnFinalizar, #btnEditar, #btnCloneToInvoice, #btnNotaCredito, #generatePdf, #btnEnviar",
+      ).addClass("d-none");
+
+      // Preenche formulário/UI
       $('#formPagamento [name="invoice_id"]').val(inv.id);
 
-      const isDraft =
-        inv.status_invoice === "Rascunho" || inv.status_invoice == 1;
-
-      $("#fatura-id").text(isDraft ? ` ` : inv.reference || "---");
-
-      $("#status-invoice").text(
-        inv.status_invoice === "Rascunho" ? inv.status_invoice : " " || "-",
+      $("#fatura-id").text(
+        inv.status_invoice === "Rascunho"
+          ? `${inv.series}/${inv.id}`
+          : inv.numero_validacao,
       );
+
+      $("#status-invoice").text(inv.status_invoice || "-");
       $("#subtitle-client").text(inv.client_name || "-");
 
-      // Reset geral (evita estados bugados)
-      const buttonsToHide = [
-        "#btnFinalizar",
-        "#btnEditar",
-        "#btnNotaCredito",
-        "#generatePdf",
-        "#btnEnviar",
-      ];
-
-      buttonsToHide.forEach((btn) => $(btn).addClass("d-none"));
-
-      $("#status-invoice").removeClass("d-none");
-
-      // Regras de UI
-      if (isDraft) {
-        $("#btnFinalizar, #btnEditar").removeClass("d-none");
+      // Mostrar botões conforme status
+      if (inv.status_invoice === "Rascunho") {
+        $("#btnFinalizar").removeClass("d-none");
+        $("#btnEditar").removeClass("d-none");
       } else {
-        $("#btnNotaCredito, #generatePdf, #btnEnviar").removeClass("d-none");
+        $("#btnCloneToInvoice").removeClass("d-none");
+        $("#btnNotaCredito").removeClass("d-none");
+        $("#generatePdf").removeClass("d-none");
+        $("#btnEnviar").removeClass("d-none");
       }
     })
     .fail((xhr) => {
       console.error("Erro AJAX:", xhr);
-      alert("Erro ao carregar fatura");
+
+      Swal.fire({
+        icon: "error",
+        title: "Erro ao carregar fatura",
+        text:
+          xhr.responseJSON?.message || "Não foi possível carregar os dados.",
+        timer: 2000,
+        showConfirmButton: false,
+      });
     });
 
-  // ---------- 3) abrir recibo ou modal Pagamento ----------
+  //=============================================================
+  //  Botao de gerar recibo
+  //=============================================================
+
   $("#btnRecibo").on("click", function () {
-    if (!currentInvoice) return;
-    $.getJSON("invoices/ajax/get_last_receipt.php", {
-      invoice_id: currentInvoice.id,
-    })
-      .done((r) => {
-        if (r.success && r.data && r.data.id) {
-          window.open("invoices/recibo_pdf.php?id=" + r.data.id, "_blank");
-        } else {
-          // se não tiver recibo ainda, abre modal de pagamento
-          new bootstrap.Modal(document.getElementById("modalPagamento")).show();
+    if (!currentInvoice || !currentInvoice.id) {
+      console.error("Nenhuma fatura selecionada.");
+      return;
+    }
+
+    const $btn = $(this);
+
+    $.ajax({
+      url: "invoices/ajax/get_last_receipt.php",
+      type: "GET",
+      dataType: "json",
+      data: {
+        invoice_id: currentInvoice.id,
+      },
+
+      beforeSend: function () {
+        $btn.prop("disabled", true);
+      },
+
+      success: function (res) {
+        if (!res || !res.success) {
+          Swal.fire({
+            icon: "warning",
+            title: "Aviso",
+            text: res?.message || "Nenhum recibo encontrado para esta fatura.",
+          });
+          return;
         }
+
+        const data = res.data || {};
+
+        if (data.length > 0) {
+          renderReceipts(data);
+          showReceiptsModal();
+        } else {
+          showPaymentModal();
+        }
+      },
+
+      error: function (xhr, status, error) {
+        console.error("AJAX ERROR:", xhr.responseText);
+
+        Swal.fire({
+          icon: "error",
+          title: "Erro",
+          text: "Não foi possível obter o recibo.",
+        });
+      },
+
+      complete: function () {
+        $btn.prop("disabled", false);
+      },
+    });
+  });
+
+  /* ======================================================
+   * MODAIS
+   * ====================================================== */
+
+  // ---------- 3) abrir recibo ou modal Pagamento ----------
+  function showPaymentModal() {
+    new bootstrap.Modal(document.getElementById("modalPagamento")).show();
+  }
+
+  function showReceiptsModal() {
+    new bootstrap.Modal(document.getElementById("modalReceipts")).show();
+  }
+
+  /* ======================================================
+   * RENDER RECIBOS
+   * ====================================================== */
+
+  function renderReceipts(receipts) {
+    const container = $("#receiptsList");
+
+    container.empty();
+
+    if (!receipts.length) {
+      container.html(`
+      <div class="alert alert-warning mb-0">
+        Nenhum recibo encontrado.
+      </div>
+    `);
+      return;
+    }
+
+    const html = receipts
+      .map((receipt) => {
+        const amount = formatCurrency(receipt.amount_paid);
+
+        const createdAt = receipt.created_at
+          ? new Date(receipt.created_at).toLocaleDateString("pt-PT")
+          : "-";
+
+        return `
+        <div class="border rounded-3 p-3 mb-3 bg-light shadow-sm">
+          
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            
+            <div>
+              <h6 class="mb-1 fw-bold">
+                Recibo #${receipt.receipt_number || receipt.id}
+              </h6>
+
+              <small class="text-muted">
+                ${createdAt}
+              </small>
+            </div>
+
+            <span class="badge bg-success fs-6">
+              ${amount} Kz
+            </span>
+
+          </div>
+
+          <div class="d-flex gap-2 mt-3">
+
+            <a
+              href="invoices/recibo_pdf.php?id=${receipt.id}"
+              target="_blank"
+              class="btn btn-sm btn-primary"
+            >
+              <i class="fa fa-file-pdf me-1"></i>
+              Ver PDF
+            </a>
+
+            <button
+              class="btn btn-sm btn-outline-secondary btnPrintReceipt"
+              data-id="${receipt.id}"
+            >
+              <i class="fa fa-print me-1"></i>
+              Imprimir
+            </button>
+
+          </div>
+
+        </div>
+      `;
       })
-      .fail(() => {
-        new bootstrap.Modal(document.getElementById("modalPagamento")).show();
-      });
+      .join("");
+
+    container.html(html);
+  }
+
+  /* ======================================================
+   * UTILITÁRIOS
+   * ====================================================== */
+
+  function formatCurrency(value) {
+    return Number(value || 0).toLocaleString("pt-PT", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  /* ======================================================
+   * EVENTO IMPRIMIR
+   * ====================================================== */
+
+  $(document).off("click", ".btnPrintReceipt");
+
+  $(document).on("click", ".btnPrintReceipt", function () {
+    const id = $(this).data("id");
+
+    if (!id) return;
+
+    window.open(`invoices/recibo_pdf.php?id=${id}`, "_blank");
   });
 
   // ---------- 4) abre modal Pagamento ----------
@@ -251,11 +410,11 @@ $(function () {
 
           const wrapper = document.createElement("div");
 
-          // ✅ CORREÇÃO PRINCIPAL: NÃO forçar altura fixa
+          //  CORREÇÃO PRINCIPAL: NÃO forçar altura fixa
           wrapper.style.width = "210mm";
           wrapper.style.boxSizing = "border-box";
 
-          // 🔥 MAIS MARGEM NO CABEÇALHO
+          //  MAIS MARGEM NO CABEÇALHO
           wrapper.style.paddingTop = "25mm"; // ajusta aqui o espaço do header
           wrapper.style.paddingBottom = "10mm";
 
@@ -298,8 +457,7 @@ $(function () {
             pdf.setFont("helvetica", "normal");
             pdf.setFontSize(8);
 
-              const footerText =
-                "Powered By BXpert";
+            const footerText = "Powered By BXpert";
 
             for (let i = 1; i <= pageCount; i++) {
               pdf.setPage(i);
@@ -341,50 +499,77 @@ $(function () {
   });
 
   // ---------- Nota de Crédito ----------
-  $("#btnNotaCredito").on("click", function () {
-    if (!currentInvoice || !currentInvoice.id) {
-      return Swal.fire("Erro", "Fatura ainda não carregada.", "error");
-    }
+  $("#btnNotaCredito").on("click", async function () {
+    try {
+      // Validação da fatura
+      if (!currentInvoice?.id) {
+        return Swal.fire({
+          icon: "error",
+          title: "Erro",
+          text: "Fatura ainda não carregada.",
+        });
+      }
 
-    Swal.fire({
-      title: "Emitir Nota de Crédito?",
-      text: "A Nota de Crédito será associada a esta fatura.",
-      input: "textarea",
-      inputLabel: "Motivo (opcional)",
-      inputPlaceholder: "Descreva o motivo da correção/anulação…",
-      showCancelButton: true,
-      confirmButtonText: "Emitir",
-      cancelButtonText: "Cancelar",
-    }).then((result) => {
+      // Verifica se já existe nota de crédito
+      const verifyResponse = await $.ajax({
+        url: "invoices/ajax/credit_notes.php",
+        method: "GET",
+        dataType: "json",
+        data: {
+          invoice_id: currentInvoice.id,
+        },
+      });
+
+      // Se já existir nota de crédito
+      if (verifyResponse?.data?.id) {
+        return (window.location.href = `credit_notes/ajax/generate_pdf.php?id=${verifyResponse.data.id}`);
+      }
+
+      // Pergunta antes de emitir
+      const result = await Swal.fire({
+        title: "Emitir Nota de Crédito?",
+        text: "A Nota de Crédito será associada a esta fatura.",
+        input: "textarea",
+        inputLabel: "Motivo (opcional)",
+        inputPlaceholder: "Descreva o motivo da correção/anulação…",
+        showCancelButton: true,
+        confirmButtonText: "Emitir",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#3085d6",
+      });
+
       if (!result.isConfirmed) return;
 
-      $.post(
-        "invoices/ajax/create_credit_note.php",
-        {
+      // Criar nota de crédito
+      const res = await $.ajax({
+        url: "invoices/ajax/create_credit_note.php",
+        method: "POST",
+        dataType: "json",
+        data: {
           invoice_id: currentInvoice.id,
           reason: result.value || "",
         },
-        function (res) {
-          if (res && res.success) {
-            // Gera o PDF e faz download direto (sem abrir aba)
-            window.location.href = `credit_notes/ajax/generate_pdf.php?id=${res.credit_note_id}`;
-          } else {
-            Swal.fire(
-              "Erro",
-              res.error || "Não foi possível emitir a Nota de Crédito.",
-              "error",
-            );
-          }
-        },
-        "json",
-      ).fail(function (xhr) {
-        Swal.fire(
-          "Erro",
-          xhr.responseText || "Falha ao emitir a Nota de Crédito.",
-          "error",
-        );
       });
-    });
+
+      // Sucesso
+      if (res?.success && res?.credit_note_id) {
+        window.location.href = `credit_notes/ajax/generate_pdf.php?id=${res.credit_note_id}`;
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Erro",
+          text: res?.error || "Não foi possível emitir a Nota de Crédito.",
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao processar Nota de Crédito:", error);
+
+      Swal.fire({
+        icon: "error",
+        title: "Erro",
+        text: error?.responseText || "Falha ao processar a Nota de Crédito.",
+      });
+    }
   });
 
   $("#pg_valor").on("input", function () {
@@ -431,7 +616,7 @@ $(function () {
     $("#email_invoice_id").val(currentInvoice.id);
 
     // Assunto default
-    const codigo = `${currentInvoice.series}/${currentInvoice.id}`;
+    const codigo = `${currentInvoice.reference}`;
     $('input[name="subject"]').val(
       `Fatura #${codigo} – ${currentInvoice.company_name}`,
     );
@@ -452,16 +637,16 @@ $(function () {
     });
 
     const template = `
-<p>Prezado(a) <strong>${currentInvoice.client_name}</strong>,</p>
+      <p>Prezado(a) <strong>${currentInvoice.client_name}</strong>,</p>
 
-<p>Segue em anexo a <strong>fatura nº ${codigo}</strong>,
-no valor de <strong>${currentInvoice.company_symbol} ${total}</strong>,
-emitida em ${issue} e com vencimento em ${dueDate}.</p>
+      <p>Segue em anexo a <strong>fatura nº ${codigo}</strong>,
+      no valor de <strong>${currentInvoice.company_symbol} ${total}</strong>,
+      emitida em ${issue} e com vencimento em ${dueDate}.</p>
 
-<p>Qualquer dúvida estou à disposição.</p>
+      <p>Qualquer dúvida estou à disposição.</p>
 
-<p>Atenciosamente,<br>
-&nbsp;</p>`;
+      <p>Atenciosamente,<br>
+      &nbsp;</p>`;
 
     quill.setContents(quill.clipboard.convert(template));
   });
@@ -508,7 +693,7 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
           "invoices/ajax/update_status.php",
           {
             invoice_id: currentInvoice.id,
-            new_status: "Pendente",
+            new_status: "Finalizada",
             document_type: document_type,
           },
           function (res) {
@@ -534,7 +719,123 @@ emitida em ${issue} e com vencimento em ${dueDate}.</p>
 
   // ---------- 7) Editar Fatura (Redirecionar) ----------
   $("#btnEditar").on("click", function () {
-    window.location.href = `create_invoices.php?edit_id=${currentInvoice.id}`;
+    window.location.href = `create_${document_type === "PF" ? "proform" : "invoices"}.php?edit_id=${currentInvoice.id}`;
+  });
+
+  // ===========================================
+  // CLONAR FACTURA
+  // ===========================================
+  $("#btnCloneToInvoice").on("click", function () {
+    // ==========================================
+    // VALIDAR
+    // ==========================================
+
+    if (!invoiceId) {
+      return Swal.fire({
+        icon: "error",
+        title: "Erro",
+        text: "Documento não encontrado.",
+      });
+    }
+
+    // ==========================================
+    // CONFIRMAR
+    // ==========================================
+    Swal.fire({
+      icon: "question",
+      title: "Clonar Factura",
+      text: "Deseja clonar esta Factura Recibo?",
+      showCancelButton: true,
+      confirmButtonText: "Clonar",
+      cancelButtonText: "Cancelar",
+      reverseButtons: true,
+    }).then((result) => {
+      // cancelado
+      if (!result.isConfirmed) {
+        return;
+      }
+
+      // ==========================================
+      // AJAX
+      // ==========================================
+      $.ajax({
+        url: "invoices/ajax/clone_invoice.php",
+
+        type: "POST",
+
+        dataType: "json",
+
+        data: {
+          invoice_id: invoiceId,
+        },
+
+        // ==========================================
+        // BEFORE SEND
+        // ==========================================
+        beforeSend: function () {
+          $("#btnCloneToInvoice").prop("disabled", true).html(`
+            <span class="spinner-border spinner-border-sm"></span>
+            Clonando...
+          `);
+        },
+
+        // ==========================================
+        // SUCCESS
+        // ==========================================
+        success: function (data) {
+          if (!data.success) {
+            Swal.fire({
+              icon: "error",
+              title: "Erro",
+              text: data.error || "Erro ao clonar factura.",
+            });
+
+            return;
+          }
+
+          Swal.fire({
+            icon: "success",
+            title: "Sucesso",
+            text: "Factura clonada com sucesso!",
+            timer: 1800,
+            showConfirmButton: false,
+          });
+
+          // redirecionar
+          setTimeout(() => {
+            window.location.href = "invoice.php?id=" + data.new_invoice_id;
+          }, 1500);
+        },
+
+        // ==========================================
+        // ERROR
+        // ==========================================
+        error: function (xhr) {
+          console.error(xhr);
+
+          Swal.fire({
+            icon: "error",
+            title: "Erro Interno",
+            text:
+              xhr.responseJSON?.error ||
+              xhr.responseText ||
+              "Erro ao clonar factura.",
+          });
+        },
+
+        // ==========================================
+        // COMPLETE
+        // ==========================================
+        complete: function () {
+          $("#btnCloneToInvoice").prop("disabled", false).html(`
+            <span class="material-icons-outlined">
+              content_copy
+            </span>
+            Clonar Factura
+          `);
+        },
+      });
+    });
   });
 });
 
@@ -560,43 +861,28 @@ $(document).ready(function () {
       $("#generatePdf").on("click", function () {
         const element = document.getElementById("invoice");
 
-        html2canvas(element, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: "#ffffff",
-        }).then((canvas) => {
-          const imgData = canvas.toDataURL("image/png");
+        const options = {
+          margin: 10,
+          filename: "fatura.pdf",
+          image: {
+            type: "jpeg",
+            quality: 1,
+          },
+          html2canvas: {
+            scale: 2,
+            useCORS: true,
+          },
+          jsPDF: {
+            unit: "mm",
+            format: "a4",
+            orientation: "portrait",
+          },
+          pagebreak: {
+            mode: ["avoid-all", "css", "legacy"],
+          },
+        };
 
-          const { jsPDF } = window.jspdf;
-          const doc = new jsPDF("p", "mm", "a4");
-
-          const pageWidth = 210;
-          const pageHeight = 297;
-
-          const imgWidth = pageWidth;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-          let y = 0;
-
-          while (y < imgHeight) {
-            doc.addImage(
-              imgData,
-              "PNG",
-              0,
-              -y, // 👈 ESSENCIAL (corrige o corte)
-              imgWidth,
-              imgHeight,
-            );
-
-            y += pageHeight;
-
-            if (y < imgHeight) {
-              doc.addPage();
-            }
-          }
-
-          doc.save("fatura.pdf");
-        });
+        html2pdf().set(options).from(element).save();
       });
     },
     error: function () {

@@ -1,7 +1,7 @@
 $(document).ready(function () {
   let items = [];
   const modalEl = document.getElementById("itemModal");
-  const modalTitle = modalEl.querySelector(".modal-title");
+  const modalTitle = document.querySelector("#itemModal .modal-title");
 
   const defaultTitle = "Adicionar Novo Produto/Serviço";
   let table;
@@ -12,17 +12,7 @@ $(document).ready(function () {
     dataType: "json",
 
     success: function (response) {
-      console.log("RESPONSE:", response?.data);
-
-      // garante array correto
-      if (Array.isArray(response?.data)) {
-        items = response?.data;
-      } else if (Array.isArray(response)) {
-        items = response;
-      } else {
-        items = [];
-      }
-
+      const items = response?.data;
       renderTable(items);
     },
 
@@ -419,8 +409,17 @@ $(document).ready(function () {
       })
 
         .done(function (res) {
-          if (!res.success) {
-            // rollback visual se falhar no backend
+          if (res.success) {
+            // ✔ sucesso
+            Swal.fire({
+              icon: "success",
+              title: "Eliminado",
+              text: res.message || "Item eliminado com sucesso",
+            });
+
+            $row.remove(); // remove linha da tabela
+          } else {
+            // ❌ backend rejeitou
             $row.fadeIn(200);
 
             Swal.fire({
@@ -430,7 +429,6 @@ $(document).ready(function () {
             });
           }
         })
-
         .fail(function (xhr) {
           $row.fadeIn(200);
 
@@ -609,7 +607,7 @@ $(document).ready(function () {
     // =========================
     // FISCAL
     // =========================
-    form.tax.value = row.tax ?? "";
+    form.taxVat.value = row.tax ?? "";
 
     $("[name='retention']", form).val(row.retention ?? 0);
 
@@ -625,7 +623,10 @@ $(document).ready(function () {
     // =========================
     // MODAL
     // =========================
-    const modal = new bootstrap.Modal(modalEl);
+    const modal = new bootstrap.Modal(modalEl, {
+      backdrop: true,
+      keyboard: true,
+    });
 
     modalTitle.innerHTML = "Editar Produto/Serviço";
 
@@ -676,8 +677,6 @@ $(document).ready(function () {
   modalEl.addEventListener("hidden.bs.modal", () => {
     resetItemForm();
   });
-
-
 
   $("#saveEdit").on("click", function () {
     const form = $("#editItemForm");

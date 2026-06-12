@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../vendor/bootstrap/css/bootstrap.min.css">
+    <script src="../vendor/bootstrap/js/bootstrap.min.js"></script>
+    <title>Carousel</title>
+</head>
+
+<style>
+    .carousel {
+        width: 100% !important;
+        overflow-y: hidden;
+    }
+
+    #carousel-inner {
+        width: 2350px;
+    }
+
+    .c-item {
+        width: 28rem;
+        text-align: center;
+    }
+
+    .c-item {
+        float: left;
+    }
+
+    .transform {
+        transform: translateX(-200px);
+    }
+</style>
+
+<body>
+    <main class="p-4">
+        <div class="carousel mt-4">
+            <div id="carousel-inner" class="d-flex gap-4 p-2">
+                <div class="card c-item p-4 shadow-sm">
+                    <h1>Item 1</h1>
+                </div>
+                <div class="card c-item p-4 shadow-sm">
+                    <h1>Item 2</h1>
+                </div>
+                <div class="card c-item p-4 shadow-sm">
+                    <h1>Item 3</h1>
+                </div>
+                <div class="card c-item p-4 shadow-sm">
+                    <h1>Item 4</h1>
+                </div>
+                <div class="card c-item p-4 shadow-sm">
+                    <h1>Item 5</h1>
+                </div>
+                <div class="card c-item p-4 shadow-sm">
+                    <h1>Item 6</h1>
+                </div>
+                <div class="card c-item p-4 shadow-sm">
+                    <h1>Item 7</h1>
+                </div>
+                <div class="card c-item p-4 shadow-sm">
+                    <h1>Item 8</h1>
+                </div>
+                <div class="card c-item p-4 shadow-sm">
+                    <h1>Item 9</h1>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+
+<script>
+    //const carouselItem = document.getElementsByClassName("c-item");
+    //const carouselItems = document.querySelectorAll(".c-item");
+    //const translate = (value) => {
+        //carouselItems.forEach(item => {
+            //item.style.transform = `translateX(-${value}px)`
+        //})
+    //}
+
+    //setInterval(() => {
+        //let itemWidth = carouselItems[0].scrollWidth;
+        //let newValue = itemWidth++;
+
+        //for(let i = 0; carouselItems.length > i; i++){
+            //console.log(carouselItem[i]);
+        //}
+    //}, 1000)
+
+
+</script>
+
+</html>

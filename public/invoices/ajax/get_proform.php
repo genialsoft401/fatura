@@ -32,6 +32,7 @@ try {
                 i.contact_id,
                 c.country as client_country,
                 c.city as client_city,
+                'PF' as document_type,
                 i.observation,
                 i.issue_date,
                 i.due_date, 
@@ -55,13 +56,13 @@ try {
                 i.currency as currency,
                 i.currency as currency_items,
                 comp.currency as currency_company
-            FROM invoices i
+            FROM proformas i
             JOIN companies comp ON comp.id = i.company_id
             JOIN contact c ON c.id = i.contact_id
-            JOIN invoice_status ivs ON ivs.id = i.status
-            JOIN currencies cr ON cr.iso_code = i.currency
+            JOIN proforma_status ivs ON ivs.id = i.status
+            JOIN currencies cr ON cr.iso_code = 'AOA'
             JOIN currencies cr2 on cr2.iso_code = comp.currency
-            WHERE i.id = :invoiceId";
+            WHERE i.id = ?";
 
     $stmt = $pdo->prepare($sql);
     $stmt->bindParam(':invoiceId', $invoiceId, PDO::PARAM_INT);
@@ -85,15 +86,16 @@ try {
     // Busca itens da fatura
     $sqlItems = "SELECT 
                     ii.item_id,
-                    it.code, 
+                    it.code,
+                    it.name, 
                     it.description, 
                     ii.quantity, 
                     ii.unit_price, 
                     ii.tax, 
                     ii.discount 
-                FROM invoice_items ii
+                FROM proforma_items ii
                 JOIN items it ON it.id = ii.item_id
-                WHERE ii.invoice_id = :invoiceId";
+                WHERE ii.proforma_id = :invoiceId";
 
     $stmtItems = $pdo->prepare($sqlItems);
     $stmtItems->bindParam(':invoiceId', $invoiceId, PDO::PARAM_INT);
@@ -114,7 +116,7 @@ try {
                     i.total_sum,
                     cr.symbol, 
                     cr.position 
-                FROM invoices i
+                FROM proformas i
                 JOIN companies comp ON comp.id = i.company_id 
                 JOIN invoice_items ii ON i.id = ii.invoice_id
                 JOIN currencies cr ON cr.iso_code = comp.currency
@@ -135,7 +137,7 @@ try {
             FROM receipts
             WHERE invoice_id = :invoiceId";
     $stmPaid = $pdo->prepare($sqlPaid);
-    $stmPaid->execute(['invoiceId'=>$invoiceId]);
+    $stmPaid->execute(['invoiceId' => $invoiceId]);
     $paid    = $stmPaid->fetch(PDO::FETCH_ASSOC)['paid_total'] ?? 0;
 
     /* anexa ao array da fatura */
@@ -144,12 +146,11 @@ try {
     /* opcional: calcula saldo e um rótulo prático */
     $invoice['saldo']      = $invoice['final_total'] - $paid;
     $invoice['pay_status'] = ($paid == 0)
-    ? 'pendente'
-    : ( ($invoice['saldo'] <= 0.009) ? 'pago' : 'parcial' );
+        ? 'pendente'
+        : (($invoice['saldo'] <= 0.009) ? 'pago' : 'parcial');
 
 
     echo json_encode($invoice);
-
 } catch (Exception $e) {
     echo json_encode(['error' => 'Erro ao buscar dados da fatura: ' . $e->getMessage()]);
 }

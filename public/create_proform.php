@@ -168,25 +168,20 @@ require_once '../app/views/layout_creation.php';
 <main>
     <div class="container mt-5">
         <br><br>
-        <h2 class="text-left mb-4"><?= t('Emissão de Fatura') ?></h2>
+        <h2 class="text-left mb-4"><?= t('Emissão de Proforma') ?></h2>
 
         <form id="formFatura" class="mt-5">
 
             <input type="hidden" value="<?= $_SESSION['user']['company_id'] ?>" id="id_company" name="id_company">
+            <input type="hidden" id="edit_invoice_id" name="edit_invoice_id">
 
             <!-- STEPPER -->
             <div class="stepper">
-                <div class="step active" data-step="1">
-                    <div class="circle">1</div><span>Cliente</span>
+                <div class="step active d-flex align-items-center gap-4 fw-bold" data-step="1">
+                    <div class="circle">1</div><span>Cliente & Documentos</span>
                 </div>
-                <div class="step" data-step="2">
-                    <div class="circle">2</div><span>Documento</span>
-                </div>
-                <div class="step" data-step="3">
-                    <div class="circle">3</div><span>Produtos & Serviços</span>
-                </div>
-                <div class="step" data-step="4">
-                    <div class="circle">4</div><span>Resumo</span>
+                <div class="step d-flex align-items-center gap-4 fw-bold" data-step="2">
+                    <div class="circle">2</div><span>Produtos & Serviços</span>
                 </div>
             </div>
 
@@ -199,7 +194,7 @@ require_once '../app/views/layout_creation.php';
                 <div class="col-lg-12">
 
                     <!-- STEP 1 -->
-                    <div class="form-step active bg-white shadow-sm p-3 rounded" data-step="1">
+                    <div class="form-step active" data-step="1">
 
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h4 class="mb-0"><?= t('Dados do Cliente') ?></h4>
@@ -212,7 +207,7 @@ require_once '../app/views/layout_creation.php';
 
                         <hr>
 
-                        <div class="col-lg-12">
+                        <div class="col-lg-12 bg-white shadow-sm p-3 rounded">
                             <div id="select-contact-container">
                                 <label for="contact-select" class="form-label"><?= t('Escolha um Contato') ?>:</label>
                                 <select id="contact-select" class="form-select">
@@ -222,7 +217,7 @@ require_once '../app/views/layout_creation.php';
                             </div>
 
                             <!-- Formulário de Cliente -->
-                            <div id="contact-form" style="display: none;">
+                            <div id="contact-form d-none" style="display: none;">
                                 <input type="text" hidden readonly id="contact_id" name="contact_id">
 
                                 <div class="row">
@@ -270,15 +265,11 @@ require_once '../app/views/layout_creation.php';
                             </div>
                         </div>
 
-                    </div>
 
-                    <!-- STEP 2 -->
-                    <div class="form-step bg-white shadow-sm p-3 pb-4 rounded" data-step="2">
-
-                        <h4><?= t('Detalhes do Documento') ?></h4>
+                        <h4 class="mt-5"><?= t('Detalhes do Documento') ?></h4>
                         <hr>
 
-                        <div class="row mb-4">
+                        <div class="row mb-4 bg-white shadow-sm p-2 rounded">
                             <input hidden readonly value="<?= $_SESSION['user']['company_id'] ?>" id="company_id" name="company_id" required>
                             <input hidden readonly value="<?= $_SESSION['user']['id'] ?>" id="user_id" name="user_id" required>
 
@@ -306,16 +297,17 @@ require_once '../app/views/layout_creation.php';
                                 <label for="observation" class="form-label"><?= t('Observações') ?>:</label>
                                 <textarea style="height: 11rem;" type="text" class="form-control" id="observation" name="observation"></textarea>
                             </div>
-                        </div>
-                        <div class="row" style="margin-top: -45px !important;">
-                            <div class="col-md-6 mb-3">
-                                <label for="series" class="form-label"><?= t('Série') ?>:</label>
-                                <input class="form-control" id="series" name="series" readonly>
-                            </div>
 
-                            <div class="col-md-6 mb-6 d-none" style="margin-top: 40px;">
-                                <label for="retention" class="form-label"><?= t('Retenção') ?>: (%)</label>
-                                <input type="number" value="0.00" step="0.01" class="form-control" id="retention" name="retention">
+                            <div class="row" style="margin-top: -45px !important;">
+                                <div class="col-md-6 mb-3">
+                                    <label for="series" class="form-label"><?= t('Série') ?>:</label>
+                                    <input class="form-control" id="series" name="series" readonly>
+                                </div>
+
+                                <div class="col-md-6 mb-6 d-none" style="margin-top: 40px;">
+                                    <label for="retention" class="form-label"><?= t('Retenção') ?>: (%)</label>
+                                    <input type="number" value="0.00" step="0.01" class="form-control" id="retention" name="retention">
+                                </div>
                             </div>
                         </div>
 
@@ -338,7 +330,7 @@ require_once '../app/views/layout_creation.php';
                     </div>
 
                     <!-- STEP 3 -->
-                    <div class="form-step bg-white shadow-sm p-3 rounded" data-step="3">
+                    <div class="form-step" data-step="2">
 
                         <div class="d-flex justify-content-between mb-2">
                             <h4><?= t('Itens') ?></h4>
@@ -350,7 +342,7 @@ require_once '../app/views/layout_creation.php';
 
                         <hr>
 
-                        <div class="row mt-3">
+                        <div class="row mt-3 bg-white shadow-sm p-3 rounded">
                             <div class="row mb-2">
                                 <div class="col-md-12">
                                     <div class="items-container d-none" id="items_list">
@@ -373,74 +365,71 @@ require_once '../app/views/layout_creation.php';
                             </div>
                         </div>
 
-                    </div>
 
-                    <!-- STEP 4 (RESUMO) -->
-                    <div class="form-step bg-white shadow-sm p-3 rounded" data-step="4">
-
-                        <h4><?= t('Resumo da Fatura') ?></h4>
+                        <h4 class="mt-3"><?= t('Resumo da Fatura') ?></h4>
                         <hr>
 
-                        <table class="table table-bordered mb-3">
-                            <thead class="table-light">
-                                <tr>
-                                    <th><?= t('Taxa/IVA') ?></th>
-                                    <th><?= t('Incidência') ?></th>
-                                    <th><?= t('Valor (IVA)') ?></th>
-                                    <th><?= t('Retenção') ?></th>
-                                    <th><?= t('Total') ?></th>
-                                </tr>
-                            </thead>
-                            <tbody id="tax_summary">
-                                <tr>
-                                    <td>0%</td>
-                                    <td id="tax_exempt_incidence">0,00</td>
-                                    <td id="tax_exempt_value">0,00</td>
-                                </tr>
-                                <tr>
-                                    <td>14%</td>
-                                    <td id="tax_14_incidence">0,00</td>
-                                    <td id="tax_14_value">0,00</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="bg-white shadow-sm p-3 rounded">
+                            <table class="table table-bordered mb-3">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th><?= t('Taxa/IVA') ?></th>
+                                        <th><?= t('Incidência') ?></th>
+                                        <th><?= t('Valor (IVA)') ?></th>
+                                        <th><?= t('Retenção') ?></th>
+                                        <th><?= t('Total') ?></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tax_summary">
+                                    <tr>
+                                        <td>0%</td>
+                                        <td id="tax_exempt_incidence">0,00</td>
+                                        <td id="tax_exempt_value">0,00</td>
+                                    </tr>
+                                    <tr>
+                                        <td>14%</td>
+                                        <td id="tax_14_incidence">0,00</td>
+                                        <td id="tax_14_value">0,00</td>
+                                    </tr>
+                                </tbody>
+                            </table>
 
-                        <table class="table table-bordered">
-                            <tbody>
-                                <tr>
-                                    <td><?= t('Soma') ?></td>
-                                    <td id="total_sum">0,00</td>
-                                </tr>
-                                <tr>
-                                    <td><?= t('Desconto') ?></td>
-                                    <td id="total_discount">0,00</td>
-                                </tr>
-                                <tr>
-                                    <td><?= t('Subtotal') ?></td>
-                                    <td id="subtotal_without_tax">0,00</td>
-                                </tr>
-                                <tr>
-                                    <td><?= t('IVA') ?></td>
-                                    <td id="total_tax">0,00</td>
-                                </tr>
-                                <tr>
-                                    <td><?= t('Retenção') ?></td>
-                                    <td id="retention_value">0,00</td>
-                                </tr>
-                                <tr>
-                                    <td><strong><?= t('Total') ?></strong></td>
-                                    <td><strong id="final_total">0,00</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <td><?= t('Soma') ?></td>
+                                        <td id="total_sum">0,00</td>
+                                    </tr>
+                                    <tr>
+                                        <td><?= t('Desconto') ?></td>
+                                        <td id="total_discount">0,00</td>
+                                    </tr>
+                                    <tr>
+                                        <td><?= t('Subtotal') ?></td>
+                                        <td id="subtotal_without_tax">0,00</td>
+                                    </tr>
+                                    <tr>
+                                        <td><?= t('IVA') ?></td>
+                                        <td id="total_tax">0,00</td>
+                                    </tr>
+                                    <tr>
+                                        <td><?= t('Retenção') ?></td>
+                                        <td id="retention_value">0,00</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong><?= t('Total') ?></strong></td>
+                                        <td><strong id="final_total">0,00</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
 
-                        <input type="hidden" name="total_sum">
-                        <input type="hidden" name="total_discount">
-                        <input type="hidden" name="subtotal_without_tax">
-                        <input type="hidden" name="total_tax">
-                        <input type="hidden" name="retention_value">
-                        <input type="hidden" name="final_total">
-
+                            <input type="hidden" name="total_sum">
+                            <input type="hidden" name="total_discount">
+                            <input type="hidden" name="subtotal_without_tax">
+                            <input type="hidden" name="total_tax">
+                            <input type="hidden" name="retention_value">
+                            <input type="hidden" name="final_total">
+                        </div>
                     </div>
 
                 </div>

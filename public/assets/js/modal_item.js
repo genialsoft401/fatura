@@ -10,11 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const stockSelect = document.getElementById("stock_id");
 
   // CAMPOS FISCAIS
-  const taxField = document.querySelector("input[name=tax]");
-
-  if(taxField){
-    alert("TaxField existe!")
-  }
+  const taxField = document.getElementById("taxVat");
 
   const retentionField =
     document.getElementById("retention_tax") ||
@@ -226,17 +222,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!codigo) return;
 
+      const formData = new FormData();
+      formData.append("codigo", codigo);
+
       const res = await fetch("items/ajax/check_code.php", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ codigo }),
+        body: formData,
       });
+
+      if (!res.ok) {
+        throw new Error(`Erro HTTP: ${res.status}`);
+      }
 
       const data = await res.json();
 
-      if (data?.exists) {
+      if (data && data.exists) {
         alert("Este código já existe.");
 
         codigoInput.value = "";
@@ -301,11 +301,10 @@ document.addEventListener("DOMContentLoaded", () => {
   categorySelect.addEventListener("change", syncUI);
 
   // Subcategoria
-  if (subcategorySelect) {
-    subcategorySelect.addEventListener("change", () => {
-      updateFiscal();
-    });
-  }
+  subcategorySelect.addEventListener("change", () => {
+    updateFiscal();
+    // alert("ok")
+  });
 
   // Stock
   if (stockSelect) {

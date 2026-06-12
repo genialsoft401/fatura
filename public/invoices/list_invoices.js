@@ -1,110 +1,139 @@
 $(document).ready(function () {
   // Configuração do DataTable
 
-  $("#invoicesTable").DataTable({
+  const table = $("#invoicesTable").DataTable({
     ajax: {
       url: "invoices/ajax/fetch_invoices.php",
       type: "GET",
       dataType: "json",
 
       dataSrc: function (json) {
-        console.log("AJAX RESPONSE:", json);
-
         if (Array.isArray(json)) return json;
-        if (json?.data && Array.isArray(json.data)) return json.data;
-        if (json?.invoices && Array.isArray(json.invoices))
-          return json.invoices;
 
-        console.error("Formato inválido do backend:", json);
+        if (json?.data && Array.isArray(json.data)) {
+          return json.data;
+        }
+
+        if (json?.invoices && Array.isArray(json.invoices)) {
+          return json.invoices;
+        }
+
+        console.error("Formato inválido:", json);
         return [];
       },
     },
 
     language: {
-      url: "https://cdn.datatables.net/plug-ins/1.13.4/i18n/pt-BR.json",
-      lengthMenu: "Mostrar _MENU_",
+      lengthMenu: "Mostrar _MENU_ registos",
+      search: "",
+      searchPlaceholder: "Pesquisar faturas...",
+      info: "Mostrando _START_ a _END_ de _TOTAL_",
+      infoEmpty: "Nenhum registo encontrado",
       emptyTable: "Nenhuma fatura encontrada",
+      zeroRecords: "Nenhum resultado encontrado",
+      paginate: {
+        first: "Primeira",
+        last: "Última",
+        next: "›",
+        previous: "‹",
+      },
     },
+    order: [[3, "desc"]], // coluna da data
 
     columns: [
       {
         data: null,
-        orderable: false,
+        orderable: true,
         searchable: false,
+        width: "90px",
 
         render: function (data, type, row) {
+          const status = row.status_invoice || "?";
+
           return `
-          <div class="d-flex flex-wrap justify-content-evenly align-items-center">
+            <div class="d-flex align-items-center gap-3">
 
-            <input
-              type="checkbox"
-              class="invoice-check"
-              data-id="${row.id}"
-              value="${row.id}"
-            />
+              <input
+                type="checkbox"
+                class="invoice-check"
+                data-id="${row.id}"
+                value="${row.id}"
+              >
 
-            <div
-              class="px-2 icon-statusFatura"
-              style="
-                background-color:${row.color || "#ccc"};
-                color:${row.text_color || "#000"};
-                font-weight:900;
-                cursor:default;
-              "
-              data-bs-toggle="tooltip"
-              data-bs-title="${row.status_invoice || ""}"
-            >
-              ${(row.status_invoice || "?").trim().charAt(0).toUpperCase()}
+              <div
+                class="icon-statusFatura p-2 py-1"
+                data-status="${status}"
+                style="
+                  background:${row.color || "#000"};
+                  color:${row.text_color || "#fff"};
+                "
+                data-bs-toggle="tooltip"
+                data-bs-title="${status}"
+              >
+                ${status.charAt(0).toUpperCase()}
+              </div>
+
             </div>
-
-          </div>
-        `;
+          `;
         },
       },
 
-      { data: "codigo", defaultContent: "-" },
-      { data: "cliente", defaultContent: "-" },
+      {
+        data: "codigo",
+        defaultContent: "-",
+      },
+
+      {
+        data: "cliente",
+        defaultContent: "-",
+      },
 
       {
         data: "issue_date",
-        render: function (data) {
+        render: function (data, type) {
           if (!data) return "-";
 
-          const d = new Date(data);
-          if (isNaN(d)) return "-";
+          if (type === "sort") {
+            return data;
+          }
 
-          return d.toLocaleDateString("pt-BR");
+          return new Date(data).toLocaleDateString("pt-BR");
         },
       },
 
       {
-        data: null,
-        render: function (data, type, row) {
-          if (!row.due_date) return "-";
+        data: "due_date",
+        render: function (data, type) {
+          if (!data) return "-";
+
+          if (type === "sort") {
+            return data;
+          }
 
           const today = new Date();
           today.setHours(0, 0, 0, 0);
 
-          const due = new Date(row.due_date);
+          const due = new Date(data);
           due.setHours(0, 0, 0, 0);
 
-          const isLate = due < today;
-
           return `
-          <span style="color:${isLate ? "red" : "inherit"}">
+          <span class="${due < today ? "text-danger" : ""}">
             ${due.toLocaleDateString("pt-BR")}
           </span>
         `;
         },
       },
 
-      { data: "currency", defaultContent: "-" },
+      {
+        data: "currency",
+        defaultContent: "-",
+      },
 
       {
         data: null,
         render: function (data, type, row) {
           return formatCurrency(
-            row.final_total || 0,
+            Number(row.final_total || 0),
             row.symbol || "",
             row.position || "left",
           );
@@ -127,18 +156,15 @@ $(document).ready(function () {
 
           let html = `
           <button
-            class="btn btn-sm text-primary"
-            title="Ver detalhes"
-            onclick="event.stopPropagation(); window.location.href='${invoiceUrl}'"
+            class="btn btn-action text-primary"
+            title="Ver"
+            onclick="event.stopPropagation();window.location.href='${invoiceUrl}'"
           >
             <i class="bi bi-card-list"></i>
           </button>
         `;
 
-          const isDraft =
-            (row.status_invoice || "").toLowerCase() === "rascunho";
-
-          if (isDraft) {
+          if ((row.status_invoice || "").toLowerCase() === "rascunho") {
             html += `
             <button
               class="btn btn-sm text-warning ms-1"
@@ -155,6 +181,7 @@ $(document).ready(function () {
             >
               <i class="bi bi-trash"></i>
             </button>
+
           `;
           } else {
             html += `
@@ -168,7 +195,11 @@ $(document).ready(function () {
           `;
           }
 
-          return html;
+          return `
+          <div class="d-flex justify-content-end gap-2">
+            ${html}
+          </div>
+        `;
         },
       },
     ],
@@ -178,29 +209,35 @@ $(document).ready(function () {
     ordering: true,
     responsive: true,
     destroy: true,
+
     pageLength: 25,
 
     order: [[1, "desc"]],
+
+    createdRow: function (row, data) {
+      $(row)
+        .addClass("invoice-row")
+        .attr("data-id", data.id)
+        .attr("data-cliente", data.cliente || "")
+        .attr("data-status", data.status_invoice || "")
+        .attr("data-issue-date", data.issue_date || "");
+    },
 
     rowCallback: function (row, data) {
       $(row)
         .off("click")
         .on("click", function (e) {
-          const $target = $(e.target);
-
           if (
-            $target.closest("button").length ||
-            $target.closest("input").length
-          )
+            $(e.target).closest("button").length ||
+            $(e.target).closest("input").length
+          ) {
             return;
-
-          const id = data.id;
-          const company = data.company_id;
+          }
 
           const url =
             `invoice.php?id=` +
             `${String(data.issue_date || "").replaceAll("-", "")}` +
-            `/${company}/${id}`;
+            `/${data.company_id}/${data.id}`;
 
           window.location.href = url;
         });
@@ -211,6 +248,122 @@ $(document).ready(function () {
         bootstrap.Tooltip.getOrCreateInstance(el);
       });
     },
+  });
+
+  $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+    if (settings.nTable.id !== "invoicesTable") {
+      return true;
+    }
+
+    const row = table.row(dataIndex).node();
+
+    if (!row) {
+      return true;
+    }
+
+    const cliente = ($(row).attr("data-cliente") || "").toLowerCase();
+
+    const status = ($(row).attr("data-status") || "").toLowerCase();
+
+    const issueDate = $(row).attr("data-issue-date");
+
+    // =====================
+    // CLIENTE
+    // =====================
+
+    const clienteFiltro = ($("#filterClient").val() || "").toLowerCase().trim();
+
+    if (clienteFiltro && !cliente.includes(clienteFiltro)) {
+      return false;
+    }
+
+    // =====================
+    // STATUS
+    // =====================
+
+    const statusFiltro = ($("#filterStatus").val() || "").toLowerCase().trim();
+
+    if (statusFiltro && status !== statusFiltro) {
+      return false;
+    }
+
+    // =====================
+    // DATA
+    // =====================
+
+    if (issueDate) {
+      const current = new Date(issueDate);
+
+      const start = $("#filterStartDate").val();
+      const end = $("#filterEndDate").val();
+
+      if (start) {
+        const startDate = new Date(start);
+
+        if (current < startDate) {
+          return false;
+        }
+      }
+
+      if (end) {
+        const endDate = new Date(end);
+        endDate.setHours(23, 59, 59, 999);
+
+        if (current > endDate) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  });
+
+  $("#filterClient").on("input", function () {
+    table.draw();
+  });
+
+  $("#filterStatus").on("change", function () {
+    table.draw();
+  });
+
+  $("#filterStartDate").on("change", function () {
+    table.draw();
+  });
+
+  $("#filterEndDate").on("change", function () {
+    table.draw();
+  });
+
+  $("#btnClearFilters").on("click", function () {
+    $("#filterClient").val("");
+    $("#filterStatus").val("");
+    $("#filterStartDate").val("");
+    $("#filterEndDate").val("");
+
+    table.search("");
+    table.columns().search("");
+
+    table.draw();
+  });
+
+  // Evento único para toda a tabela
+  $("#invoicesTable tbody").on("click", "tr", function (e) {
+    const $target = $(e.target);
+
+    if ($target.closest("button").length || $target.closest("input").length) {
+      return;
+    }
+
+    const row = table.row(this).data();
+
+    if (!row) return;
+
+    const url =
+      `invoice.php?id=` +
+      `${String(row.issue_date || "").replaceAll("-", "")}` +
+      `/${row.company_id}/${row.id}`;
+
+    window.location.href = url;
   });
 
   $("#exportCsv").on("click", function () {

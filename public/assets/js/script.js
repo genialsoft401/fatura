@@ -64,20 +64,18 @@ $(document).ready(function () {
     // =========================
     // TAX
     // =========================
-    formData.append("tax_vat", $("#tax").val());
+    formData.append("tax_vat", $("#taxVat").val());
 
     for (let pair of formData.entries()) {
       console.log(pair[0], pair[1]);
     }
 
-    console.log(formData.get("tax_vat"));
+    console.log("tax:", formData.get("tax_vat"));
 
     // =========================
     // URL
     // =========================
-    const url = itemId
-      ? "items/ajax/edit_item.php"
-      : "items/ajax/save_item.php";
+    const url = "items/ajax/save_item.php";
 
     $.ajax({
       url: url,
@@ -95,6 +93,7 @@ $(document).ready(function () {
 
         $("#itemModal").modal("hide");
         $("#itemForm")[0].reset();
+
         loadItems();
       },
       error: function () {

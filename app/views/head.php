@@ -41,7 +41,7 @@
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    
+
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -111,7 +111,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
-    
+
     <!-- html2canvas + jsPDF bundle -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <!-- <script src="../../vendor/"></script> -->
@@ -119,7 +119,7 @@
     <!-- Estilos -->
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="assets/css/side.css">
-    
+
     <?php
     $currentPage = basename($_SERVER['PHP_SELF']);
 
@@ -129,7 +129,7 @@
     ?>
 
     <!-- Quill – visual “Snow” -->
-    <link  href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+    <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
 
     <!-- Editor WYSIWYG -->
@@ -140,6 +140,6 @@
     <!-- <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ffffff"> -->
 </head>
-<?php 
-require_once('../app/models/modal_item.php'); 
-?> 
+<?php
+require_once('../app/models/modal_item.php');
+?>

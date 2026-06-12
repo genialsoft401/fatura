@@ -37,7 +37,7 @@ try {
 
     $pdo->beginTransaction();
 
-    // 🔒 LOCK DA FATURA
+    //  LOCK DA FATURA
     $stmt = $pdo->prepare("
         SELECT *
         FROM invoices
@@ -71,7 +71,7 @@ try {
 
     $statusId = $statusMap[$newStatusName];
 
-    // 🔢 GERAR NUMERAÇÃO
+    //  GERAR NUMERAÇÃO
     $result = apply_invoice_number_rules(
         $pdo,
         (int)$invoice['company_id'],
@@ -137,7 +137,7 @@ try {
     ");
     $updateHash->execute([$hash, $invoiceId]);
 
-    // 🔒 OPCIONAL: guardar system_entry_date
+    //  OPCIONAL: guardar system_entry_date
     $updateDate = $pdo->prepare("
         UPDATE invoices 
         SET created_at = ?

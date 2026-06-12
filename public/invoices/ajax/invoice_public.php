@@ -297,7 +297,7 @@ if ($paid_total >= $inv['final_total']) {  // quitada
       </div>
 
       <span class="d-block fs-6 title-line tag-title">
-        Factura n.º <?= htmlspecialchars($inv['status'] != 1 ? $inv['reference'] :  " ") ?>
+        <?= $inv["document_type"] === "PF" ? "Proforma" : "Factura"?> n.º <?= htmlspecialchars($inv['status'] != 1 ? $inv['reference'] :  " ") ?>
       </span>
 
       <!-- Bloco flex com 2 colunas -->

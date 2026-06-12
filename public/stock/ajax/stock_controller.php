@@ -159,7 +159,7 @@ function listarEstoques($pdo)
         $estoques = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // =========================
-        // BUSCAR TODOS ITENS DE UMA VEZ (🔥 evita N+1)
+        // BUSCAR TODOS ITENS DE UMA VEZ ( evita N+1)
         // =========================
         $stmtItens = $pdo->prepare("
             SELECT 

@@ -151,6 +151,7 @@ require_once '../app/views/layout_creation.php';
     .dt-search {
         position: relative;
         margin-bottom: 15px;
+        display: none !important;
     }
 
     .dt-search label {
@@ -184,6 +185,23 @@ require_once '../app/views/layout_creation.php';
         display: flex;
         align-items: center;
         min-height: 100vh;
+    }
+
+    #filterClient,
+    #filterStatus,
+    #filterStartDate,
+    #filterEndDate {
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        min-height: 44px;
+    }
+
+    #filterClient:focus,
+    #filterStatus:focus,
+    #filterStartDate:focus,
+    #filterEndDate:focus {
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, .12);
     }
 </style>
 
@@ -221,7 +239,7 @@ require_once '../app/views/layout_creation.php';
 
     <main>
         <div class="container mt-5">
-            <h2 class="mb-4"><?= t('Emissão de Fatura') ?></h2>
+            <h2 class="mb-4"><?= t('Minhas Faturas') ?></h2>
 
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="dropdown">
@@ -248,6 +266,73 @@ require_once '../app/views/layout_creation.php';
                     </ul>
                 </div>
 
+            </div>
+
+            <!-- FILTROS -->
+            <div class="card border-0 mb-4" style="background: none !important;">
+                <div class="card-body">
+
+                    <div class="row g-3 align-items-end">
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">
+                                Cliente
+                            </label>
+
+                            <input
+                                type="text"
+                                id="filterClient"
+                                class="form-control"
+                                placeholder="Pesquisar cliente...">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">
+                                Status
+                            </label>
+
+                            <select id="filterStatus" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="pendente">Pendente</option>
+                                <option value="parcial">Parcial</option>
+                                <option value="pago">Pago</option>
+                                <option value="rascunho">Rascunho</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">
+                                Data Inicial
+                            </label>
+
+                            <input
+                                type="date"
+                                id="filterStartDate"
+                                class="form-control">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">
+                                Data Final
+                            </label>
+
+                            <input
+                                type="date"
+                                id="filterEndDate"
+                                class="form-control">
+                        </div>
+
+                        <div class="col-md-2">
+                            <button
+                                id="btnClearFilters"
+                                class="btn btn-secondary w-100">
+                                Limpar
+                            </button>
+                        </div>
+
+                    </div>
+
+                </div>
             </div>
 
             <div class="table-responsive">

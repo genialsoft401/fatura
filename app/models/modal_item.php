@@ -101,7 +101,7 @@
     }
 </style>
 
-<div class="modal fade" id="itemModal" data-bs-backdrop="static" data-bs-keyboard="false">
+<div class="modal fade" id="itemModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="itemModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
 
@@ -119,6 +119,7 @@
                 <form id="itemForm">
 
                     <input type="hidden" value="<?= $_SESSION['user']['company_id'] ?>" name="id_company">
+                    <input type="hidden" value="0" name="item_id" id="item_id">
 
                     <!-- ========================= -->
                     <!-- 1. IDENTIFICAÇÃO -->
@@ -253,7 +254,7 @@
                             <!-- IVA -->
                             <div class="col-md-4">
                                 <label class="form-label"><?= t('IVA') ?></label>
-                                <input class="form-control" name="tax_vat" id="tax" readonly>
+                                <input class="form-control" type="text" name="tax_vat" id="taxVat">
                             </div>
 
                             <!-- RETENÇÃO -->
@@ -312,4 +313,4 @@
     </div>
 </div>
 
-<script src="../public/assets/js/modal_item.js"></script>
+<script src="../public/assets/js/modal_item.js?v=0.6"></script>

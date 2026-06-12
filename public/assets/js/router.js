@@ -101,7 +101,7 @@ async function loadRoute(path, addToHistory = true) {
     // Executa scripts da view (IMPORTANTE)
     executeScripts(app);
 
-    // 🔥 CHAMA O APP.JS
+    //  CHAMA O APP.JS
     initPage(path);
   } catch (err) {
     if (err.name !== "AbortError") {

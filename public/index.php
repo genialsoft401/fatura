@@ -305,7 +305,7 @@ require_once '../app/views/layout_creation.php';
         height: 100%;
     }
 
-    /* 🔥 importante para mostrar metade do próximo */
+    /*  importante para mostrar metade do próximo */
     .owl-stage {
         display: flex;
     }
@@ -329,11 +329,10 @@ require_once '../app/views/layout_creation.php';
                                 <a href="#" data-tag="rh" class="tag-link btn">Recursos Humanos</a>
                             </div>
                             <div class="mb-3">
-                                <select style="width: 160px !important;" name="export" id="exportData" class="form-select">
-                                    <option value="" selected>Exportar</option>
-                                    <option value="sell">Relatório de Vendas</option>
-                                    <option value="saft">Ficheiro SAFT</option>
-                                </select>
+                                <div style="width: 180px !important; margin-right: -80px;" name="export" id="exportData">
+                                    <select id="yearSelect" class="form-select col-3 w-60" style="width: 100px;">
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -396,7 +395,7 @@ require_once '../app/views/layout_creation.php';
                                         <div class="icon-box"><i class="bi bi-file-earmark-text text-primary"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="total_docs">157</h4>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Documentos emitidos</span>
+                                            <span class="small-text">Recebimentos</span>
                                             <span id="total_doc_dif" class="small"><i class="bi bi-arrow-up-right"></i>0</span>
                                         </div>
                                     </div>
@@ -410,17 +409,11 @@ require_once '../app/views/layout_creation.php';
                                 <div class="col-lg-8">
                                     <div class="card card-custom p-4" id="chart-card">
                                         <div class="d-flex justify-content-between mb-3">
-                                            <h6 class="h-title"><i class="bi bi-graph-up"></i> Evolução Trimestral</h6>
-                                            <div class="mb-3">
-                                                <select id="trimestreSelect" class="form-select col-2 w-40">
-                                                    <option value="1">Iº Trim. (Jan - Mar)</option>
-                                                    <option value="2" selected>IIº Trim. (Abr - Jun)</option>
-                                                    <option value="3">IIIº Trim. (Jul - Set)</option>
-                                                    <option value="4">IVº Trim. (Out - Dez)</option>
-                                                </select>
-                                            </div>
+                                            <h6 class="h-title"><i class="bi bi-graph-up"></i> Evolução Anual</h6>
                                         </div>
-                                        <canvas id="chart"></canvas>
+                                        <div class="" style="height: 400px;">
+                                            <canvas id="chart"></canvas>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -690,6 +683,9 @@ require_once '../app/views/footer.php';
    🔹 INIT VARS
 ============================= */
 
+    const currentYear = new Date().getFullYear();
+    let selectedYear = new Date().getFullYear();
+
     const userEl = document.getElementById("user_id");
     const companyEl = document.getElementById("company_id");
 
@@ -791,6 +787,10 @@ require_once '../app/views/footer.php';
             url: 'invoices/ajax/get_invoices_feed.php',
             method: 'GET',
             dataType: 'json',
+            data: {
+                year: selectedYear
+            },
+
             success: function(res) {
 
                 if (!res?.success || !Array.isArray(res.data)) return;
@@ -799,21 +799,24 @@ require_once '../app/views/footer.php';
 
                 res.data.forEach(inv => {
                     html += `
-                    <div class="item">
-                        <div class="card p-2 hover-row">
-                            <div class="d-flex justify-content-between">
-                                <small class="text-primary">${inv.reference ?? ''}</small>
-                                ${getBadge(inv.status)}
-                            </div>
-                            <strong>${inv.client_name ?? ''}</strong>
-                            <div class="d-flex justify-content-between">
-                                <small>${formatDate(inv.issue_date)}</small>
-                                <span class="small text-black">
-                                    ${formatCurrency(inv.final_total)}
-                                </span>
+                    <a href="invoice.php?id=${inv.id}">
+                        <div class="item">
+                            <div class="card p-2 hover-row">
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-primary">${inv.reference ?? ''}</small>
+                                    ${getBadge(inv.status)}
+                                </div>
+                                <strong>${inv.client_name ?? ''}</strong>
+                                <div class="d-flex justify-content-between">
+                                    <small>${formatDate(inv.issue_date)}</small>
+                                    <span class="small text-black">
+                                        ${formatCurrency(inv.final_total)}
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                    </div>`;
+                    </a>
+                    `;
                 });
 
                 if (carousel) {
@@ -883,7 +886,8 @@ require_once '../app/views/footer.php';
             method: 'GET',
             data: {
                 company_id,
-                user_id
+                user_id,
+                year: selectedYear
             },
             dataType: 'json',
 
@@ -903,12 +907,12 @@ require_once '../app/views/footer.php';
         $("#month_average").text(formatCurrency(kpis?.media_mensal));
         $("#month_sell").text(formatCurrency(kpis.venda_periodo));
         $("#total_customer").text(kpis.clientes || 0);
-        $("#total_docs").text(kpis.documentos || 0);
+        $("#total_docs").text(kpis.volume_liquid || 0);
         setDif("trimestral_volume_dif", kpis.crescimento || 0);
         setDif("month_average_dif", kpis.media_mensal_dif || 0);
         setDif("month_sell_dif", kpis.venda_periodo_growth || 0);
         setDif("total_customer_dif", kpis.crescimento_clientes || 0);
-        setDif("total_doc_dif", kpis.crescimento_documentos || 0);
+        // setDif("total_doc_dif", kpis.crescimento_documentos || 0);
 
         function setDif(id, value) {
             const el = document.getElementById(id);
@@ -925,8 +929,57 @@ require_once '../app/views/footer.php';
     /* =============================
     🔹 CHART
     ============================= */
+
     function renderGraphics(apiData) {
-        const evolucao = apiData?.evolucao || [];
+
+        currentData = apiData;
+
+        const yearsInvoices = apiData?.yearsInvoices || [];
+
+        const yearSelect = document.getElementById("yearSelect");
+
+        // Se o ano selecionado não existir mais,
+        // usa o ano atual ou o primeiro disponível
+
+        const availableYears = yearsInvoices.map(y => Number(y.ano));
+
+        if (!availableYears.includes(selectedYear)) {
+            selectedYear =
+                availableYears.includes(new Date().getFullYear()) ?
+                new Date().getFullYear() :
+                availableYears[0];
+        }
+
+        yearSelect.innerHTML = yearsInvoices.map(y => `
+        <option
+            value="${y.ano}"
+            ${Number(y.ano) === selectedYear ? "selected" : ""}
+        >
+            ${y.ano}
+        </option>
+    `).join("");
+
+        yearSelect.onchange = () => {
+
+            selectedYear = Number(yearSelect.value);
+
+            updateChart(selectedYear);
+
+            setTimeout(() => {
+                loadInvoices();
+                getInsightsNumber();
+                loadRHData();
+                loadStockDashboard();
+            }, 1000)
+        };
+
+        updateChart(selectedYear);
+    }
+
+
+    function updateChart(selectedYear) {
+
+        const evolucao = currentData?.evolucao || [];
 
         const nomesMeses = [
             'Jan', 'Fev', 'Mar',
@@ -935,94 +988,99 @@ require_once '../app/views/footer.php';
             'Out', 'Nov', 'Dez'
         ];
 
-        const trimestres = {
-            1: [1, 2, 3], // Jan, Fev, Mar
-            2: [4, 5, 6], // Abr, Mai, Jun
-            3: [7, 8, 9], // Jul, Ago, Set
-            4: [10, 11, 12] // Out, Nov, Dez
-        };
-
-        const anoAtual = new Date().getFullYear();
-
-        // Mapeia os valores existentes da base
+        // map filtrado pelo ano selecionado
         const map = {};
+
         evolucao.forEach(item => {
-            map[item.mes] = Number(item.total || 0);
+
+            const [year, month] = item.mes.split("-");
+
+            if (Number(year) === selectedYear) {
+                map[item.mes] = Number(item.total || 0);
+            }
         });
-
-        // o select de trimestre caso ainda não exista
-        const trimestreSelect = document.getElementById("trimestreSelect");
-
-
 
         const canvas = document.getElementById("chart");
         if (!canvas) return;
 
-        function atualizarGrafico() {
-            const trimestreSelecionado = Number(trimestreSelect.value);
-            const mesesDoTrimestre = trimestres[trimestreSelecionado];
+        const labels = [];
+        const valores = [];
 
-            const labels = [];
-            const valores = [];
+        for (let mes = 1; mes <= 12; mes++) {
 
-            mesesDoTrimestre.forEach(numeroMes => {
-                const mesFormatado = `${anoAtual}-${String(numeroMes).padStart(2, '0')}`;
+            const mesFormatado =
+                `${selectedYear}-${String(mes).padStart(2, '0')}`;
 
-                labels.push(nomesMeses[numeroMes - 1]);
-                valores.push(map[mesFormatado] || 0);
-            });
+            labels.push(nomesMeses[mes - 1]);
+            valores.push(map[mesFormatado] || 0);
+        }
 
-            if (chartInstance) {
-                chartInstance.destroy();
-            }
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
 
-            const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d");
 
-            // Gradiente linear
-            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, "#007abd");
-            gradient.addColorStop(1, "#007bbd41");
+        const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+        gradient.addColorStop(0, "#007abd");
+        gradient.addColorStop(1, "#007bbd30");
 
-            chartInstance = new Chart(ctx, {
-                type: "bar",
-                data: {
-                    labels,
-                    datasets: [{
-                        label: "Receita",
-                        data: valores,
-                        backgroundColor: gradient,
-                        borderColor: "transparent",
-                        borderWidth: 1,
-                        borderRadius: 6,
-                        borderSkipped: false,
-                        hoverBackgroundColor: gradient
-                    }]
+        chartInstance = new Chart(ctx, {
+            type: "bar",
+
+            data: {
+                labels,
+                datasets: [{
+                    label: `Receita ${selectedYear}`,
+
+                    data: valores,
+
+                    backgroundColor: gradient,
+
+                    borderRadius: 8,
+
+                    borderSkipped: false,
+
+                    hoverBackgroundColor: "#007abd",
+
+                    barThickness: 45
+                }]
+            },
+
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+
+                    tooltip: {
+                        callbacks: {
+                            label: (context) =>
+                                `Receita: ${context.raw.toLocaleString()}`
+                        }
+                    }
                 },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: {
-                            display: false
+
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: "#f1f5f9"
                         }
                     },
-                    scales: {
-                        y: {
-                            beginAtZero: true
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
+                    x: {
+                        grid: {
+                            display: false
                         }
                     }
                 }
-            });
-        }
-
-        trimestreSelect.addEventListener("change", atualizarGrafico);
-
-        atualizarGrafico();
+            }
+        });
     }
+
 
 
     /* =============================
@@ -1035,16 +1093,16 @@ require_once '../app/views/footer.php';
         const list = apiData?.top_clients || [];
 
         el.innerHTML = list.map(c => `
-<div class="hover-row d-flex justify-content-between p-2 rounded">
-    <div>
-        <strong>${c.cliente ?? ''}</strong><br>
-        <small class="text-muted">${c.total_faturas || 0} facturas</small>
-    </div>
-    <span class="text-black small">
-        ${formatCurrency(c.total_faturado)}
-    </span>
-</div>
-`).join('');
+        <div class="hover-row d-flex justify-content-between p-2 rounded">
+            <div>
+                <strong>${c.cliente ?? ''}</strong><br>
+                <small class="text-muted">${c.total_faturas || 0} facturas</small>
+            </div>
+            <span class="text-black small">
+                ${formatCurrency(c.total_faturado)}
+            </span>
+        </div>
+        `).join('');
     }
 
     /* =============================
@@ -1056,7 +1114,8 @@ require_once '../app/views/footer.php';
             url: `index/ajax/get_hr_insights.php`,
             method: "GET",
             data: {
-                company_id
+                company_id,
+                year: selectedYear
             },
             dataType: "json",
 
@@ -1092,39 +1151,39 @@ require_once '../app/views/footer.php';
                     const badgeText = v.status === 'pendente' ? 'Pendente' : 'Aprovadas';
 
                     return `
-<div class="list-item d-flex justify-content-between align-items-center mb-2">
-    <div class="d-flex align-items-center gap-2">
-        <div class="avatar bg-primary-subtle text-primary">
-            ${getInitials(v.name)}
-        </div>
-        <div>
-            <div class="fw-medium">${v.name}</div>
-            <small class="text-muted">
-                ${formatDateRange(v.start_date, v.end_date)}
-            </small>
-        </div>
-    </div>
-    <span class="badge ${badgeClass}">${badgeText}</span>
-</div>`;
+            <div class="list-item d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar bg-primary-subtle text-primary">
+                        ${getInitials(v.name)}
+                    </div>
+                    <div>
+                        <div class="fw-medium">${v.name}</div>
+                        <small class="text-muted">
+                            ${formatDateRange(v.start_date, v.end_date)}
+                        </small>
+                    </div>
+                </div>
+                <span class="badge ${badgeClass}">${badgeText}</span>
+            </div>`;
                 }).join('');
 
                 $("#rh_vacations_list").html(vacHtml);
 
                 /* Absences */
                 const absHtml = (data.top_absences || []).map(a => `
-<div class="list-item d-flex justify-content-between align-items-center mb-2">
-    <div class="d-flex align-items-center gap-2">
-        <div class="avatar bg-danger-subtle text-danger">
-            ${getInitials(a.name)}
-        </div>
-        <div>
-            <div class="fw-medium">${a.name}</div>
-            <small class="text-muted">${a.tipo_falta}</small>
-        </div>
-    </div>
-    <span class="fw-bold">${a.total_absences} faltas</span>
-</div>
-`).join('');
+            <div class="list-item d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="avatar bg-danger-subtle text-danger">
+                        ${getInitials(a.name)}
+                    </div>
+                    <div>
+                        <div class="fw-medium">${a.name}</div>
+                        <small class="text-muted">${a.tipo_falta}</small>
+                    </div>
+                </div>
+                <span class="fw-bold">${a.total_absences} faltas</span>
+            </div>
+            `).join('');
 
                 $("#rh_absences_list").html(absHtml);
             },
@@ -1146,7 +1205,8 @@ require_once '../app/views/footer.php';
             url: "index/ajax/get_stock_dashboard.php",
             method: "GET",
             data: {
-                company_id
+                company_id,
+                year: currentYear
             },
             dataType: "json",
 
@@ -1195,25 +1255,25 @@ require_once '../app/views/footer.php';
 
                     (data.depots || []).forEach(dep => {
                         html += `
-<div class="col-12 col-sm-4">
-    <div class="p-3 border rounded-3 depo-item">
-        <h6 class="fw-semibold">${dep.name}</h6>
-        <small class="text-muted">${dep.city ?? ''}</small>
+                            <div class="col-12 col-sm-4">
+                                <div class="p-3 border rounded-3 depo-item">
+                                    <h6 class="fw-semibold">${dep.name}</h6>
+                                    <small class="text-muted">${dep.city ?? ''}</small>
 
-        <div class="d-flex justify-content-between mt-2">
-            <small class="text-muted">${dep.total_items || 0} itens</small>
-            <span class="fw-bold text-success">
-                ${formatCurrency(dep.total_value)}
-            </span>
-        </div>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <small class="text-muted">${dep.total_items || 0} itens</small>
+                                        <span class="fw-bold text-success">
+                                            ${formatCurrency(dep.total_value)}
+                                        </span>
+                                    </div>
 
-        <a href="stock-depot.php?depot_id=${dep.id}" class="stretched-link">
-            <small class="text-primary d-block mt-2">
-                Ver detalhes <i class="bi bi-chevron-right"></i>
-            </small>
-        </a>
-    </div>
-</div>`;
+                                    <a href="stock-depot.php?depot_id=${dep.id}" class="stretched-link">
+                                        <small class="text-primary d-block mt-2">
+                                            Ver detalhes <i class="bi bi-chevron-right"></i>
+                                        </small>
+                                    </a>
+                                </div>
+                            </div>`;
                     });
 
                     depositsContainer.innerHTML = html || `<small class="text-muted">Sem depósitos</small>`;
@@ -1229,17 +1289,17 @@ require_once '../app/views/footer.php';
 
                     (data.low_stock || []).forEach(item => {
                         html += `
-<div class="list-item">
-    <div>
-        <div class="fw-medium">${item.name}</div>
-        <small class="text-muted">
-            ${item.quantity}/${item.min_quantity}
-        </small>
-    </div>
-    <button class="btn btn-sm text-primary">
-        <i class="bi bi-plus"></i> Lista
-    </button>
-</div>`;
+                            <div class="list-item">
+                                <div>
+                                    <div class="fw-medium">${item.name}</div>
+                                    <small class="text-muted">
+                                        ${item.quantity}/${item.min_quantity}
+                                    </small>
+                                </div>
+                                <button class="btn btn-sm text-primary">
+                                    <i class="bi bi-plus"></i> Lista
+                                </button>
+                            </div>`;
                     });
 
                     lowStockContainer.innerHTML = html || `<small class="text-muted">Sem alertas</small>`;
@@ -1255,15 +1315,15 @@ require_once '../app/views/footer.php';
 
                     (data.purchases || []).forEach(p => {
                         html += `
-<div class="list-item">
-    <div>
-        <div class="fw-medium">${p.name}</div>
-        <small class="text-muted">
-            Sugerido: ${p.suggested_qty}
-        </small>
-    </div>
-    <small class="text-muted">Auto</small>
-</div>`;
+                            <div class="list-item">
+                                <div>
+                                    <div class="fw-medium">${p.name}</div>
+                                    <small class="text-muted">
+                                        Sugerido: ${p.suggested_qty}
+                                    </small>
+                                </div>
+                                <small class="text-muted">Auto</small>
+                            </div>`;
                     });
 
                     purchaseContainer.innerHTML = html || `<small class="text-muted">Sem sugestões</small>`;
@@ -1276,47 +1336,93 @@ require_once '../app/views/footer.php';
         });
     }
 
-    const exportDataSelect = document.getElementById("exportData");
-    exportDataSelect.addEventListener("change", e => {
-        exportData(e.target.value);
-    })
+    // const exportDataSelect = document.getElementById("exportData");
+    // exportDataSelect.addEventListener("change", e => {
+    //     exportData(e.target.value);
+    // })
 
-    const exportData = async (type) => {
-        let url;
+    // const exportData = async (type) => {
+    //     let url;
 
-        if (type === "sell") {
-            url = "index/ajax/relatorio_vendas.php";
-        } else if (type === "saft") {
-            url = "index/ajax/generate_saft.php";
-        }
+    //     if (type === "sell") {
+    //         url = "index/ajax/relatorio_vendas.php";
+    //     } else if (type === "saft") {
+    //         url = "index/ajax/generate_saft.php";
+    //     }
 
-        window.location.href = url;
-    };
+    //     window.location.href = url;
+    // };
 
     /* =============================
     🔹 INIT
     ============================= */
-    $(document).ready(function() {
+    const REFRESH_INTERVAL = 30000; // 30 segundos
 
-        loadInvoices();
-        getInsightsNumber();
-        loadRHData();
-        loadStockDashboard();
+    let dashboardTimer = null;
+    let isRefreshing = false;
 
-        // ⚠️ cuidado: 10s pode ser pesado em produção
-        setInterval(() => {
-            getInsightsNumber();
-            loadInvoices();
-            loadRHData();
-            loadStockDashboard();
-        }, 10000);
+    async function refreshDashboard() {
+        if (isRefreshing) return;
 
+        try {
+            isRefreshing = true;
+
+            await Promise.all([
+                getInsightsNumber(),
+                loadInvoices(),
+                loadRHData(),
+                loadStockDashboard()
+            ]);
+
+        } catch (error) {
+            console.error("Erro ao atualizar dashboard:", error);
+        } finally {
+            isRefreshing = false;
+        }
+    }
+
+    function startDashboardRefresh() {
+
+        refreshDashboard();
+
+        dashboardTimer = setInterval(() => {
+
+            // Não atualizar quando a aba estiver oculta
+            if (document.hidden) return;
+
+            refreshDashboard();
+
+        }, REFRESH_INTERVAL);
+    }
+
+    function stopDashboardRefresh() {
+
+        if (dashboardTimer) {
+            clearInterval(dashboardTimer);
+            dashboardTimer = null;
+        }
+    }
+
+    $(document).ready(() => {
+
+        startDashboardRefresh();
+
+        // Pausa quando a aba não está visível
+        document.addEventListener("visibilitychange", () => {
+
+            if (document.hidden) {
+                stopDashboardRefresh();
+            } else {
+                startDashboardRefresh();
+            }
+
+        });
     });
 
     document.addEventListener("DOMContentLoaded", e => {
         const chartCard = window.getElementById("chart-card");
         const cardOthers = document.getElementById("card-others");
-        
+
     })
 </script>
 

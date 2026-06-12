@@ -631,14 +631,14 @@ require_once '../app/views/layout_creation.php';
 
                         <button
                             id="filterActive"
-                            class="btn btn-primary btn-sm">
+                            class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-people"></i>
                             Ativos
                         </button>
 
                         <button
                             id="filterArchived"
-                            class="btn btn-outline-secondary btn-sm">
+                            class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-archive"></i>
                             Arquivados
                         </button>

@@ -1,55 +1,54 @@
 <?php
+
 require_once '../../../app/config/db.php';
-require_once __DIR__ . '/document_helper.php';
 
 /**
  * ==================================================
- * HELPER DE CONTROLO DE NUMERAÇÃO DE FATURAS
+ * DOCUMENT HELPER - SISTEMA FISCAL AGT
  * ==================================================
- *
- * ✔ Corrigido:
- * - Sem duplicação
- * - Com lock (FOR UPDATE)
- * - Com verificação de existência
- * - Compatível com concorrência
- * - Ajustado para regras fiscais AGT
  */
 
 /**
- * Mapeamento de status
+ * STATUS PADRÃO (INT -> invoice_status.id)
  */
 function invoice_status_map(): array
 {
     return [
-        'Rascunho'   => 1,
-        'Pago'       => 4,
-        'Cancelado'  => 2,
-        'Finalizado' => 3, // corrigido
-        'Pendente'   => 5,
+        'Rascunho'     => 1,
+        'Emitida' => 2,
+        'Finalizada' => 3,
+        'Paga'      => 4,
+        'Cancelada'   => 5,
+        'Pendente' => 6,
+        'Expirada'   => 7
     ];
 }
 
 /**
- * Verifica se deve gerar número
+ * PREFIXO DO DOCUMENTO
  */
-function invoice_should_generate_number(string $status, ?string $reference): bool
+function document_prefix(string $type): string
 {
-    $allowed = ['Pendente', 'Pago', 'Finalizado'];
-
-    return in_array($status, $allowed, true)
-        && empty($reference);
+    return match (strtoupper(trim($type))) {
+        'PF' => 'PF',
+        'FT' => 'FT',
+        'FR' => 'FR',
+        'NC' => 'NC',
+        'ND' => 'ND',
+        default => 'FT'
+    };
 }
 
 /**
- * AGT: NÃO apagar referência
+ * VERIFICA SE DEVE GERAR NUMERAÇÃO
  */
-function invoice_should_clear_number(string $status): bool
+function should_generate_number(?string $reference): bool
 {
-    return false;
+    return empty($reference);
 }
 
 /**
- * Verifica se referência já existe
+ * VERIFICA EXISTÊNCIA DE REFERÊNCIA
  */
 function reference_exists(PDO $pdo, string $reference): bool
 {
@@ -58,73 +57,83 @@ function reference_exists(PDO $pdo, string $reference): bool
         FROM invoices 
         WHERE reference = ?
     ");
+
     $stmt->execute([$reference]);
 
-    return $stmt->fetchColumn() > 0;
+    return (int)$stmt->fetchColumn() > 0;
 }
 
 /**
- * Gera próximo número seguro
+ * GERADOR SEGURO DE NUMERAÇÃO POR DOCUMENTO
  */
-function generate_next_invoice_reference(PDO $pdo, int $companyId, ?string $series = 'FT'): string
-{
-    $year = date('Y');
-    $prefix = strtoupper(trim($series ?: 'FT'));
-    $like = $prefix . ' ' . $year . '/%';
+function generate_document_number(
+    PDO $pdo,
+    int $companyId,
+    string $documentType
+): string {
 
-    // LOCK na sequência
+    $year = date('Y');
+    $prefix = document_prefix($documentType);
+
+    $like = "{$prefix}{$year}/%";
+
     $stmt = $pdo->prepare("
-        SELECT MAX(CAST(SUBSTRING_INDEX(reference, '/', -1) AS UNSIGNED)) as last_number
+        SELECT MAX(CAST(SUBSTRING_INDEX(reference, '/', -1) AS UNSIGNED)) 
         FROM invoices
         WHERE company_id = ?
+          AND document_type = ?
           AND reference LIKE ?
         FOR UPDATE
     ");
 
-    $stmt->execute([$companyId, $like]);
-    $lastNumber = (int) $stmt->fetchColumn();
+    $stmt->execute([$companyId, $documentType, $like]);
 
-    $nextNumber = $lastNumber + 1;
+    $last = (int)$stmt->fetchColumn();
+    $next = $last + 1;
 
-    // Garantir unicidade
     do {
-        $reference = sprintf('%s %s/%06d', $prefix, $year, $nextNumber);
-        $exists = reference_exists($pdo, $reference);
+        $reference = sprintf("%s%s/%04d", $prefix, $year, $next);
 
-        if ($exists) {
-            $nextNumber++;
+        if (!reference_exists($pdo, $reference)) {
+            break;
         }
-    } while ($exists);
+
+        $next++;
+    } while (true);
 
     return $reference;
 }
 
 /**
- * Aplicar regras de numeração
+ * REGRAS PRINCIPAIS DE NUMERAÇÃO
  */
 function apply_invoice_number_rules(
     PDO $pdo,
     int $companyId,
     string $status,
     ?string $currentReference,
-    string $documentType = 'FT'
+    string $documentType
 ): array {
 
-    //  Normalizar tipo de documento
     $documentType = strtoupper(trim($documentType));
 
-    //  Cancelado → mantém número (regra AGT)
-    if ($status === 'Cancelado') {
+    $statusMap = invoice_status_map();
+    $statusId = $statusMap[$status] ?? 1;
+
+    /**
+     * ❌ CANCELADO NUNCA ALTERA
+     */
+    if ($statusId === 2) {
         return [
             'reference' => $currentReference,
-            'status' => $status,
+            'status' => $statusId
         ];
     }
 
-    //  Só gera número se:
-    // - status válido
-    // - ainda não tem referência
-    if (invoice_should_generate_number($status, $currentReference)) {
+    /**
+     * ✔ GERAR SE NÃO EXISTE REFERÊNCIA
+     */
+    if (should_generate_number($currentReference)) {
 
         $reference = generate_document_number(
             $pdo,
@@ -134,13 +143,23 @@ function apply_invoice_number_rules(
 
         return [
             'reference' => $reference,
-            'status' => $status,
+            'status' => $statusId
         ];
     }
 
-    //  Caso padrão → mantém o que já existe
+    /**
+     * ✔ CASO NORMAL
+     */
     return [
         'reference' => $currentReference,
-        'status' => $status,
+        'status' => $statusId
     ];
+}
+
+/**
+ * VERIFICAR SE DEVE LIMPAR NUMERO (AGT)
+ */
+function should_clear_number(string $status): bool
+{
+    return false;
 }
