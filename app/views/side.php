@@ -16,6 +16,8 @@
     /* SIDEBAR */
     .sidebar {
         width: 260px;
+        left: 0px;
+        transition: all ease-in-out 0.3s;
         background: var(--sidebar-bg);
         height: 100vh;
         display: flex;
@@ -25,18 +27,91 @@
         z-index: 999;
     }
 
+    .sidebar.mobile-active {
+        left: 0px;
+    }
+
+    /* Fora do mobile, a sidebar fica escondida por padrão em telas pequenas */
+    @media (max-width: 768px) {
+        .sidebar {
+            left: -260px;
+        }
+    }
+
+    main.mobile-active {
+        left: 250px;
+    }
+
+    header.mobile-active {
+        width: calc(100% - 250px);
+    }
+
+    /* Ajusta o conteúdo ao lado da sidebar */
+    main {
+        flex-grow: 1;
+        margin-left: 250px;
+        padding: 20px;
+        width: calc(100% - 250px);
+        transition: margin-left 0.3s ease-in-out, width 0.3s ease-in-out;
+        padding-bottom: 2rem;
+    }
+
+    /* Garante que a navbar ocupe a tela corretamente */
+    header {
+        width: calc(100% - 250px);
+        padding: 10px 20px;
+        position: fixed;
+        top: 0;
+        left: 250px;
+        right: 0;
+        z-index: 1000;
+        transition:
+            left 0.3s ease-in-out,
+            width 0.3s ease-in-out;
+    }
+
     .brand {
         padding: 14px;
         border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
     }
 
     .brand img {
         width: 120px;
+        transition: opacity 0.2s ease-in-out;
+    }
+
+    /* BOTÃO TOGGLE */
+    .sidebar-toggle-btn {
+        background: transparent;
+        border: none;
+        color: var(--text);
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: background .2s;
+    }
+
+    .sidebar-toggle-btn:hover {
+        background: var(--hover-bg);
+    }
+
+    .sidebar-toggle-btn i {
+        width: 20px;
+        height: 20px;
     }
 
     .nav-section {
         padding: 10px;
         overflow-y: auto;
+        overflow-x: hidden;
         flex: 1;
     }
 
@@ -65,10 +140,10 @@
         width: 100%;
         border: none;
         background: transparent;
-        background: none;
+        position: relative;
+        white-space: nowrap;
     }
 
-    /* TEXT + ICON */
     .nav-item span {
         display: flex;
         align-items: center;
@@ -76,26 +151,23 @@
         color: inherit;
     }
 
-    /* ICON */
     .nav-item i {
         color: inherit;
+        flex-shrink: 0;
     }
 
-    /* HOVER */
     .nav-item:hover {
         background: var(--hover-bg);
         color: var(--text);
         transform: translateX(2px);
     }
 
-    /* ACTIVE */
     .nav-item.active {
         background: var(--active-bg);
         color: var(--text);
         font-weight: 600;
     }
 
-    /* ACTIVE BAR */
     .nav-item.active::before {
         content: "";
         position: absolute;
@@ -107,7 +179,6 @@
         border-radius: 3px;
     }
 
-    /* ICON ACTIVE */
     .nav-item.active i {
         color: #ffffff;
     }
@@ -124,6 +195,8 @@
         padding: 12px 12px 6px;
         font-weight: bold;
         margin-top: 10px;
+        white-space: nowrap;
+        overflow: hidden;
     }
 
     .submenu {
@@ -150,8 +223,6 @@
         pointer-events: auto;
     }
 
-
-    /* SUBMENU ITEMS */
     .submenu a {
         display: flex;
         align-items: center;
@@ -162,20 +233,17 @@
         text-decoration: none;
         font-size: 14px;
         transition: .2s;
+        white-space: nowrap;
     }
 
-    /* HOVER SUBMENU */
     .submenu a:hover {
         background: var(--hover-bg);
         color: var(--text);
     }
 
-    /* ICON SIZE */
     .nav-section .submenu svg {
         width: 15px !important;
-        /* height: 15px !important; */
     }
-
 
     .nav-item i:last-child {
         transition: transform .3s;
@@ -196,33 +264,107 @@
     .bg-plan {
         background: rgba(255, 255, 255, 0.15) !important;
     }
+
+    /* ESTADO COLAPSADO (desktop) */
+    .sidebar.collapsed {
+        width: 76px;
+    }
+
+    .sidebar.collapsed .brand {
+        justify-content: center;
+        padding: 14px 8px;
+    }
+
+    .sidebar.collapsed .brand img {
+        display: none;
+    }
+
+    .sidebar.collapsed .section-title,
+    .sidebar.collapsed .nav-item span span,
+    .sidebar.collapsed .submenu,
+    .sidebar.collapsed .footer .above {
+        display: none;
+    }
+
+    .sidebar.collapsed .nav-item span {
+        gap: 0;
+    }
+
+    .sidebar.collapsed .nav-item {
+        justify-content: center;
+        padding: 10px;
+    }
+
+    .sidebar.collapsed .nav-item i:last-child {
+        display: none;
+    }
+
+    .sidebar.collapsed .footer .nav-item span {
+        justify-content: center;
+    }
+
+    main.collapsed {
+        margin-left: 76px;
+        width: calc(100% - 76px);
+    }
+
+    header.collapsed {
+        left: 76px;
+        width: calc(100% - 76px);
+    }
+
+    .sidebar.collapsed .nav-item {
+        position: relative;
+    }
+
+    .sidebar.collapsed .nav-item:hover::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        margin-left: 10px;
+        background: #1e1e1e;
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        white-space: nowrap;
+        z-index: 1100;
+        pointer-events: none;
+    }
 </style>
 
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
     <div class="brand">
         <a href="index.php">
             <img src="assets/img/logo/BXpert2-Branca.png" alt="logo">
         </a>
+        <button id="sidebarToggle" class="sidebar-toggle-btn" title="Ocultar/Mostrar menu">
+            <i data-lucide="panel-left-close"></i>
+        </button>
     </div>
     <div class="nav-section">
         <br>
 
-        <a href="index.php" class="nav-item" data-link><span><i data-lucide="layout-dashboard" class="nav-icon"></i> Painel de contole</span></a>
+        <a href="index.php" class="nav-item" data-link data-tooltip="Painel de controle">
+            <span><i data-lucide="layout-dashboard" class="nav-icon"></i> <span>Painel de controle</span></span>
+        </a>
 
         <div class="section-title">Gestão</div>
 
-        <button class="nav-item" data-submenu="#clientes">
-            <span><i data-lucide="building-2"></i> Empresa/Cliente</span>
-            <i class="text-white" data-lucide="chevron-down"></i>
+        <button class="nav-item" data-submenu="#clientes" data-tooltip="Empresa/Cliente">
+            <span><i data-lucide="building-2"></i> <span>Empresa/Cliente</span></span>
+            <i class="text-white menu-link-icon" data-lucide="chevron-down"></i>
         </button>
         <div class="submenu" id="clientes">
             <a href="register_contact.php" data-link><i data-lucide="plus"></i> Adicionar Cliente/Empresa</a>
             <a href="contacts.php" data-link><i data-lucide="list"></i> Lista de Clientes/Empresas</a>
         </div>
 
-        <button class="nav-item" data-submenu="#produtos">
-            <span><i data-lucide="package"></i> Produtos/Serviços</span>
-            <i class="text-white" data-lucide="chevron-down"></i>
+        <button class="nav-item" data-submenu="#produtos" data-tooltip="Produtos/Serviços">
+            <span><i data-lucide="package"></i> <span>Produtos/Serviços</span></span>
+            <i class="text-white menu-link-icon" data-lucide="chevron-down"></i>
         </button>
         <div class="submenu" id="produtos">
             <a href="#" data-bs-toggle="modal" data-bs-target="#itemModal">
@@ -233,16 +375,16 @@
 
         <div class="section-title">Operações</div>
 
-        <button class="nav-item" data-submenu="#vendas">
-            <span><i data-lucide="receipt"></i> Vendas</span>
-            <i class="text-white" data-lucide="chevron-down"></i>
+        <button class="nav-item" data-submenu="#vendas" data-tooltip="Vendas">
+            <span><i data-lucide="receipt"></i> <span>Vendas</span></span>
+            <i class="text-white menu-link-icon" data-lucide="chevron-down"></i>
         </button>
 
         <div class="submenu" id="vendas">
 
             <button class="nav-item" data-submenu="#proformas">
                 <span><i data-lucide="file-text"></i> Proformas</span>
-                <i class="text-white" data-lucide="chevron-down"></i>
+                <i class="text-white menu-link-icon" data-lucide="chevron-down"></i>
             </button>
             <div class="submenu" id="proformas">
                 <a href="create_proform.php" data-link><i data-lucide="plus"></i> Emitir</a>
@@ -251,7 +393,7 @@
 
             <button class="nav-item" data-submenu="#facturas">
                 <span><i data-lucide="file-check"></i> Facturas</span>
-                <i class="text-white" data-lucide="chevron-down"></i>
+                <i class="text-white menu-link-icon" data-lucide="chevron-down"></i>
             </button>
             <div class="submenu" id="facturas">
                 <a href="create_invoices.php" data-link><i data-lucide="plus"></i> Emitir</a>
@@ -260,18 +402,18 @@
 
         </div>
 
-        <button class="nav-item d-none" data-submenu="#stock">
-            <span><i data-lucide="boxes"></i> Stock</span>
-            <i class="text-white" data-lucide="chevron-down"></i>
+        <button class="nav-item d-none" data-submenu="#stock" data-tooltip="Stock">
+            <span><i data-lucide="boxes"></i> <span>Stock</span></span>
+            <i class="text-white menu-link-icon" data-lucide="chevron-down"></i>
         </button>
         <div class="submenu d-none" id="stock">
             <a href="stock.php" data-link><i data-lucide="database"></i> Inventário</a>
             <a href="purchases.php" data-link><i data-lucide="shopping-cart"></i> Compras</a>
         </div>
 
-        <button class="nav-item" data-submenu="#rh">
-            <span><i data-lucide="users"></i> Recursos Humanos</span>
-            <i class="text-white" data-lucide="chevron-down"></i>
+        <button class="nav-item" data-submenu="#rh" data-tooltip="Recursos Humanos">
+            <span><i data-lucide="users"></i> <span>Recursos Humanos</span></span>
+            <i class="text-white menu-link-icon" data-lucide="chevron-down"></i>
         </button>
         <div class="submenu" id="rh">
             <a href="employees.php" data-link><i data-lucide="users"></i> Funcionários</a>
@@ -285,21 +427,20 @@
 
     <div class="footer">
 
-        <a href="list_companies.php" class="nav-item">
-            <span><i data-lucide="settings"></i> Definições</span>
+        <a href="list_companies.php" class="nav-item" data-tooltip="Definições">
+            <span><i data-lucide="settings"></i> <span>Definições</span></span>
         </a>
 
-        <a href="subscription.php" class="nav-item">
-            <span><i data-lucide="credit-card"></i> Meu Plano</span>
+        <a href="subscription.php" class="nav-item" data-tooltip="Meu Plano">
+            <span><i data-lucide="credit-card"></i> <span>Meu Plano</span></span>
         </a>
 
-        <a href="help.php" target="_blank" class="nav-item">
-            <span><i data-lucide="help-circle"></i> Ajuda</span>
+        <a href="help.php" target="_blank" class="nav-item" data-tooltip="Ajuda">
+            <span><i data-lucide="help-circle"></i> <span>Ajuda</span></span>
         </a>
 
         <div class="col-12 above">
             <div class="card border-0 rounded-xl bg-plan p-3">
-                <!-- Informações do Plano -->
                 <div class="d-flex justify-content-between align-items-center align-content-center flex-wrap gap-3 mb-2">
                     <div>
                         <h5 class="mb-1 fw-bolder text-white" style="font-size: 12pt;">Plano &nbsp;</h5>
@@ -310,7 +451,6 @@
                         <i class="bi bi-arrow-up-right"></i>
                     </a>
                 </div>
-
             </div>
         </div>
 
@@ -319,8 +459,9 @@
 
 <script src="assets/js/lucide.js"></script>
 <script>
-    $(document).ready(function() {
+    lucide.createIcons();
 
+    $(document).ready(function() {
         // Assinatura / limites
         $.getJSON('assets/ajax/get_company_limits.php', {
             company_id: <?php echo (int)$_SESSION['user']['company_id']; ?>
@@ -333,17 +474,12 @@
             const exp = expIso ? new Date(expIso + 'T00:00:00').toLocaleDateString('pt-PT') : '-';
             const days = (resp.days_left === null) ? '-' : resp.days_left;
             $('#subInfo').text(`${resp.plan_name} • vence em ${exp} • ${days} dias restantes`);
-
-            const limInv = resp.limits.invoice_limit_month === null ? '∞' : resp.limits.invoice_limit_month;
-            const limUsers = resp.limits.user_limit === null ? '∞' : resp.limits.user_limit;
-
-            $('#btnRenewFromIndex').attr('href', `subscription.php?company_id=${resp.company_id}`);
         });
-
     });
 
-    lucide.createIcons();
+    
 
+    // Accordion dos submenus (responsabilidade exclusiva da sidebar)
     document.querySelectorAll('.nav-item[data-submenu]').forEach(button => {
         button.addEventListener('click', e => {
             e.stopPropagation();
@@ -353,7 +489,6 @@
 
             const isOpen = submenu.classList.contains('open');
 
-            // Fecha todos os submenus irmãos
             const parent = button.parentElement;
             Array.from(parent.children).forEach(el => {
                 if (el.classList.contains('submenu') && el !== submenu) {
@@ -364,7 +499,6 @@
                 }
             });
 
-            // Toggle submenu atual
             if (isOpen) {
                 submenu.classList.remove('open');
                 button.classList.remove('active');
@@ -375,7 +509,6 @@
         });
     });
 
-    // Fecha tudo ao clicar fora
     document.addEventListener('click', e => {
         document.querySelectorAll('.submenu').forEach(sm => sm.classList.remove('open'));
         document.querySelectorAll('.nav-item.active').forEach(btn => btn.classList.remove('active'));

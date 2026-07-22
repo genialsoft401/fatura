@@ -125,8 +125,6 @@ try {
         return (float) $stmt->fetchColumn();
     }
 
-
-
     // =====================================================
     // TOTAL LÍQUIDO (STATUS 3 E 4)
     // =====================================================
@@ -152,6 +150,36 @@ try {
         return (float) $stmt->fetchColumn();
     }
 
+    function getMediaMensalTotalLiquid($pdo, $start, $end, $company_id)
+    {
+        $sql = "
+        SELECT COALESCE(AVG(total_mes), 0)
+        FROM (
+            SELECT 
+                DATE_FORMAT(issue_date, '%Y-%m') AS periodo,
+                SUM(final_total) AS total_mes
+            FROM invoices
+            WHERE company_id = :company_id
+              AND status IN (3,4)
+              AND issue_date >= :start
+              AND issue_date <= :end
+            GROUP BY DATE_FORMAT(issue_date, '%Y-%m')
+        ) AS meses
+    ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([
+            'company_id' => $company_id,
+            'start'      => $start . ' 00:00:00',
+            'end'        => $end . ' 23:59:59'
+        ]);
+
+        return (float)$stmt->fetchColumn();
+    }
+
+    $volumeLiquidMensal = getMediaMensalTotalLiquid($pdo, $previous['start'], $previous['end'], $company_id);
+
     // =====================================================
     // FUNÇÃO CRESCIMENTO
     // =====================================================
@@ -174,6 +202,151 @@ try {
             (($current - $previous) / $previous) * 100,
             1
         );
+    }
+
+    // =====================================================
+    // NOVO: VERIFICA SE HÁ HISTÓRICO ANTES DE UMA DATA
+    // Evita mostrar "-100%" quando na verdade não há
+    // dado anterior suficiente para comparar (ex: empresa
+    // nova, poucos meses de uso).
+    // =====================================================
+
+    function hasSufficientHistory($pdo, $beforeDate, $company_id)
+    {
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*)
+            FROM invoices
+            WHERE company_id = :company_id
+            AND issue_date < :beforeDate
+        ");
+
+        $stmt->execute([
+            'company_id' => $company_id,
+            'beforeDate' => $beforeDate
+        ]);
+
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    // =====================================================
+    // CORRIGIDO: SPARKLINE GENÉRICO (SOMA POR MÊS)
+    // Recebe $statusList para que cada sparkline use
+    // EXATAMENTE o mesmo filtro de status do KPI a que
+    // pertence — evita mostrar uma tendência que não bate
+    // certo com o número apresentado no card.
+    //
+    // $statusList:
+    // - [1, 2] => mesmo filtro de getTotal (volume_global,
+    //             venda_periodo)
+    // - [3, 4] => mesmo filtro de getTotalLiquid (volume_liquid
+    //             / card "Recebimentos Global")
+    // =====================================================
+
+    function getSparklineSum(
+        $pdo,
+        $company_id,
+        $months = 6,
+        $referenceDate = null,
+        $statusList = null
+    ) {
+        $referenceDate = $referenceDate ?? date('Y-m-d');
+
+        $start = date(
+            'Y-m-01',
+            strtotime($referenceDate . " -" . ($months - 1) . " months")
+        );
+
+        $statusFilter = '';
+        $params = [
+            'company_id' => $company_id,
+            'start' => $start,
+            'end' => $referenceDate
+        ];
+
+        if (is_array($statusList) && count($statusList) > 0) {
+
+            $placeholders = [];
+
+            foreach ($statusList as $i => $status) {
+                $key = "status{$i}";
+                $placeholders[] = ":{$key}";
+                $params[$key] = $status;
+            }
+
+            $statusFilter = "AND status IN (" . implode(',', $placeholders) . ")";
+        }
+
+        $sql = "
+            SELECT
+                DATE_FORMAT(issue_date, '%Y-%m') AS mes,
+                COALESCE(SUM(final_total), 0) AS total
+            FROM invoices
+            WHERE company_id = :company_id
+            {$statusFilter}
+            AND issue_date >= :start
+            AND issue_date <= :end
+            GROUP BY DATE_FORMAT(issue_date, '%Y-%m')
+            ORDER BY mes ASC
+        ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $map = [];
+        foreach ($rows as $r) {
+            $map[$r['mes']] = (float)$r['total'];
+        }
+
+        $series = [];
+
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $key = date('Y-m', strtotime($referenceDate . " -{$i} months"));
+            $series[] = round($map[$key] ?? 0, 2);
+        }
+
+        return $series;
+    }
+
+    // =====================================================
+    // NOVO: SPARKLINE DE MÉDIA ACUMULADA
+    // Reconstrói, mês a mês, o mesmo cálculo do KPI
+    // "média mensal de vendas" (volume acumulado desde o
+    // início do ano até esse mês, dividido pelo nº do mês).
+    // Assim o sparkline reflecte de facto a tendência da
+    // média, e não apenas repete o volume bruto.
+    // =====================================================
+
+    function getSparklineAverage(
+        $pdo,
+        $company_id,
+        $year,
+        $months = 6,
+        $referenceDate = null
+    ) {
+        $referenceDate = $referenceDate ?? date('Y-m-d');
+
+        $series = [];
+
+        for ($i = $months - 1; $i >= 0; $i--) {
+
+            $monthDate = strtotime($referenceDate . " -{$i} months");
+            $monthEnd = date('Y-m-t', $monthDate);
+            $monthNumber = max(1, (int)date('n', $monthDate));
+            $monthYearStart = date('Y', $monthDate) . '-01-01';
+
+            $acumulado = getTotal(
+                $pdo,
+                $monthYearStart,
+                $monthEnd,
+                $company_id
+            );
+
+            $series[] = round($acumulado / $monthNumber, 2);
+        }
+
+        return $series;
     }
 
     // =====================================================
@@ -245,6 +418,22 @@ try {
         $pdo,
         $previousMonthStart,
         $previousMonthEnd,
+        $company_id
+    );
+
+    // =====================================================
+    // HÁ HISTÓRICO SUFICIENTE?
+    // =====================================================
+
+    $temHistoricoMensal = hasSufficientHistory(
+        $pdo,
+        $previousMonthStart,
+        $company_id
+    );
+
+    $temHistorico3Meses = hasSufficientHistory(
+        $pdo,
+        $previous['start'],
         $company_id
     );
 
@@ -342,8 +531,6 @@ try {
 
     $clientes = (int)$clientesStmt->fetchColumn();
 
-
-
     // =====================================================
     // DOCUMENTOS
     // =====================================================
@@ -380,7 +567,6 @@ try {
         ':start'      => $monthStart,
         ':end'        => $monthEnd
     ]);
-
 
     $documentos = (int)$documentosStmt->fetchColumn();
 
@@ -451,6 +637,33 @@ try {
 
     $evolucao = $stmtEvolucao->fetchAll(PDO::FETCH_ASSOC);
 
+    // =====================================================
+    // NOVO: EVOLUÇÃO DO ANO ANTERIOR (para comparação
+    // lado a lado no gráfico, em vez de uma barra isolada)
+    // =====================================================
+
+    $previousYear = $year - 1;
+
+    $evolucaoAnteriorSql = "
+        SELECT
+            DATE_FORMAT(i.issue_date, '%Y-%m') AS mes,
+            ROUND(SUM(i.final_total), 2) AS total
+        FROM invoices i
+        WHERE i.company_id = :company_id
+        AND i.status NOT IN (1, 2)
+        AND YEAR(i.issue_date) = :previousYear
+        GROUP BY DATE_FORMAT(i.issue_date, '%Y-%m')
+        ORDER BY mes ASC
+    ";
+
+    $stmtEvolucaoAnterior = $pdo->prepare($evolucaoAnteriorSql);
+
+    $stmtEvolucaoAnterior->execute([
+        'company_id' => $company_id,
+        'previousYear' => $previousYear
+    ]);
+
+    $evolucaoAnterior = $stmtEvolucaoAnterior->fetchAll(PDO::FETCH_ASSOC);
 
     // =========================================================
     // ANOS DA FACTURAÇÃO
@@ -471,6 +684,61 @@ try {
 
     $yearsInvoices = $stmtYears->fetchAll(PDO::FETCH_ASSOC);
 
+    // =====================================================
+    // CORRIGIDO: SPARKLINES (últimos 6 meses até $today)
+    // Uma série por card, cada uma usando o MESMO filtro de
+    // status do KPI que representa:
+    //
+    // - trimestral_volume (Volume global)   -> status IN(1,2)
+    // - month_average    (Média mensal)     -> média acumulada
+    //                                          derivada do volume
+    //                                          global (mesmo
+    //                                          filtro IN(1,2))
+    // - month_sell       (Venda período)    -> status IN(1,2),
+    //                                          série mensal
+    // - total_docs       (na verdade exibe
+    //                      kpis.volume_liquid)-> status IN(3,4)
+    // =====================================================
+
+    $sparkMonths = 6;
+
+    $sparklines = [
+
+        'volume_global' => getSparklineSum(
+            $pdo,
+            $company_id,
+            $sparkMonths,
+            $today,
+            [1, 2]
+        ),
+
+        'media_mensal' => getSparklineAverage(
+            $pdo,
+            $company_id,
+            $year,
+            $sparkMonths,
+            $today
+        ),
+
+        'venda_periodo' => getSparklineSum(
+            $pdo,
+            $company_id,
+            $sparkMonths,
+            $today,
+            [1, 2]
+        ),
+
+        // CORRIGIDO: o card "total_docs" exibe kpis.volume_liquid
+        // no front (status IN(3,4)), por isso o sparkline usa
+        // o mesmo filtro — não o de documentos/contagem.
+        'total_docs' => getSparklineSum(
+            $pdo,
+            $company_id,
+            $sparkMonths,
+            $today,
+            [3, 4]
+        ),
+    ];
 
     // =====================================================
     // RESPONSE
@@ -487,23 +755,25 @@ try {
 
                 'volume_global' => round($volumeGlobal, 2),
                 'volume_liquid' => round($volumeLiquid, 2),
+                'volume_liquid_mensal' => round($volumeLiquidMensal, 2),
 
                 'media_mensal' => round($mediaMensal, 2),
 
-                'media_mensal_dif' => round(
-                    $mediaMensal_dif,
-                    1
-                ),
+                // null quando não há histórico suficiente -
+                // o front mostra "Sem dados anteriores" em vez
+                // de um -100% enganoso
+                'media_mensal_dif' => $temHistorico3Meses
+                    ? round($mediaMensal_dif, 1)
+                    : null,
 
                 'venda_periodo' => round(
                     $vendaPeriodo,
                     2
                 ),
 
-                'venda_periodo_growth' => round(
-                    $vendaPeriodoGrowth,
-                    1
-                ),
+                'venda_periodo_growth' => $temHistoricoMensal
+                    ? round($vendaPeriodoGrowth, 1)
+                    : null,
 
                 'clientes' => $clientes,
 
@@ -515,10 +785,9 @@ try {
 
                 'crescimento_documentos' => $novosDocumentos,
 
-                'crescimento' => round(
-                    $crescimento,
-                    1
-                )
+                'crescimento' => $temHistorico3Meses
+                    ? round($crescimento, 1)
+                    : null
             ],
 
             'comparacao' => [
@@ -535,7 +804,12 @@ try {
             ],
 
             'evolucao' => $evolucao,
-            'yearsInvoices' => $yearsInvoices
+            'evolucao_anterior' => $evolucaoAnterior,
+            'yearsInvoices' => $yearsInvoices,
+
+            // CORRIGIDO: sparklines dos 4 cards, consistentes
+            // com os filtros de status usados em cada KPI
+            'sparklines' => $sparklines
         ]
     ]);
 } catch (Throwable $e) {

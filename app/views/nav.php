@@ -7,7 +7,8 @@
     }
 
     .app-navbar.mobile-active {
-        transform: translateX(250px);
+        left: 250px;
+        width: calc(100% - 250px);
     }
 
     /* Botões */
@@ -105,11 +106,6 @@
         <!-- LEFT -->
         <div class="d-flex align-items-center gap-3">
 
-            <!-- Mobile -->
-            <button id="mobileMenuBtn" class="btn d-lg-none nav-icon-btn">
-                <i class="material-icons-round text-primary">menu</i>
-            </button>
-
             <!-- Empresa -->
             <div class="dropdown">
                 <button class="btn nav-pill dropdown-toggle d-flex align-items-center gap-2"
@@ -130,22 +126,6 @@
                 </ul>
             </div>
 
-            <!-- <div class="col-12">
-                <div class="border-0 border-0">
-                    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-3">
-                        <div>
-                            <h5 class="card-title mb-1">Plano &nbsp;</h5>
-                            <div id="subInfo" class="text-muted" style="font-size:0.95rem;">Carregando...</div>
-                        </div>
-                        <div class="d-flex gap-2 flex-wrap" id="subActions">
-                            <a class="btn btn-warning" id="btnRenewFromIndex" href="subscription.php">Renovar</a>
-                        </div>
-                    </div>
-                    <div class="card-body pt-0">
-                        <div class="row" id="subMetrics"></div>
-                    </div>
-                </div>
-            </div> -->
         </div>
 
         <!-- RIGHT -->
@@ -155,8 +135,6 @@
             <div class="position-relative">
                 <button class="btn nav-icon-btn position-relative" onclick="togglePopup('notif-menu')">
                     <i class="bi bi-bell"></i>
-
-                    <!-- Badge -->
                     <span class="notif-badge">3</span>
                 </button>
 
@@ -164,13 +142,7 @@
                     <div class="dropdown-header fw-semibold">Notificações</div>
 
                     <a class="dropdown-item">
-                        <strong>Novo pagamento recebido</strong>
-                        <small class="d-block text-muted">há 2 min</small>
-                    </a>
-
-                    <a class="dropdown-item">
-                        <strong>Aluno registado</strong>
-                        <small class="d-block text-muted">há 10 min</small>
+                        <small>Nenhuma notificação</small>
                     </a>
 
                     <div class="dropdown-divider"></div>
@@ -181,7 +153,6 @@
             <?php
             $nomeFormatado = formatName($_SESSION['user']['name']);
 
-            // Exemplo (ajusta com teus dados reais)
             $plano = $_SESSION['user']['plan'] ?? 'Pro';
             $expira = $_SESSION['user']['plan_expiration'] ?? '2026-12-31';
             ?>
@@ -214,15 +185,9 @@
 <script>
     lucide.createIcons();
 
-    const formatName = (name) => {
-        if (!name) return null;
-        name.split("")[0];
-    }
-
     const userName = document.getElementById("userName");
     const nameAttr = userName.getAttribute("data-text");
-    userName.innerText = nameAttr
-
+    userName.innerText = nameAttr;
 
     function togglePopup(id) {
         const current = document.getElementById(id);
@@ -256,10 +221,20 @@
             const days = (resp.days_left === null) ? '-' : resp.days_left;
             $('#subInfo').text(`${resp.plan_name} • vence em ${exp} • ${days} dias restantes`);
 
-            const limInv = resp.limits.invoice_limit_month === null ? '∞' : resp.limits.invoice_limit_month;
-            const limUsers = resp.limits.user_limit === null ? '∞' : resp.limits.user_limit;
-
             $('#btnRenewFromIndex').attr('href', `subscription.php?company_id=${resp.company_id}`);
+        });
+
+        // Dados da empresa (regime de IVA etc.)
+        $.getJSON('assets/ajax/company_data.php', {
+            company_id: <?php echo (int)$_SESSION['user']['company_id']; ?>
+        }, function(resp) {
+            if (!resp.success) {
+                $('#subInfo').text('Não foi possível carregar os dados.');
+                return;
+            }
+
+            let data = resp?.data;
+            localStorage.setItem("vat_regime", JSON.stringify(data["vat_regime"]));
         });
 
     });
@@ -289,7 +264,7 @@
             .then(response => response.json())
             .then(data => {
                 let dropdown = document.getElementById("empresaDropdownMenu");
-                dropdown.innerHTML = ''; // Limpa as opções existentes
+                dropdown.innerHTML = '';
 
                 data.forEach(empresa => {
                     let li = document.createElement("li");

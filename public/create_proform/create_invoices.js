@@ -1,4 +1,5 @@
 $(document).ready(function () {
+  const vat_regime = JSON.parse(localStorage.getItem("vat_regime"));
   let countryMap = {};
 
   initializeTooltips();
@@ -283,178 +284,147 @@ $(document).ready(function () {
       // $(this).val('').trigger('change'); // Opcional: limpar seleção
     }
   });
-  function addItemRow(item) {
-    const itemId = item.id || item.item_id;
 
-    console.log(item);
+  function addItemRow(item) {
+    const itemId = item?.id || item?.item_id;
 
     if (!itemId) return;
 
-    /**
-     * Evitar duplicação
-     */
+    // Evitar duplicação
     if ($(`#item-${itemId}`).length) {
       return;
     }
 
-    /**
-     * Descrição
-     */
-    const description = item.name || item.description || "";
+    // Dados do item
+    const description = item?.name || item?.description || "";
+    const code = item?.code || item?.codigo || "";
+    const retention = item?.retention || 0;
 
-    /**
-     * Código
-     */
-    const code = item.code || item.codigo || "";
-    const retention = item.retention;
-    /**
-     * IVA
-     */
-    let taxVal = item?.tax_raw ?? item?.tax ?? 0;
-    /**
-     * Quantidade máxima
-     */
+    // IVA
+    const itemTax = Number(item?.tax ?? 0);
+    const taxValue = String(vat_regime).toLowerCase() === "geral" ? itemTax : 0;
+
+    console.log({
+      vat_regime,
+      itemTax,
+      taxValue,
+    });
+
+    // Serviço ou Produto
     const isService =
       item?.item_type === "service" ||
       String(code).toUpperCase().startsWith("SERV");
 
+    // Quantidade máxima
     const maxQty = isService
       ? 999999
-      : parseInt(item?.quantity || item?.stock_quantity || 9999);
+      : Number(item?.quantity ?? item?.stock_quantity ?? 9999);
 
-    /**
-     * Preço unitário
-     */
-    const unitPrice =
-      parseFloat(item.unit_price || item.sale_price || item.cost_price || 0) ||
-      0;
+    // Preço unitário
+    const unitPrice = Number(
+      item?.unit_price ?? item?.sale_price ?? item?.cost_price ?? 0,
+    );
 
-    /**
-     * Desconto
-     */
-    const discount = parseFloat(item.discount || 0) || 0;
+    // Desconto
+    const discount = Number(item?.discount ?? 0);
 
-    /**
-     * HTML
-     */
     const itemHtml = `
     <div
-      class="row row-item item-list align-items-center mb-2"
-      id="item-${itemId}"
-      data-id="${itemId}"
+        class="row row-item item-list align-items-center mb-2"
+        id="item-${itemId}"
+        data-id="${itemId}"
     >
 
-      <div
-        class="text-center"
-        style="width: 120px !important;"
-      >
-        <input
-          type="text"
-          class="form-control field_code"
-          value="${code}"
-          readonly
-        >
-      </div>
+        <div class="text-center" style="width:120px">
+            <input
+                type="text"
+                class="form-control field_code"
+                value="${code}"
+                readonly
+            >
+        </div>
 
-      <div
-        class="text-center"
-        style="width: 0px !important; margin-left: -15px;"
-      >
-      <input
-        type="text"
-        class="form-control field_retention d-none"
-        value="${retention}"
-      >
-      </div>
+        <div class="d-none">
+            <input
+                type="hidden"
+                class="field_retention"
+                value="${retention}"
+            >
+        </div>
 
-      <div class="col-3">
-        <input
-          type="text"
-          class="form-control field_description"
-          value="${description}"
-          readonly
-        >
-      </div>
+        <div class="col-3">
+            <input
+                type="text"
+                class="form-control field_description"
+                value="${description}"
+                readonly
+            >
+        </div>
 
-      <div class="col-2 text-center">
-        <input
-          type="number"
-          class="field_price form-control"
-          value="${unitPrice}"
-          step="0.01"
-          min="0"
-        >
-      </div>
+        <div class="col-2">
+            <input
+                type="number"
+                class="form-control field_price"
+                value="${unitPrice.toFixed(2)}"
+                step="0.01"
+                min="0"
+            >
+        </div>
 
-      <div class="col-1 text-center">
-        <input
-          type="number"
-          class="field_qtd form-control"
-          value="1"
-          min="1"
-          max="${maxQty}"
-        >
-      </div>
+        <div class="col-1">
+            <input
+                type="number"
+                class="form-control field_qtd"
+                value="1"
+                min="1"
+                max="${maxQty}"
+            >
+        </div>
 
-      <div
-        class="text-center"
-        style="width: 90px !important;"
-      >
-        <input
-          type="text"
-          class="field_tax form-control"
-          value="${taxVal}"
-          readonly
-        >
-      </div>
+        <div style="width:90px">
+            <input
+                type="number"
+                class="form-control field_tax"
+                value="${taxValue}"
+                step="0.01"
+                readonly
+            >
+        </div>
 
-      <div class="col-1 text-center">
-        <input
-          type="number"
-          class="field_desc form-control"
-          value="${discount}"
-          step="0.01"
-          min="0"
-        >
-      </div>
+        <div class="col-1">
+            <input
+                type="number"
+                class="form-control field_desc"
+                value="${discount}"
+                step="0.01"
+                min="0"
+            >
+        </div>
 
-      <div
-        class="col-2 text-center row-total text-success fw-bold"
-      >
-        0,00
-      </div>
+        <div class="col-2 text-center row-total text-success fw-bold">
+            0,00
+        </div>
 
-      <div
-        class="text-center"
-        style="width: 50px !important;"
-      >
-        <i
-          data-id="${itemId}"
-          class="bi bi-trash remove-item cursor"
-          role="button"
-          title="Remover item"
-        ></i>
-      </div>
+        <div style="width:50px" class="text-center">
+            <i
+                class="bi bi-trash remove-item cursor"
+                data-id="${itemId}"
+                role="button"
+                title="Remover item"
+            ></i>
+        </div>
+
     </div>
-  `;
+    `;
 
-    /**
-     * Append
-     */
     $("#items_list").append(itemHtml);
 
     const newRow = $(`#item-${itemId}`);
 
-    /**
-     * Garantir que código não seja editado
-     */
     newRow.find(".field_code").on("keydown paste", function (e) {
       e.preventDefault();
     });
 
-    /**
-     * Recalcular ao alterar
-     */
     newRow
       .find(".field_price, .field_qtd, .field_desc")
       .on("input change", function () {
@@ -467,9 +437,6 @@ $(document).ready(function () {
         }
       });
 
-    /**
-     * Remover item
-     */
     newRow.find(".remove-item").on("click", function () {
       newRow.remove();
 
@@ -487,9 +454,6 @@ $(document).ready(function () {
       }
     });
 
-    /**
-     * Cálculo inicial
-     */
     calculateRowTotal(newRow);
 
     if (typeof updateInvoiceSummary === "function") {
@@ -629,9 +593,6 @@ $(document).ready(function () {
     itemList.forEach((row) => {
       const $row = $(row);
 
-      // =========================
-      // SAFE PARSING HELPERS
-      // =========================
       const toNumber = (value) =>
         parseFloat(
           String(value || "0")
@@ -640,30 +601,15 @@ $(document).ready(function () {
             .trim(),
         ) || 0;
 
-      // =========================
-      // VALUES
-      // =========================
       const price = toNumber($row.find(".field_price").val());
       const qtd = toNumber($row.find(".field_qtd").val());
-
-      // desconto em %
       const discountPercent = toNumber($row.find(".field_desc").val());
-
-      // IVA
       const taxNum = toNumber($row.find(".field_tax").val());
-
-      // retenção %
       const retentionRate = toNumber($row.find(".field_retention").val());
 
-      // =========================
-      // BASE DA LINHA
-      // =========================
       const lineTotal = price * qtd;
 
-      // desconto calculado em %
       const discountValue = (lineTotal * discountPercent) / 100;
-
-      // evita desconto maior que o total
       const safeDiscount = Math.min(discountValue, lineTotal);
 
       const lineSubtotal = lineTotal - safeDiscount;
@@ -671,26 +617,28 @@ $(document).ready(function () {
       totalSum += lineTotal;
       totalDiscount += safeDiscount;
 
-      // =========================
+      // ==================================================
       // IVA
-      // =========================
-      const ivaValue = (lineSubtotal * taxNum) / 100;
+      // Regra: taxa 7 = Isento = IVA 0%
+      // ==================================================
+      const effectiveTaxRate = taxNum === 7 ? 0 : taxNum;
+      const ivaValue = (lineSubtotal * effectiveTaxRate) / 100;
 
-      // =========================
+      // ==================================================
       // RETENÇÃO
-      // =========================
+      // ==================================================
       const retentionValue = (lineSubtotal * retentionRate) / 100;
 
       totalRetention += retentionValue;
 
-      // =========================
-      // TOTAL FINAL DA LINHA
-      // =========================
+      // ==================================================
+      // TOTAL DA LINHA
+      // ==================================================
       const net = lineSubtotal + ivaValue - retentionValue;
 
-      // =========================
+      // ==================================================
       // INCIDÊNCIA IVA
-      // =========================
+      // ==================================================
       if (taxNum === 14) {
         tax14Incidence += lineSubtotal;
       } else {
@@ -699,11 +647,14 @@ $(document).ready(function () {
 
       totalTax += ivaValue;
 
-      // =========================
-      // AGRUPAMENTO POR TAXA
-      // =========================
-      if (!grouped[taxNum]) {
-        grouped[taxNum] = {
+      // ==================================================
+      // AGRUPAMENTO
+      // Mostra 0% quando a taxa original é 7
+      // ==================================================
+      const groupTax = taxNum === 7 ? 0 : taxNum;
+
+      if (!grouped[groupTax]) {
+        grouped[groupTax] = {
           base: 0,
           iva: 0,
           retention: 0,
@@ -711,15 +662,12 @@ $(document).ready(function () {
         };
       }
 
-      grouped[taxNum].base += lineSubtotal;
-      grouped[taxNum].iva += ivaValue;
-      grouped[taxNum].retention += retentionValue;
-      grouped[taxNum].net += net;
+      grouped[groupTax].base += lineSubtotal;
+      grouped[groupTax].iva += ivaValue;
+      grouped[groupTax].retention += retentionValue;
+      grouped[groupTax].net += net;
     });
 
-    // =========================
-    // NORMALIZAÇÃO FINAL
-    // =========================
     totalSum = +totalSum.toFixed(2);
     totalDiscount = +totalDiscount.toFixed(2);
     totalTax = +totalTax.toFixed(2);
@@ -731,33 +679,37 @@ $(document).ready(function () {
       2,
     );
 
-    if (finalTotal < 0) finalTotal = 0;
+    if (finalTotal < 0) {
+      finalTotal = 0;
+    }
 
-    // =========================
-    // UI
-    // =========================
     $("#total_sum").text(
       formatCurrency(totalSum, currencySymbol, currencyPosition),
     );
+
     $("#total_discount").text(
       formatCurrency(totalDiscount, currencySymbol, currencyPosition),
     );
+
     $("#subtotal_without_tax").text(
       formatCurrency(subtotalWithoutTax, currencySymbol, currencyPosition),
     );
+
     $("#total_tax").text(
       formatCurrency(totalTax, currencySymbol, currencyPosition),
     );
+
     $("#retention_value").text(
       formatCurrency(totalRetention, currencySymbol, currencyPosition),
     );
+
     $("#final_total").text(
       formatCurrency(finalTotal, currencySymbol, currencyPosition),
     );
 
-    // =========================
-    // TAX SUMMARY
-    // =========================
+    // ==================================================
+    // RESUMO DE IMPOSTOS
+    // ==================================================
     const tax_summary = $("#tax_summary");
     let html = "";
 
@@ -765,21 +717,22 @@ $(document).ready(function () {
       const g = grouped[tax];
 
       html += `
-            <tr>
-                <td>${tax}%</td>
-                <td>${formatCurrency(g.base, currencySymbol, currencyPosition)}</td>
-                <td>${formatCurrency(g.iva, currencySymbol, currencyPosition)}</td>
-                <td>${formatCurrency(g.retention, currencySymbol, currencyPosition)}</td>
-                <td>${formatCurrency(g.net, currencySymbol, currencyPosition)}</td>
-            </tr>
-        `;
+      <tr>
+        <td>${tax}%</td>
+        <td>${formatCurrency(g.base, currencySymbol, currencyPosition)}</td>
+        <td>${formatCurrency(g.iva, currencySymbol, currencyPosition)}</td>
+        <td>${formatCurrency(
+          g.retention,
+          currencySymbol,
+          currencyPosition,
+        )}</td>
+        <td>${formatCurrency(g.net, currencySymbol, currencyPosition)}</td>
+      </tr>
+    `;
     });
 
     tax_summary.html(html);
 
-    // =========================
-    // INPUTS HIDDEN
-    // =========================
     const setVal = (name, value) => {
       $(`input[name='${name}']`).val(value.toFixed(2));
     };
@@ -1195,140 +1148,73 @@ $(document).ready(function () {
   });
 
   function loadInvoiceForEdit(id) {
-    $.getJSON("invoices/ajax/get_invoice.php", { id: id })
+    $.getJSON("proform/ajax/get_proform.php", { id: id }, function (response) {
+      if (response.error) {
+        Swal.fire("Erro", response.error, "error");
+        return;
+      }
 
-      .done(function (response) {
-        // Caso o PHP retorne {success:true,data:{}}
-        const data = response.data || response;
+      console.log(response);
 
-        if (!data || data.error) {
-          Swal.fire(
-            "Erro",
-            data?.error || "Não foi possível carregar a fatura.",
-            "error",
-          );
-          return;
-        }
+      const data = response?.data;
 
-        // =====================================================
-        // ID DA FATURA
-        // =====================================================
+      // Definir ID da fatura para edição
+      $("#edit_invoice_id").val(id);
 
-        $("#edit_invoice_id").val(data.id || id);
+      // Preencher campos
+      $("#contact-select").val(data.contact_id).trigger("change");
+      $("#issue_date").val(data.issue_date);
 
-        // =====================================================
-        // DADOS PRINCIPAIS
-        // =====================================================
+      // Verificar se a data de vencimento existe no select, se não, adicionar
+      if ($("#due_date option[value='" + data.due_date + "']").length === 0) {
+        $("#due_date").append(new Option(data.due_date, data.due_date));
+      }
+      $("#due_date").val(data.due_date);
 
-        $("#contact-select").val(data.contact_id).trigger("change");
+      $("#reference").val(data.reference);
+      $("#observation").val(data.observation);
 
-        $("#issue_date").val(data.issue_date || "");
+      // Verificar se a série existe no select, se não, adicionar
+      if ($("#series option[value='" + data.series + "']").length === 0) {
+        $("#series").append(new Option(data.series, data.series));
+      }
+      $("#series").val(data.series);
 
-        // =====================================================
-        // DATA DE VENCIMENTO
-        // =====================================================
+      $("#retention").val(data.retention);
 
-        if (data.due_date) {
-          if (
-            $("#due_date option").filter(function () {
-              return this.value === data.due_date;
-            }).length === 0
-          ) {
-            $("#due_date").append(new Option(data.due_date, data.due_date));
-          }
-
-          $("#due_date").val(data.due_date);
-        }
-
-        // =====================================================
-        // OUTROS CAMPOS
-        // =====================================================
-
-        $("#reference").val(data.reference || "");
-
-        $("#observation").val(data.observation || "");
-
-        // =====================================================
-        // SÉRIE
-        // =====================================================
-
-        if (data.series) {
-          if (
-            $("#series option").filter(function () {
-              return this.value === data.series;
-            }).length === 0
-          ) {
-            $("#series").append(new Option(data.series, data.series));
-          }
-
-          $("#series").val(data.series);
-        }
-
-        // =====================================================
-        // RETENÇÃO
-        // =====================================================
-
-        $("#retention").val(data.retention || 0);
-
-        // =====================================================
-        // MOEDA
-        // =====================================================
-
-        const currency =
+      // moeda: prioriza a da própria fatura; fallback para moeda da empresa; default AOA
+      $("#currency")
+        .val(
           data.currency ||
-          data.currency_items ||
-          data.currency_company ||
-          "AOA";
+            data.currency_items ||
+            data.currency_company ||
+            "AOA",
+        )
+        .trigger("change");
+      if (data.manual_exchange_rate) {
+        $("#manual_exchange_rate").val(data.manual_exchange_rate);
+      }
 
-        $("#currency").val(currency).trigger("change");
+      // Limpar itens existentes
+      $("#items_list .item-list").remove();
 
-        // =====================================================
-        // TAXA DE CÂMBIO MANUAL
-        // =====================================================
-
-        $("#manual_exchange_rate").val(data.manual_exchange_rate || "");
-
-        // =====================================================
-        // LIMPAR ITENS
-        // =====================================================
-
-        $("#items_list").find(".item-list").remove();
-
-        // =====================================================
-        // CARREGAR ITENS
-        // =====================================================
-
-        if (Array.isArray(data.items) && data.items.length) {
-          data.items.forEach((item) => {
-            addItemRow({
-              id: item.item_id || item.id || null,
-
-              code: item.code || "",
-
-              description: item.description || "",
-
-              unit_price: parseFloat(item.unit_price || 0),
-
-              quantity: parseFloat(item.quantity || 1),
-
-              tax: parseFloat(item.tax || 0),
-
-              discount: parseFloat(item.discount || 0),
-            });
+      // Preencher itens
+      if (data.items && data.items.length > 0) {
+        data.items.forEach((item) => {
+          addItemRow({
+            id: item.item_id || item.id,
+            code: item.code,
+            description: item.description,
+            unit_price: item.unit_price,
+            quantity: item.quantity,
+            tax: item.tax,
+            discount: item.discount,
           });
-        }
+        });
+      }
+      updateInvoiceSummary();
 
-        // Atualizar totais
-        updateInvoiceSummary();
-
-        // Alterar botão
-        $("#saveInvoiceBtn").text("Atualizar Fatura");
-      })
-
-      .fail(function (xhr) {
-        console.error(xhr.responseText);
-
-        Swal.fire("Erro", "Falha na comunicação com o servidor.", "error");
-      });
+      $("#saveInvoiceBtn").text("Atualizar Fatura");
+    });
   }
 });

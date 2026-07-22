@@ -51,7 +51,6 @@ require_once '../app/views/layout_creation.php';
         pointer-events: none;
     }
 
-    /* Estado ativo */
     .tag-content.active {
         opacity: 1;
         transform: translateY(0);
@@ -61,7 +60,6 @@ require_once '../app/views/layout_creation.php';
         position: relative;
     }
 
-    /* Estado saindo (extra pra suavizar saída) */
     .tag-content.exit {
         opacity: 0;
         transform: translateY(-10px);
@@ -100,12 +98,6 @@ require_once '../app/views/layout_creation.php';
 
     .list-item:hover {
         background: #f8f9fa;
-    }
-
-    .icon-box {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
     }
 
     .card-custom {
@@ -188,11 +180,18 @@ require_once '../app/views/layout_creation.php';
         float: right !important;
     }
 
+    /* NOVO: texto neutro para "sem dados anteriores",
+       usado quando não há histórico suficiente para
+       calcular variação percentual */
+    .text-muted-dif {
+        color: #6c757d !important;
+        font-weight: normal !important;
+    }
+
     /* ============================= */
     /* RESPONSIVIDADE EXTRA */
     /* ============================= */
 
-    /* ====== TAGS (menu superior) ====== */
     @media (max-width: 768px) {
         .tags {
             display: flex;
@@ -209,7 +208,6 @@ require_once '../app/views/layout_creation.php';
         }
     }
 
-    /* ====== CARDS PRINCIPAIS ====== */
     @media (max-width: 1200px) {
         .card-item {
             width: 18rem !important;
@@ -232,14 +230,12 @@ require_once '../app/views/layout_creation.php';
         }
     }
 
-    /* ====== CHART + SIDEBAR ====== */
     @media (max-width: 992px) {
         #chart-card {
             margin-bottom: 20px;
         }
     }
 
-    /* ====== SELECT TRIMESTRE ====== */
     @media (max-width: 576px) {
         #trimestreSelect {
             width: 100% !important;
@@ -247,7 +243,6 @@ require_once '../app/views/layout_creation.php';
         }
     }
 
-    /* ====== CLIENTES / SCROLL ====== */
     @media (max-width: 768px) {
         #clients {
             height: auto !important;
@@ -258,7 +253,6 @@ require_once '../app/views/layout_creation.php';
         }
     }
 
-    /* ====== RH / STOCK CARDS ====== */
     @media (max-width: 992px) {
         .col-md-3 {
             flex: 0 0 50%;
@@ -273,14 +267,12 @@ require_once '../app/views/layout_creation.php';
         }
     }
 
-    /* ====== LISTAS ====== */
     @media (max-width: 768px) {
         .row.g-3.mt-2 {
             flex-direction: column;
         }
     }
 
-    /* ====== OWL CAROUSEL FIX MOBILE ====== */
     @media (max-width: 576px) {
         .owl-carousel .card {
             margin: 0 auto;
@@ -288,7 +280,6 @@ require_once '../app/views/layout_creation.php';
         }
     }
 
-    /* ====== TÍTULOS ====== */
     @media (max-width: 576px) {
         .h-title {
             font-size: 0.8rem;
@@ -305,7 +296,6 @@ require_once '../app/views/layout_creation.php';
         height: 100%;
     }
 
-    /*  importante para mostrar metade do próximo */
     .owl-stage {
         display: flex;
     }
@@ -318,7 +308,6 @@ require_once '../app/views/layout_creation.php';
 <body>
     <main style="background: #f7f7f7;">
         <div>
-            <!-- Gráficos -->
             <div class="container">
                 <div class="row g-4 mt-5">
                     <div class="col-12">
@@ -350,9 +339,10 @@ require_once '../app/views/layout_creation.php';
                                             <div class="icon-box"><i class="bi bi-coin text-primary"></i></div>
                                         </div>
                                         <h4 class="mt-3 fw-semibold" id="trimestral_volume">0</h4>
+                                        <div style="height:32px;margin:6px 0"><canvas id="spark1"></canvas></div>
                                         <div class="d-flex justify-content-between">
                                             <span class="small-text">Volume global de vendas</span>
-                                            <span id="trimestral_volume_dif" class="small"><i class="bi bi-arrow-up-right"></i>+12%</span>
+                                            <span id="trimestral_volume_dif" class="small"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -361,9 +351,10 @@ require_once '../app/views/layout_creation.php';
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
                                         <h4 class="mt-3 fw-semibold" id="month_average">0</h4>
+                                        <div style="height:32px;margin:6px 0"><canvas id="spark2"></canvas></div>
                                         <div class="d-flex justify-content-between">
                                             <span class="small-text">Média mensal de vendas</span>
-                                            <span id="month_average_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>
+                                            <span id="month_average_dif" class="small"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -371,33 +362,41 @@ require_once '../app/views/layout_creation.php';
                                 <div class="col-lg-3 col-12">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
-                                        <h4 class="mt-3 fw-semibold" id="month_sell">AOA 323.666</h4>
+                                        <h4 class="mt-3 fw-semibold" id="month_sell">AOA 0</h4>
+                                        <div style="height:32px;margin:6px 0"><canvas id="spark3"></canvas></div>
                                         <div class="d-flex justify-content-between">
                                             <span class="small-text">Venda do período (mês)</span>
-                                            <span id="month_sell_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>
+                                            <span id="month_sell_dif" class="small"></span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- <div class="col-2">
-                                    <div class="card card-custom p-3">
-                                        <div class="icon-box"><i class="bi bi-people text-primary"></i></div>
-                                        <h4 class="mt-3 fw-semibold" id="total_customer">64</h4>
-                                        <div class="d-flex justify-content-between">
-                                            <span class="small-text">Clientes pagantes no período (mês)</span>
-                                            <span id="total_customer_dif" class="small"><i class="bi bi-arrow-up-right"></i>0%</span>
-                                        </div>
-                                    </div>
-                                </div> -->
-
                                 <div class="col-lg-3 col-12">
-                                    <div class="card card-custom p-3">
-                                        <div class="icon-box"><i class="bi bi-file-earmark-text text-primary"></i></div>
-                                        <h4 class="mt-3 fw-semibold" id="total_docs">157</h4>
-                                        <div class="d-flex justify-content-between">
-                                            <span class="small-text">Recebimentos</span>
-                                            <span id="total_doc_dif" class="small"><i class="bi bi-arrow-up-right"></i>0</span>
+                                    <div class="card card-custom p-3 position-relative">
+
+                                        <!-- Valor mensal -->
+                                        <div class="position-absolute top-0 end-0 mt-2 me-3 text-end">
+                                            <small class="text-muted d-block">Mensal</small>
+                                            <strong id="recebimento_mensal" class="text-success">
+                                                0,00 Kz
+                                            </strong>
                                         </div>
+
+                                        <div class="icon-box">
+                                            <i class="bi bi-file-earmark-text text-primary"></i>
+                                        </div>
+
+                                        <h4 class="mt-3 fw-semibold" id="total_docs">0</h4>
+
+                                        <div style="height:32px;margin:6px 0">
+                                            <canvas id="spark4"></canvas>
+                                        </div>
+
+                                        <div class="d-flex justify-content-between">
+                                            <span class="small-text">Recebimentos Global</span>
+                                            <span id="total_doc_dif" class="small"></span>
+                                        </div>
+
                                     </div>
                                 </div>
 
@@ -426,13 +425,8 @@ require_once '../app/views/layout_creation.php';
 
                                         <div class="row g-3">
                                             <div class="card p-3">
-
-                                                <div class="owl-carousel invoice-carousel" id="invoiceCarousel">
-
-                                                </div>
-
+                                                <div class="owl-carousel invoice-carousel" id="invoiceCarousel"></div>
                                             </div>
-
                                         </div>
                                     </div>
 
@@ -441,18 +435,12 @@ require_once '../app/views/layout_creation.php';
                                             <h6 class="mb-3 h-title"><i class="bi bi-people"></i> Principais Clientes</h6>
                                         </div>
 
-                                        <div class="col-12" id="topClients">
-
-                                        </div>
-
-                                        <!-- Conteúdo javascript -->
+                                        <div class="col-12" id="topClients"></div>
                                     </div>
 
                                 </div>
 
                             </div>
-
-                            <!-- ================== FACTURAS POR CLIENTE ================== -->
 
                         </div>
 
@@ -460,65 +448,84 @@ require_once '../app/views/layout_creation.php';
                         <!-- Sessao Gestao de RH -->
                         <div class="col-12 tag-content" data-tag-content="rh">
                             <!-- CARDS -->
-                            <div class="d-flex gap-3 flex-wrap flex-lg-nowrap">
-                                <!-- CARD 1 -->
+                            <div class="row g-3 mb-4">
                                 <div class="col-12 col-md-3">
-                                    <div class="card card-custom p-3 p-3">
+                                    <div class="card card-custom p-3">
                                         <div class="d-flex justify-content-between">
                                             <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
                                                 <i class="bi bi-people"></i>
                                             </div>
                                         </div>
 
-                                        <h4 class="fw-bold mt-3" id="rh_total_employees">47</h4>
+                                        <h4 class="fw-bold mt-3" id="rh_total_employees">0</h4>
+                                        <div style="height:32px;margin:6px 0"><canvas id="spark5"></canvas></div>
 
                                         <div class="d-flex justify-content-between align-items-center">
                                             <small class="text-muted">Total funcionários activos</small>
-                                            <!-- <span id="rh_total_employees_dif" class="text-primary small fw-semibold"><i class="bi bi-arrow-up-right"></i> +2</span> -->
+                                            <!-- <span id="rh_total_employees_dif" class="small fw-semibold d-none"></span> -->
                                         </div>
                                     </div>
                                 </div>
 
-                                <!-- CARD 2 -->
                                 <div class="col-12 col-md-3">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
                                             <i class="bi bi-cash-stack"></i>
                                         </div>
 
-                                        <h4 class="fw-bold mt-3" id="rh_total_salary">€62.300</h4>
-                                        <small class="text-muted">Custo salárial mensal</small>
+                                        <h4 class="fw-bold mt-3" id="rh_total_salary">AOA 0</h4>
+                                        <div style="height:32px;margin:6px 0"><canvas id="spark6"></canvas></div>
+
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Custo salárial mensal</small>
+                                            <span id="rh_total_salary_dif" class="small fw-semibold"></span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- CARD 3 -->
                                 <div class="col-12 col-md-3">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-calendar-event"></i>
+                                            <i class="bi bi-file-earmark-text"></i>
                                         </div>
 
-                                        <h4 class="fw-bold mt-3" id="rh_pending_vacations">4</h4>
-                                        <small class="text-muted">Pedido de férias pendentes</small>
+                                        <h4 class="fw-bold mt-3" id="rh_pending_payroll">0</h4>
+                                        <div style="height:32px;margin:6px 0"><canvas id="spark7"></canvas></div>
+
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">Pagamentos pendentes</small>
+                                            <span id="rh_pending_payroll_dif" class="small fw-semibold"></span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <!-- CARD 4 -->
                                 <div class="col-12 col-md-3">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
                                             <i class="bi bi-person-x"></i>
                                         </div>
 
-                                        <h4 class="fw-bold mt-3" id="rh_absences">12</h4>
+                                        <h4 class="fw-bold mt-3" id="rh_absences">0</h4>
+                                        <div style="height:32px;margin:6px 0"><canvas id="spark8"></canvas></div>
 
                                         <div class="d-flex justify-content-between align-items-center">
                                             <small class="text-muted">Faltas no mês</small>
-                                            <span id="rh_absences_month_dif" class="small fw-semibold"><i class="bi bi-arrow-up-right"></i> -2</span>
+                                            <span id="rh_absences_month_dif" class="small fw-semibold"></span>
                                         </div>
                                     </div>
                                 </div>
 
+                            </div>
+
+                            <!-- NOVO: gráfico de faltas por mês, dando ao RH
+                                 o mesmo peso visual que o módulo de Vendas -->
+                            <div class="card card-custom p-4 mt-3">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <h6 class="h-title"><i class="bi bi-graph-up"></i> Custo Salarial mensal</h6>
+                                </div>
+                                <div style="height: 260px;">
+                                    <canvas id="rhSalaryChart"></canvas>
+                                </div>
                             </div>
 
                             <!-- LISTAS -->
@@ -528,13 +535,10 @@ require_once '../app/views/layout_creation.php';
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex">
-                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-list"></i> Lista de Férias</h6>
+                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-list"></i> Pagamentos Pendentes</h6>
                                         </div>
 
-                                        <div class="col-12" id="rh_vacations_list">
-
-                                        </div>
-
+                                        <div class="col-12" id="rh_pending_payroll_list"></div>
                                     </div>
                                 </div>
 
@@ -544,8 +548,7 @@ require_once '../app/views/layout_creation.php';
                                         <div class="d-flex">
                                             <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-list"></i> Funcionários com Mais Faltas</h6>
                                         </div>
-                                        <div class="col-12" id="rh_absences_list"></div>
-
+                                        <div class="col-12" id="rh_recent_absences_list"></div>
                                     </div>
                                 </div>
 
@@ -555,17 +558,16 @@ require_once '../app/views/layout_creation.php';
 
                         <!-- Sessao Gestao de Stock -->
                         <div class="col-12 tag-content" data-tag-content="stock">
-                            <!-- CARDS -->
                             <div class="d-flex gap-3 flex-wrap flex-lg-nowrap">
                                 <div class="col-12 col-md-3">
                                     <div class="card card-custom p-3">
                                         <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
                                             <i class="bi bi-building"></i>
                                         </div>
-                                        <h4 class="fw-bold mt-3" id="kpi-depots">3</h4>
+                                        <h4 class="fw-bold mt-3" id="kpi-depots">0</h4>
                                         <div class="d-flex justify-content-between">
                                             <small class="text-muted ">Nº de depósitos</small>
-                                            <span id="kpi-depots-growth" class="text-primary small">+14 <i class="bi bi-arrow-up-right"></i></span>
+                                            <span id="kpi-depots-growth" class="text-primary small"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -575,10 +577,10 @@ require_once '../app/views/layout_creation.php';
                                         <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
                                             <i class="bi bi-box-seam"></i>
                                         </div>
-                                        <h4 class="fw-bold mt-3" id="kpi-products">957</h4>
+                                        <h4 class="fw-bold mt-3" id="kpi-products">0</h4>
                                         <div class="d-flex justify-content-between">
                                             <small class="text-muted">Quantidade de produtos em stock</small>
-                                            <span id="kpi-products-growth" class="text-primary small">+14 <i class="bi bi-arrow-up-right"></i></span>
+                                            <span id="kpi-products-growth" class="text-primary small"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -588,10 +590,10 @@ require_once '../app/views/layout_creation.php';
                                         <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
                                             <i class="bi bi-cash-stack"></i>
                                         </div>
-                                        <h4 class="fw-bold mt-3" id="kpi-total-value">€257.000</h4>
+                                        <h4 class="fw-bold mt-3" id="kpi-total-value">AOA 0</h4>
                                         <div class="d-flex justify-content-between">
                                             <small class="text-muted">Valor total dos produtos em stock</small>
-                                            <span id="kpi-total-value-growth" class="text-primary small">+3.1% <i class="bi bi-arrow-up-right"></i></span>
+                                            <span id="kpi-total-value-growth" class="text-primary small"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -601,40 +603,32 @@ require_once '../app/views/layout_creation.php';
                                         <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
                                             <i class="bi bi-exclamation-triangle"></i>
                                         </div>
-                                        <h4 class="fw-bold mt-3" id="kpi-low-stock">4</h4>
+                                        <h4 class="fw-bold mt-3" id="kpi-low-stock">0</h4>
                                         <small class="text-muted">Produtos com stock baixo</small>
                                     </div>
                                 </div>
 
                             </div>
 
-                            <!-- DEPÓSITOS -->
                             <div class="card mt-4 card-custom p-3">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h6 class="fw-semibold h-title"><i class="bi bi-geo-alt"></i>Principais depósitos</h6>
                                 </div>
 
-                                <div class="row g-3" id="depots_list">
-
-                                </div>
+                                <div class="row g-3" id="depots_list"></div>
                             </div>
 
-                            <!-- LISTAS -->
                             <div class="row g-3 mt-2">
 
-                                <!-- STOCK BAIXO -->
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex">
                                             <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-exclamation-triangle"></i> Produtos com stock baixo</h6>
                                         </div>
-                                        <div class="col-12" id="low_stock_list">
-
-                                        </div>
+                                        <div class="col-12" id="low_stock_list"></div>
                                     </div>
                                 </div>
 
-                                <!-- COMPRAS -->
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex justify-content-between mb-3">
@@ -642,9 +636,7 @@ require_once '../app/views/layout_creation.php';
                                             <small class="text-muted">Últimos 5 itens</small>
                                         </div>
 
-                                        <div class="col-12" id="purchase_list">
-                                        </div>
-
+                                        <div class="col-12" id="purchase_list"></div>
                                     </div>
                                 </div>
 
@@ -660,24 +652,14 @@ require_once '../app/views/layout_creation.php';
 <?php
 require_once '../app/views/footer.php';
 ?>
-<!-- jQuery (necessário para plugins como OwlCarousel e Select2) -->
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-<!-- Bootstrap -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- OwlCarousel -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
-
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<!-- FontAwesome -->
 <script src="../vendor/fontawesome-free-5.15.4-web/js/all.js"></script>
-
-<!-- Seus scripts -->
 <script src="./assets/js/script.js"></script>
-<!-- ================== CHART JS PRO ================== -->
+
 <script>
     /* =============================
    🔹 INIT VARS
@@ -693,7 +675,9 @@ require_once '../app/views/footer.php';
     const company_id = companyEl?.value || null;
 
     let chartInstance = null;
+    let rhSalaryChartInstance = null;
     let carousel = null;
+    let currentData = null;
 
     /* =============================
        🔹 HELPERS
@@ -726,6 +710,7 @@ require_once '../app/views/footer.php';
     }
 
     function getInitials(name = "") {
+        if (!name) return "?";
         return name
             .split(' ')
             .map(n => n[0])
@@ -735,6 +720,8 @@ require_once '../app/views/footer.php';
     }
 
     function formatDateRange(start, end) {
+        if (!start || !end) return 'Datas não definidas';
+
         const s = new Date(start);
         const e = new Date(end);
 
@@ -743,6 +730,39 @@ require_once '../app/views/footer.php';
             month: 'short'
         };
         return `${s.toLocaleDateString('pt-PT', opt)}–${e.toLocaleDateString('pt-PT', opt)}`;
+    }
+
+    /* =============================
+       🔹 NOVO: setDif genérico
+       Trata valores null/undefined como "sem dados
+       anteriores" em vez de forçar 0% ou -100%
+       enganosos.
+    ============================= */
+    function setDif(id, value, opts = {}) {
+        const el = document.getElementById(id);
+        if (!el) return;
+
+        const suffix = opts.suffix ?? '%';
+        const noSuffixOnPositive = opts.noSuffixOnPositive ?? false;
+
+        if (value === null || value === undefined) {
+            el.innerHTML = `Sem dados anteriores`;
+            el.className = "small text-muted-dif";
+            return;
+        }
+
+        const numeric = Number(value);
+
+        if (numeric > 0) {
+            el.innerHTML = `<i class="bi bi-arrow-up-right"></i>${noSuffixOnPositive ? '+' : ''}${numeric}${noSuffixOnPositive ? '' : suffix}`;
+            el.className = "small text-success";
+        } else if (numeric < 0) {
+            el.innerHTML = `<i class="bi bi-arrow-down-right"></i>${numeric}${suffix}`;
+            el.className = "small text-danger";
+        } else {
+            el.innerHTML = `<i class="bi bi-dash"></i>0${suffix}`;
+            el.className = "small text-muted-dif";
+        }
     }
 
     /* =============================
@@ -797,7 +817,17 @@ require_once '../app/views/footer.php';
 
                 let html = '';
 
+                if (res.data.length === 0) {
+                    html = `<div class="p-3 text-center text-muted small">Sem facturas neste período</div>`;
+                }
+
                 res.data.forEach(inv => {
+                    // Trunca nomes longos com título completo no hover
+                    const clientName = inv.client_name ?? '';
+                    const displayName = clientName.length > 22 ?
+                        clientName.slice(0, 22) + '…' :
+                        clientName;
+
                     html += `
                     <a href="invoice.php?id=${inv.id}">
                         <div class="item">
@@ -806,7 +836,7 @@ require_once '../app/views/footer.php';
                                     <small class="text-primary">${inv.reference ?? ''}</small>
                                     ${getBadge(inv.status)}
                                 </div>
-                                <strong>${inv.client_name ?? ''}</strong>
+                                <strong title="${clientName}">${displayName}</strong>
                                 <div class="d-flex justify-content-between">
                                     <small>${formatDate(inv.issue_date)}</small>
                                     <span class="small text-black">
@@ -831,8 +861,8 @@ require_once '../app/views/footer.php';
                 carousel = $('#invoiceCarousel').owlCarousel({
                     items: 1.2,
                     margin: 10,
-                    loop: true,
-                    autoplay: true,
+                    loop: res.data.length > 1,
+                    autoplay: res.data.length > 1,
                     autoplayTimeout: 3000,
                     autoplayHoverPause: true,
                     dots: false,
@@ -844,10 +874,7 @@ require_once '../app/views/footer.php';
             }
         });
 
-
-
         $(document).ready(function() {
-
             $('.dashboard-carousel').owlCarousel({
                 loop: true,
                 margin: 4,
@@ -870,13 +897,130 @@ require_once '../app/views/footer.php';
                     }
                 }
             });
-
         });
-
     }
 
     /* =============================
-    🔹 KPI DATA
+    🔹 KPI DATA (VENDAS)
+    ============================= */
+    function getInsightsNumber() {
+        if (!company_id || !user_id) return;
+
+        $.ajax({
+            url: `index/ajax/get_sell_insights.php`,
+            method: 'GET',
+            data: {
+                company_id,
+                user_id,
+                year: selectedYear
+            },
+            dataType: 'json',
+
+            success: function(res) {
+                if (res?.success) renderNumbers(res.data);
+            },
+            error: function(xhr) {
+                console.error("AJAX ERROR KPI:", xhr.responseText);
+            }
+        });
+    }
+
+    // function renderNumbers(data) {
+    //     const kpis = data?.kpis || {};
+
+    //     $("#trimestral_volume").text(formatCurrency(kpis.volume_global));
+    //     $("#month_average").text(formatCurrency(kpis?.media_mensal));
+    //     $("#month_sell").text(formatCurrency(kpis.venda_periodo));
+    //     $("#total_docs").text(formatCurrency(kpis.volume_liquid || 0));
+
+    //     // CORRIGIDO: agora trata null como "sem dados anteriores"
+    //     // em vez de mostrar -100% quando não há histórico real
+    //     setDif("trimestral_volume_dif", kpis.crescimento);
+    //     setDif("month_average_dif", kpis.media_mensal_dif);
+    //     setDif("month_sell_dif", kpis.venda_periodo_growth);
+    //     setDif("total_doc_dif", kpis.crescimento_documentos, {
+    //         noSuffixOnPositive: true,
+    //         suffix: ''
+    //     });
+
+    //     renderGraphics(data);
+    //     renderTopClients(data);
+    // }
+
+
+    /* =============================
+    🔹 SPARKLINES (mini-gráficos dos cards)
+    ============================= */
+    const sparkInstances = {};
+
+    function renderSparkline(canvasId, data, color = "#007abd") {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        if (!Array.isArray(data) || data.length === 0) return;
+
+        if (sparkInstances[canvasId]) {
+            sparkInstances[canvasId].destroy();
+        }
+
+        sparkInstances[canvasId] = new Chart(canvas.getContext("2d"), {
+            type: "line",
+            data: {
+                labels: data.map((_, i) => i),
+                datasets: [{
+                    data,
+                    borderColor: color,
+                    backgroundColor: color + "22",
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 0,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
+                },
+                scales: {
+                    x: {
+                        display: false
+                    },
+                    y: {
+                        display: false
+                    }
+                },
+                elements: {
+                    line: {
+                        borderJoinStyle: "round"
+                    }
+                }
+            }
+        });
+    }
+
+    // Escolhe a cor do sparkline com base no sinal do crescimento
+    // (mesma leitura usada em setDif): positivo -> verde,
+    // negativo -> vermelho, neutro/sem dados -> azul padrão.
+    function sparkColorFromGrowth(value) {
+        if (value === null || value === undefined) return "#007abd";
+
+        const numeric = Number(value);
+
+        if (numeric > 0) return "#28a745";
+        if (numeric < 0) return "#dc3545";
+
+        return "#007abd";
+    }
+
+    /* =============================
+    🔹 KPI DATA (VENDAS)
     ============================= */
     function getInsightsNumber() {
         if (!company_id || !user_id) return;
@@ -902,25 +1046,49 @@ require_once '../app/views/footer.php';
 
     function renderNumbers(data) {
         const kpis = data?.kpis || {};
+        const sparks = data?.sparklines || {};
 
         $("#trimestral_volume").text(formatCurrency(kpis.volume_global));
         $("#month_average").text(formatCurrency(kpis?.media_mensal));
         $("#month_sell").text(formatCurrency(kpis.venda_periodo));
-        $("#total_customer").text(kpis.clientes || 0);
-        $("#total_docs").text(kpis.volume_liquid || 0);
-        setDif("trimestral_volume_dif", kpis.crescimento || 0);
-        setDif("month_average_dif", kpis.media_mensal_dif || 0);
-        setDif("month_sell_dif", kpis.venda_periodo_growth || 0);
-        setDif("total_customer_dif", kpis.crescimento_clientes || 0);
-        // setDif("total_doc_dif", kpis.crescimento_documentos || 0);
+        $("#total_docs").text(formatCurrency(kpis.volume_liquid || 0));
+        $("#recebimento_mensal").text(formatCurrency(kpis.volume_liquid_mensal || 0));
 
-        function setDif(id, value) {
-            const el = document.getElementById(id);
-            if (!el) return;
+        // CORRIGIDO: agora trata null como "sem dados anteriores"
+        // em vez de mostrar -100% quando não há histórico real
+        setDif("trimestral_volume_dif", kpis.crescimento);
+        setDif("month_average_dif", kpis.media_mensal_dif);
+        setDif("month_sell_dif", kpis.venda_periodo_growth);
+        setDif("total_doc_dif", kpis.crescimento_documentos, {
+            noSuffixOnPositive: true,
+            suffix: ''
+        });
 
-            el.innerHTML = value > 0 ? `<i class="bi bi-arrow-up-right"></i>${value}${(id === 'total_customer_dif' || id === 'total_doc_dif') ? '' : '%'}` : `<i class="bi bi-arrow-down-right"></i>${value}%`;
-            el.className = value > 0 ? "text-success" : "text-danger";
-        }
+        // NOVO: sparklines dos 4 cards, cor dinâmica conforme
+        // a tendência de cada KPI
+        renderSparkline(
+            "spark1",
+            sparks.volume_global,
+            sparkColorFromGrowth(kpis.crescimento)
+        );
+
+        renderSparkline(
+            "spark2",
+            sparks.media_mensal,
+            sparkColorFromGrowth(kpis.media_mensal_dif)
+        );
+
+        renderSparkline(
+            "spark3",
+            sparks.venda_periodo,
+            sparkColorFromGrowth(kpis.venda_periodo_growth)
+        );
+
+        renderSparkline(
+            "spark4",
+            sparks.total_docs,
+            sparkColorFromGrowth(kpis.crescimento_documentos)
+        );
 
         renderGraphics(data);
         renderTopClients(data);
@@ -937,9 +1105,6 @@ require_once '../app/views/footer.php';
         const yearsInvoices = apiData?.yearsInvoices || [];
 
         const yearSelect = document.getElementById("yearSelect");
-
-        // Se o ano selecionado não existir mais,
-        // usa o ano atual ou o primeiro disponível
 
         const availableYears = yearsInvoices.map(y => Number(y.ano));
 
@@ -976,10 +1141,10 @@ require_once '../app/views/footer.php';
         updateChart(selectedYear);
     }
 
-
     function updateChart(selectedYear) {
 
         const evolucao = currentData?.evolucao || [];
+        const evolucaoAnterior = currentData?.evolucao_anterior || [];
 
         const nomesMeses = [
             'Jan', 'Fev', 'Mar',
@@ -988,16 +1153,20 @@ require_once '../app/views/footer.php';
             'Out', 'Nov', 'Dez'
         ];
 
-        // map filtrado pelo ano selecionado
         const map = {};
 
         evolucao.forEach(item => {
-
-            const [year, month] = item.mes.split("-");
-
+            const [year] = item.mes.split("-");
             if (Number(year) === selectedYear) {
                 map[item.mes] = Number(item.total || 0);
             }
+        });
+
+        // NOVO: mapa do ano anterior, para comparação lado a lado
+        const mapAnterior = {};
+
+        evolucaoAnterior.forEach(item => {
+            mapAnterior[item.mes] = Number(item.total || 0);
         });
 
         const canvas = document.getElementById("chart");
@@ -1005,14 +1174,19 @@ require_once '../app/views/footer.php';
 
         const labels = [];
         const valores = [];
+        const valoresAnteriores = [];
 
         for (let mes = 1; mes <= 12; mes++) {
 
             const mesFormatado =
                 `${selectedYear}-${String(mes).padStart(2, '0')}`;
 
+            const mesAnteriorFormatado =
+                `${selectedYear - 1}-${String(mes).padStart(2, '0')}`;
+
             labels.push(nomesMeses[mes - 1]);
             valores.push(map[mesFormatado] || 0);
+            valoresAnteriores.push(mapAnterior[mesAnteriorFormatado] || 0);
         }
 
         if (chartInstance) {
@@ -1031,20 +1205,24 @@ require_once '../app/views/footer.php';
             data: {
                 labels,
                 datasets: [{
-                    label: `Receita ${selectedYear}`,
-
-                    data: valores,
-
-                    backgroundColor: gradient,
-
-                    borderRadius: 8,
-
-                    borderSkipped: false,
-
-                    hoverBackgroundColor: "#007abd",
-
-                    barThickness: 45
-                }]
+                        label: `Receita ${selectedYear}`,
+                        data: valores,
+                        backgroundColor: gradient,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        hoverBackgroundColor: "#007abd",
+                        barThickness: 20
+                    },
+                    {
+                        label: `Receita ${selectedYear - 1}`,
+                        data: valoresAnteriores,
+                        backgroundColor: "#c3c2b7",
+                        borderRadius: 8,
+                        borderSkipped: false,
+                        hoverBackgroundColor: "#a3a29c",
+                        barThickness: 20
+                    }
+                ]
             },
 
             options: {
@@ -1053,13 +1231,19 @@ require_once '../app/views/footer.php';
 
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'top',
+                        align: 'end',
+                        labels: {
+                            boxWidth: 10,
+                            usePointStyle: false
+                        }
                     },
 
                     tooltip: {
                         callbacks: {
                             label: (context) =>
-                                `Receita: ${context.raw.toLocaleString()}`
+                                `${context.dataset.label}: ${context.raw.toLocaleString()}`
                         }
                     }
                 },
@@ -1081,8 +1265,6 @@ require_once '../app/views/footer.php';
         });
     }
 
-
-
     /* =============================
     🔹 TOP CLIENTS
     ============================= */
@@ -1092,17 +1274,27 @@ require_once '../app/views/footer.php';
 
         const list = apiData?.top_clients || [];
 
-        el.innerHTML = list.map(c => `
+        if (list.length === 0) {
+            el.innerHTML = `<div class="p-3 text-center text-muted small">Sem clientes registados</div>`;
+            return;
+        }
+
+        el.innerHTML = list.map(c => {
+            const nome = c.cliente ?? 'Cliente sem nome';
+            const nomeCurto = nome.length > 28 ? nome.slice(0, 28) + '…' : nome;
+
+            return `
         <div class="hover-row d-flex justify-content-between p-2 rounded">
-            <div>
-                <strong>${c.cliente ?? ''}</strong><br>
+            <div title="${nome}">
+                <strong>${nomeCurto}</strong><br>
                 <small class="text-muted">${c.total_faturas || 0} facturas</small>
             </div>
             <span class="text-black small">
                 ${formatCurrency(c.total_faturado)}
             </span>
         </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     /* =============================
@@ -1124,71 +1316,195 @@ require_once '../app/views/footer.php';
 
                 const data = res.data || {};
                 const k = data.kpis || {};
+                const sparks = data.sparklines || {};
 
                 $("#rh_total_employees").text(k.total_employes || 0);
                 $("#rh_total_salary").text(formatCurrency(k.total_salary));
-                $("#rh_pending_vacations").text(k.pending_vacations || 0);
-                $("#rh_absences").text(k.absences_year || 0);
-                $("#rh_absences_month_dif").text(k.absences_year || 0);
-                setDif("rh_total_employees_dif", k.increase_employes || 0);
-                setDif("rh_total_salary_dif", k.increase_salary || 0);
-                setDif("rh_pending_vacations_dif", k.increase_vacations || 0);
+                $("#rh_pending_payroll").text(k.pending_payroll || 0);
+                $("#rh_absences").text(k.absences || 0);
 
-                function setDif(id, value) {
-                    const el = document.getElementById(id);
-                    if (!el) return;
+                setDif("rh_total_employees_dif", k.increase_employes, {
+                    noSuffixOnPositive: true
+                });
+                setDif("rh_total_salary_dif", k.increase_salary);
+                setDif("rh_pending_payroll_dif", k.increase_pending, {
+                    noSuffixOnPositive: true
+                });
+                setDif("rh_absences_month_dif", k.increase_absences, {
+                    noSuffixOnPositive: true
+                });
 
-                    el.innerHTML = value > 0 ? `<i class="bi bi-arrow-up-right"></i>${value}%` : `<i class="bi bi-arrow-down-right"></i>${value}%`;
-                    el.className = value > 0 ? "text-success" : "text-danger";
+                // Sparklines dos 4 cards, cor dinâmica conforme a
+                // tendência de cada KPI. Para pagamentos pendentes
+                // e faltas, subir é "negativo" (mais pendências,
+                // mais faltas), por isso invertemos o sinal só
+                // para efeitos de cor.
+                renderSparkline(
+                    "spark5",
+                    sparks.total_employes,
+                    sparkColorFromGrowth(k.increase_employes)
+                );
+
+                renderSparkline(
+                    "spark6",
+                    sparks.total_salary,
+                    sparkColorFromGrowth(k.increase_salary)
+                );
+
+                renderSparkline(
+                    "spark7",
+                    sparks.pending_payroll,
+                    sparkColorFromGrowth(
+                        k.increase_pending != null ? -k.increase_pending : null
+                    )
+                );
+
+                renderSparkline(
+                    "spark8",
+                    sparks.absences,
+                    sparkColorFromGrowth(
+                        k.increase_absences != null ? -k.increase_absences : null
+                    )
+                );
+
+                /* Pagamentos pendentes */
+                const payrollList = data.pending_payroll_list || [];
+
+                if (payrollList.length === 0) {
+                    $("#rh_pending_payroll_list").html(
+                        `<div class="p-3 text-center text-muted small">Sem pagamentos pendentes</div>`
+                    );
+                } else {
+                    const html = payrollList.map(p => {
+                        const nome = p.name || 'Funcionário não identificado';
+
+                        return `
+                            <div class="list-item d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar bg-warning-subtle text-warning">
+                                        ${getInitials(nome)}
+                                    </div>
+                                    <div>
+                                        <div class="fw-medium">${nome}</div>
+                                        <small class="text-muted">${p.reference_month || ''}</small>
+                                    </div>
+                                </div>
+                                <span class="fw-bold">${formatCurrency(p.net_salary)}</span>
+                            </div>`;
+                    }).join('');
+
+                    $("#rh_pending_payroll_list").html(html);
                 }
 
-                /* Vacations */
-                const vacHtml = (data.vacations || []).map(v => {
-                    const badgeClass = v.status === 'pendente' ?
-                        'bg-warning-subtle text-warning' :
-                        'bg-success-subtle text-success';
+                /* Últimas faltas registadas */
+                const absencesList = data.rh_recent_absences_list || [];
 
-                    const badgeText = v.status === 'pendente' ? 'Pendente' : 'Aprovadas';
+                if (absencesList.length === 0) {
+                    $("#rh_recent_absences_list").html(
+                        `<div class="p-3 text-center text-muted small">Sem faltas registadas</div>`
+                    );
+                } else {
+                    const html = absencesList.map(a => {
+                        const nome = a.name || 'Funcionário não identificado';
 
-                    return `
-            <div class="list-item d-flex justify-content-between align-items-center mb-2">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="avatar bg-primary-subtle text-primary">
-                        ${getInitials(v.name)}
-                    </div>
-                    <div>
-                        <div class="fw-medium">${v.name}</div>
-                        <small class="text-muted">
-                            ${formatDateRange(v.start_date, v.end_date)}
-                        </small>
-                    </div>
-                </div>
-                <span class="badge ${badgeClass}">${badgeText}</span>
-            </div>`;
-                }).join('');
+                        return `
+                            <div class="list-item d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="avatar bg-danger-subtle text-danger">
+                                        ${getInitials(nome)}
+                                    </div>
+                                    <div>
+                                        <div class="fw-medium">${nome}</div>
+                                        <small class="text-muted">${formatDate(a.date)}</small>
+                                    </div>
+                                </div>
+                                <span class="badge ${a.justification ? 'bg-success' : 'bg-danger'}">
+                                    ${a.justification ? 'Justificada' : 'Não justificada'}
+                                </span>
+                            </div>`;
+                    }).join('');
 
-                $("#rh_vacations_list").html(vacHtml);
+                    $("#rh_recent_absences_list").html(html);
+                }
 
-                /* Absences */
-                const absHtml = (data.top_absences || []).map(a => `
-            <div class="list-item d-flex justify-content-between align-items-center mb-2">
-                <div class="d-flex align-items-center gap-2">
-                    <div class="avatar bg-danger-subtle text-danger">
-                        ${getInitials(a.name)}
-                    </div>
-                    <div>
-                        <div class="fw-medium">${a.name}</div>
-                        <small class="text-muted">${a.tipo_falta}</small>
-                    </div>
-                </div>
-                <span class="fw-bold">${a.total_absences} faltas</span>
-            </div>
-            `).join('');
-
-                $("#rh_absences_list").html(absHtml);
+                renderRHSalaryChart(data.salary_evolution || []);
             },
             error: function(xhr) {
                 console.error("RH AJAX ERROR:", xhr.responseText);
+            }
+        });
+    }
+
+    /* =============================
+    🔹 NOVO: GRÁFICO DE FALTAS (RH)
+    ============================= */
+    function renderRHSalaryChart(evolution) {
+        const canvas = document.getElementById("rhSalaryChart");
+        if (!canvas) return;
+
+        const nomesMeses = [
+            'Jan', 'Fev', 'Mar',
+            'Abr', 'Mai', 'Jun',
+            'Jul', 'Ago', 'Set',
+            'Out', 'Nov', 'Dez'
+        ];
+
+        const map = {};
+        evolution.forEach(item => {
+            map[item.mes] = Number(item.total || 0);
+        });
+
+        const labels = [];
+        const valores = [];
+
+        for (let mes = 1; mes <= 12; mes++) {
+            const mesFormatado = `${selectedYear}-${String(mes).padStart(2, '0')}`;
+            labels.push(nomesMeses[mes - 1]);
+            valores.push(map[mesFormatado] || 0);
+        }
+
+        if (rhSalaryChartInstance) {
+            rhSalaryChartInstance.destroy();
+        }
+
+        const ctx = canvas.getContext("2d");
+
+        rhSalaryChartInstance = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Custo Salarial',
+                    data: valores,
+                    backgroundColor: '#eda100',
+                    borderRadius: 6,
+                    barThickness: 28
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        },
+                        grid: {
+                            color: "#f1f5f9"
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
             }
         });
     }
@@ -1217,37 +1533,28 @@ require_once '../app/views/footer.php';
                     return;
                 }
 
-
                 const data = res.data || {};
                 const kpis = data.kpis || {};
 
-                console.log(data)
-
-                /* =========================
-                🔹 KPIs
-                ========================= */
                 document.getElementById("kpi-depots").textContent = kpis.depots ?? 0;
                 document.getElementById("kpi-products").textContent = kpis.products ?? 0;
                 document.getElementById("kpi-total-value").textContent = formatCurrency(kpis.total_value);
                 document.getElementById("kpi-low-stock").textContent = kpis.low_stock ?? 0;
 
-                setDif('kpi-depots-growth', kpis.increase_depots ?? 0);
-                setDif('kpi-products-growth', kpis.increase_products ?? 0);
-                setDif('kpi-total-value-growth', kpis.increase_total_value.toFixed(2) ?? 0);
+                setDif('kpi-depots-growth', kpis.increase_depots, {
+                    noSuffixOnPositive: true,
+                    suffix: ''
+                });
+                setDif('kpi-products-growth', kpis.increase_products, {
+                    noSuffixOnPositive: true,
+                    suffix: ''
+                });
+                setDif('kpi-total-value-growth', kpis.increase_total_value != null ?
+                    Number(kpis.increase_total_value).toFixed(2) :
+                    null
+                );
 
-                function setDif(id, value) {
-                    const el = document.getElementById(id);
-                    if (!el) return;
-
-                    el.innerHTML = value > 0 ? `<i class="bi bi-arrow-up-right"></i>${(id === 'kpi-depots-growth' || id === 'kpi-products-growth') ? '+' : ''}${value}${(id === 'kpi-depots-growth' || id === 'kpi-products-growth') ? '' : '%'}` : `<i class="bi bi-arrow-down-right"></i>${value}%`;
-                    el.className = value > 0 ? "text-success" : "text-danger";
-
-                }
-
-
-                /* =========================
-                🔹 DEPÓSITOS
-                ========================= */
+                /* DEPÓSITOS */
                 const depositsContainer = document.getElementById("depots_list");
 
                 if (depositsContainer) {
@@ -1279,9 +1586,7 @@ require_once '../app/views/footer.php';
                     depositsContainer.innerHTML = html || `<small class="text-muted">Sem depósitos</small>`;
                 }
 
-                /* =========================
-                🔹 STOCK BAIXO
-                ========================= */
+                /* STOCK BAIXO */
                 const lowStockContainer = document.getElementById("low_stock_list");
 
                 if (lowStockContainer) {
@@ -1305,9 +1610,7 @@ require_once '../app/views/footer.php';
                     lowStockContainer.innerHTML = html || `<small class="text-muted">Sem alertas</small>`;
                 }
 
-                /* =========================
-                🔹 COMPRAS (SUGESTÃO)
-                ========================= */
+                /* COMPRAS (SUGESTÃO) */
                 const purchaseContainer = document.getElementById("purchase_list");
 
                 if (purchaseContainer) {
@@ -1336,27 +1639,10 @@ require_once '../app/views/footer.php';
         });
     }
 
-    // const exportDataSelect = document.getElementById("exportData");
-    // exportDataSelect.addEventListener("change", e => {
-    //     exportData(e.target.value);
-    // })
-
-    // const exportData = async (type) => {
-    //     let url;
-
-    //     if (type === "sell") {
-    //         url = "index/ajax/relatorio_vendas.php";
-    //     } else if (type === "saft") {
-    //         url = "index/ajax/generate_saft.php";
-    //     }
-
-    //     window.location.href = url;
-    // };
-
     /* =============================
     🔹 INIT
     ============================= */
-    const REFRESH_INTERVAL = 30000; // 30 segundos
+    const REFRESH_INTERVAL = 30000;
 
     let dashboardTimer = null;
     let isRefreshing = false;
@@ -1387,7 +1673,6 @@ require_once '../app/views/footer.php';
 
         dashboardTimer = setInterval(() => {
 
-            // Não atualizar quando a aba estiver oculta
             if (document.hidden) return;
 
             refreshDashboard();
@@ -1407,7 +1692,6 @@ require_once '../app/views/footer.php';
 
         startDashboardRefresh();
 
-        // Pausa quando a aba não está visível
         document.addEventListener("visibilitychange", () => {
 
             if (document.hidden) {
@@ -1418,12 +1702,6 @@ require_once '../app/views/footer.php';
 
         });
     });
-
-    document.addEventListener("DOMContentLoaded", e => {
-        const chartCard = window.getElementById("chart-card");
-        const cardOthers = document.getElementById("card-others");
-
-    })
 </script>
 
 </html>

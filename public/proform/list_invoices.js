@@ -143,7 +143,7 @@ $(document).ready(function () {
             <button
               class="btn btn-sm text-warning ms-1"
               title="Editar"
-              onclick="event.stopPropagation(); window.location.href='create_invoices.php?edit_id=${id}'"
+              onclick="event.stopPropagation(); window.location.href='create_proform.php?edit_id=${id}'"
             >
               <i class="bi bi-pencil"></i>
             </button>

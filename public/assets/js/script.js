@@ -375,42 +375,7 @@ function formatCurrency(value, currencySymbol, currencyPosition) {
     : `${formattedValue} ${currencySymbol}`;
 }
 
-document.addEventListener("DOMContentLoaded", function () {
-  const btn = document.getElementById("mobileMenuBtn");
-  const sidebar = document.getElementById("sidebar");
-  let overlay = document.querySelector(".overlay");
 
-  // Cria o overlay se ele não existir
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.classList.add("overlay");
-    document.body.appendChild(overlay);
-  }
-
-  if (btn && sidebar) {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      sidebar.classList.toggle("mobile-active");
-      overlay.classList.toggle("show");
-      document.body.classList.toggle("sidebar-open");
-    });
-  }
-
-  overlay.addEventListener("click", () => {
-    if (sidebar) sidebar.classList.remove("mobile-active");
-    overlay.classList.remove("show");
-    document.body.classList.remove("sidebar-open");
-  });
-
-  // Fecha com ESC
-  document.addEventListener("keydown", (ev) => {
-    if (ev.key === "Escape") {
-      if (sidebar) sidebar.classList.remove("mobile-active");
-      overlay.classList.remove("show");
-      document.body.classList.remove("sidebar-open");
-    }
-  });
-});
 
 // btn.addEventListener("click", () => {
 //   sidebar.classList.toggle("mobile-active");
