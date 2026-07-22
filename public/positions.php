@@ -113,7 +113,7 @@ require_once '../app/views/layout_creation.php';
                 <div>
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h2 class="mb-0 fw-bold mt-5">Cargos e Salários</h2>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalPosition">
+                        <button class="btn btn-primary d-flex align-items-center justify-items-center align-content-center" data-bs-toggle="modal" data-bs-target="#modalPosition">
                             <i class="material-icons-round">add</i>
                             Adicionar Cargo
                         </button>

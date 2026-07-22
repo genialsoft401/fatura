@@ -326,6 +326,10 @@ require_once '../app/views/layout_creation.php';
                                 <i class="bi bi-file-pdf"></i>
                                 Exportar PDF
                             </button>
+                            <button class="btn btn-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalPosition">
+                                <i class="bi bi-plus"></i>
+                                Adicionar cargo
+                            </button>
                             <button class="btn btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalEmployee">
                                 <i class="bi bi-person-plus"></i>
                                 Adicionar Funcionário
@@ -536,7 +540,7 @@ require_once '../app/views/layout_creation.php';
                         </div>
 
                         <h6 id="previewName">Nome do Funcionário</h6>
-                        <small class="text-muted small" id="previewPosition">Cargo</small>
+                        <small class="text-muted small fw-semibold mb-3" style="margin-top: -100px;" id="previewPosition">Cargo</small>
                         <div class="col-md-12 mb-3">
                             <label for="photo" class="btn btn-outline-primary">Alterar Foto <i class="bi bi-camera"></i></label>
                             <input type="file" name="photo" id="photo" class="form-control d-none">
@@ -545,12 +549,12 @@ require_once '../app/views/layout_creation.php';
                         <hr>
 
                         <div class="text-start small">
-                            <p><strong class="opacity-50">Status:</strong> <span id="previewStatus" class="text-capitalize">Ativo</span></p>
-                            <p><strong class="opacity-50">Salário:</strong> <span id="previewSalary" class="text-capitalize">0 Kz</span></p>
-                            <p><strong class="opacity-50">Admissão:</strong> <span id="previewAdmission" class="text-capitalize">--</span></p>
+                            <p style="margin-bottom:  0px;"><strong class="opacity-50">Status:</strong> <span id="previewStatus" class="text-capitalize">Ativo</span></p>
+                            <p style="margin-bottom:  0px;"><strong class="opacity-50">Salário:</strong> <span id="previewSalary" class="text-capitalize">0 Kz</span></p>
+                            <p style="margin-bottom:  0px;"><strong class="opacity-50">Admissão:</strong> <span id="previewAdmission" class="text-capitalize">--</span></p>
                         </div>
 
-                        <div class="col-md-12 align-items-center">
+                        <div class="col-md-12 align-items-center mt-4">
                             <button type="submit" class="btn btn-success p-2" style="width: 160px !important;">Salvar</button>
                         </div>
 
@@ -698,6 +702,59 @@ require_once '../app/views/layout_creation.php';
 
                 </div>
 
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPosition" tabindex="-1" aria-labelledby="modalPositionLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="formPosition">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalPositionLabel">Cadastrar Cargo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Nome do Cargo</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Salário Sugerido</label>
+                        <input type="number" step="0.01" name="suggested_salary" class="form-control">
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Subsídio de alimentação</label>
+                        <input type="number" step="0.01" name="food_allowance" class="form-control" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label>Subsídio de transporte</label>
+                        <input type="number" step="0.01" name="transport_allowance" class="form-control" value="0">
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Subsídio de férias</label>
+                        <select name="vacation_subsidy_pct" class="form-control">
+                            <option value="0">0%</option>
+                            <option value="50">50%</option>
+                            <option value="100">100%</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Subsídio de 13º</label>
+                        <select name="thirteenth_subsidy_pct" class="form-control">
+                            <option value="0">0%</option>
+                            <option value="50">50%</option>
+                            <option value="100">100%</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
             </form>
         </div>
     </div>
@@ -1112,43 +1169,73 @@ require_once '../app/views/layout_creation.php';
 
         const positionsSelects = $('#positionSelect, #selectPosition');
 
-        $.ajax({
+        function loadPositions() {
 
-            url: "rh/ajax/list_positions.php",
-            method: "GET",
-            dataType: "json",
+            $.ajax({
+                url: "rh/ajax/list_positions.php",
+                method: "GET",
+                dataType: "json",
 
-            success: function(response) {
+                success: function(response) {
 
-                const data = response?.data || [];
+                    const data = response?.data || [];
 
-                console.log(data);
-
-                const options = data.map(r => {
-                    return `
+                    const options = data.map(r => {
+                        return `
                     <option 
                         data-salary="${r.suggested_salary}" 
                         value="${r.name}">
                         ${r.name}
                     </option>
                 `;
-                }).join('');
+                    }).join('');
 
-                positionsSelects.each(function() {
+                    positionsSelects.each(function() {
 
-                    $(this).html(`
+                        // guardar valor selecionado
+                        const currentValue = $(this).val();
+
+                        // atualizar opções
+                        $(this).html(`
                     <option value="">Selecione</option>
                     ${options}
                 `);
 
-                });
+                        // restaurar valor selecionado
+                        if (currentValue) {
+                            $(this).val(currentValue);
+                        }
 
-            },
+                    });
 
-            error: function(xhr, status, error) {
+                },
 
-                console.log(error);
+                error: function(xhr, status, error) {
+                    console.log(error);
+                }
 
+            });
+        }
+
+
+        // carregar ao abrir a página
+        loadPositions();
+
+
+        // atualizar automaticamente a cada 10 segundos
+        setInterval(loadPositions, 10000);
+
+        positionsSelects.each(function() {
+            const select = $(this);
+            if (document.activeElement !== this) {
+                const currentValue = select.val();
+                select.empty()
+                    .append('<option value="">Selecione</option>')
+                    .append(options);
+
+                if (currentValue) {
+                    select.val(currentValue);
+                }
             }
 
         });
@@ -1205,6 +1292,34 @@ require_once '../app/views/layout_creation.php';
 
         }
 
+    });
+
+    $('#formPosition').on('submit', function(e) {
+        e.preventDefault();
+
+        $.post('rh/ajax/save_position.php', $(this).serialize(), function() {
+
+            // fechar modal
+            $('#modalPosition').modal('hide');
+
+            // limpar backdrop manualmente
+            setTimeout(function() {
+                $('.modal-backdrop').remove();
+                $('body').removeClass('modal-open');
+                $('body').css('padding-right', '');
+            }, 300);
+
+            table.ajax.reload();
+
+            Swal.fire(
+                'Sucesso',
+                'Cargo salvo com sucesso!',
+                'success'
+            );
+
+            $('#editPositionId').remove();
+
+        });
     });
 </script>
 
