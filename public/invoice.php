@@ -98,7 +98,7 @@ require_once '../app/views/layout_creation.php';
             <div class="invoice-header pagea4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
-                        <span class="mb-0">Factura nº <span id="fatura-id"></span></span>
+                        <span class="mb-0">Fatura nº <span id="fatura-id"></span></span>
                         <span class="subtitle" id="subtitle-client"></span>
                     </div>
                     <div>
@@ -134,7 +134,7 @@ require_once '../app/views/layout_creation.php';
 
             <button class="d-none btn btn-warning w-100 mb-2" id="btnCloneToInvoice">
                 <span class="material-icons-outlined">copy</span>
-                Clonar Factura
+                Clonar Fatura
             </button>
 
             <!-- <h6 class="section-title">Documento</h6> -->

@@ -116,7 +116,7 @@ try {
     $reference = generate_document_number(
         $pdo,
         $companyId,
-        'FR'
+        'FT'
     );
 
     /*
@@ -171,9 +171,8 @@ try {
         $proforma['final_total'],
         $proforma['final_total'],
         $userId,
-        'FR',
-        $proforma['final_total'],
-        0
+        'FT',
+        $proforma['final_total']
     ]);
 
     $invoiceId = (int)$pdo->lastInsertId();

@@ -73,7 +73,7 @@ require_once '../app/views/layout_creation.php';
             <div class="col-lg-3 mb-4">
                 <div class="card shadow-sm border-0 text-center p-3">
 
-                    <img src="assets/img/profiles/<?= $_SESSION['user']['image'] ?>?t=<?= time() ?>"
+                    <img id="profileImage" src="assets/img/profiles/<?= $_SESSION['user']['image'] ?>?t=<?= time() ?>"
                         class="rounded-circle mx-auto mb-3"
                         style="width:100px;height:100px;object-fit:cover;">
 
@@ -234,7 +234,7 @@ require_once '../app/views/layout_creation.php';
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 
-<script src="perfil/perfil.js"></script>
+<script src="perfil/perfil.js?v=0.1"></script>
 <script>
     var selectedCountry = "<?php echo isset($_SESSION['user']['country']) ? $_SESSION['user']['country'] : ''; ?>";
     var selectedCity = "<?php echo isset($_SESSION['user']['address_district']) ? $_SESSION['user']['address_district'] : ''; ?>";

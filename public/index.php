@@ -341,7 +341,7 @@ require_once '../app/views/layout_creation.php';
                                         <h4 class="mt-3 fw-semibold" id="trimestral_volume">0</h4>
                                         <div style="height:32px;margin:6px 0"><canvas id="spark1"></canvas></div>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Volume global de vendas</span>
+                                            <span class="small-text">Vendas este Ano</span>
                                             <span id="trimestral_volume_dif" class="small"></span>
                                         </div>
                                     </div>
@@ -353,7 +353,7 @@ require_once '../app/views/layout_creation.php';
                                         <h4 class="mt-3 fw-semibold" id="month_average">0</h4>
                                         <div style="height:32px;margin:6px 0"><canvas id="spark2"></canvas></div>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Média mensal de vendas</span>
+                                            <span class="small-text">Média Mensal de Vendas</span>
                                             <span id="month_average_dif" class="small"></span>
                                         </div>
                                     </div>
@@ -365,7 +365,7 @@ require_once '../app/views/layout_creation.php';
                                         <h4 class="mt-3 fw-semibold" id="month_sell">AOA 0</h4>
                                         <div style="height:32px;margin:6px 0"><canvas id="spark3"></canvas></div>
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Venda do período (mês)</span>
+                                            <span class="small-text">Vendas este Mês</span>
                                             <span id="month_sell_dif" class="small"></span>
                                         </div>
                                     </div>
@@ -373,30 +373,20 @@ require_once '../app/views/layout_creation.php';
 
                                 <div class="col-lg-3 col-12">
                                     <div class="card card-custom p-3 position-relative">
-
-                                        <!-- Valor mensal -->
-                                        <div class="position-absolute top-0 end-0 mt-2 me-3 text-end">
-                                            <small class="text-muted d-block">Mensal</small>
-                                            <strong id="recebimento_mensal" class="text-success">
-                                                0,00 Kz
-                                            </strong>
-                                        </div>
-
                                         <div class="icon-box">
                                             <i class="bi bi-file-earmark-text text-primary"></i>
                                         </div>
 
-                                        <h4 class="mt-3 fw-semibold" id="total_docs">0</h4>
+                                        <h4 class="mt-3 fw-semibold" id="recebimento_mensal">0</h4>
 
                                         <div style="height:32px;margin:6px 0">
                                             <canvas id="spark4"></canvas>
                                         </div>
 
                                         <div class="d-flex justify-content-between">
-                                            <span class="small-text">Recebimentos Global</span>
+                                            <span class="small-text">Recebimentos este Mês</span>
                                             <span id="total_doc_dif" class="small"></span>
                                         </div>
-
                                     </div>
                                 </div>
 
@@ -419,7 +409,7 @@ require_once '../app/views/layout_creation.php';
                                 <div class="col-lg-4" id="card-others">
                                     <div class="card card-custom p-3">
                                         <div class="d-flex justify-content-between mb-3">
-                                            <h6 class="h-title"><i class="bi bi-file-earmark-text"></i> Últimas Facturas</h6>
+                                            <h6 class="h-title"><i class="bi bi-file-earmark-text"></i> Últimas Faturas</h6>
                                             <a href="list_invoices.php" class="small text-primary">Ver todas <i class="bi bi-chevron-right"></i></a>
                                         </div>
 
@@ -489,12 +479,12 @@ require_once '../app/views/layout_creation.php';
                                             <i class="bi bi-file-earmark-text"></i>
                                         </div>
 
-                                        <h4 class="fw-bold mt-3" id="rh_pending_payroll">0</h4>
+                                        <h4 class="fw-bold mt-3" id="rh_pending_vacations">0</h4>
                                         <div style="height:32px;margin:6px 0"><canvas id="spark7"></canvas></div>
 
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Pagamentos pendentes</small>
-                                            <span id="rh_pending_payroll_dif" class="small fw-semibold"></span>
+                                            <small class="text-muted">Férias este Mês</small>
+                                            <span id="rh_pending_vacations_dif" class="small fw-semibold"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -534,19 +524,21 @@ require_once '../app/views/layout_creation.php';
                                 <!-- FÉRIAS -->
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
-                                        <div class="d-flex">
-                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-list"></i> Pagamentos Pendentes</h6>
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-list"></i>Férias Pendentes</h6>
+                                            <a href="vacations.php" class="small text-green">Ver todos <i class="bi bi-chevron-right"></i></a>
                                         </div>
 
-                                        <div class="col-12" id="rh_pending_payroll_list"></div>
+                                        <div class="col-12" id="rh_pending_vacations_list"></div>
                                     </div>
                                 </div>
 
                                 <!-- FALTAS -->
                                 <div class="col-12 col-lg-6">
                                     <div class="card card-custom p-3">
-                                        <div class="d-flex">
-                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-list"></i> Funcionários com Mais Faltas</h6>
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="fw-semibold mb-3 h-title"><i class="bi bi-list"></i>Funcionários com Mais Faltas</h6>
+                                            <a href="ponto.php" class="small text-green">Ver todos <i class="bi bi-chevron-right"></i></a>
                                         </div>
                                         <div class="col-12" id="rh_recent_absences_list"></div>
                                     </div>
@@ -818,7 +810,7 @@ require_once '../app/views/footer.php';
                 let html = '';
 
                 if (res.data.length === 0) {
-                    html = `<div class="p-3 text-center text-muted small">Sem facturas neste período</div>`;
+                    html = `<div class="p-3 text-center text-muted small">Sem faturas neste período</div>`;
                 }
 
                 res.data.forEach(inv => {
@@ -1059,7 +1051,7 @@ require_once '../app/views/footer.php';
         setDif("trimestral_volume_dif", kpis.crescimento);
         setDif("month_average_dif", kpis.media_mensal_dif);
         setDif("month_sell_dif", kpis.venda_periodo_growth);
-        setDif("total_doc_dif", kpis.crescimento_documentos, {
+        setDif("total_doc_dif", kpis.volume_liquid_mensal_crescimento.percentual, {
             noSuffixOnPositive: true,
             suffix: ''
         });
@@ -1087,7 +1079,7 @@ require_once '../app/views/footer.php';
         renderSparkline(
             "spark4",
             sparks.total_docs,
-            sparkColorFromGrowth(kpis.crescimento_documentos)
+            sparkColorFromGrowth(kpis.volume_liquid_mensal_crescimento.percentual)
         );
 
         renderGraphics(data);
@@ -1287,7 +1279,7 @@ require_once '../app/views/footer.php';
         <div class="hover-row d-flex justify-content-between p-2 rounded">
             <div title="${nome}">
                 <strong>${nomeCurto}</strong><br>
-                <small class="text-muted">${c.total_faturas || 0} facturas</small>
+                <small class="text-muted">${c.total_faturas || 0} faturas</small>
             </div>
             <span class="text-black small">
                 ${formatCurrency(c.total_faturado)}
@@ -1320,14 +1312,14 @@ require_once '../app/views/footer.php';
 
                 $("#rh_total_employees").text(k.total_employes || 0);
                 $("#rh_total_salary").text(formatCurrency(k.total_salary));
-                $("#rh_pending_payroll").text(k.pending_payroll || 0);
+                $("#rh_pending_vacations").text(k.pending_vacations || 0);
                 $("#rh_absences").text(k.absences || 0);
 
                 setDif("rh_total_employees_dif", k.increase_employes, {
                     noSuffixOnPositive: true
                 });
                 setDif("rh_total_salary_dif", k.increase_salary);
-                setDif("rh_pending_payroll_dif", k.increase_pending, {
+                setDif("rh_pending_vacations_dif", k.increase_vacations, {
                     noSuffixOnPositive: true
                 });
                 setDif("rh_absences_month_dif", k.increase_absences, {
@@ -1353,9 +1345,9 @@ require_once '../app/views/footer.php';
 
                 renderSparkline(
                     "spark7",
-                    sparks.pending_payroll,
+                    sparks.pending_vacations,
                     sparkColorFromGrowth(
-                        k.increase_pending != null ? -k.increase_pending : null
+                        k.increase_vacations != null ? -k.increase_vacations : null
                     )
                 );
 
@@ -1367,16 +1359,51 @@ require_once '../app/views/footer.php';
                     )
                 );
 
-                /* Pagamentos pendentes */
-                const payrollList = data.pending_payroll_list || [];
+                /* Férias pendentes */
+                const vacationsList = data.pending_vacations_list || [];
 
-                if (payrollList.length === 0) {
-                    $("#rh_pending_payroll_list").html(
-                        `<div class="p-3 text-center text-muted small">Sem pagamentos pendentes</div>`
+                if (vacationsList.length === 0) {
+                    $("#rh_pending_vacations_list").html(
+                        `<div class="p-3 text-center text-muted small">Sem férias pendentes</div>`
                     );
                 } else {
-                    const html = payrollList.map(p => {
-                        const nome = p.name || 'Funcionário não identificado';
+
+                    const statusBadge = (status) => {
+                        switch (status) {
+                            case 'Aprovado':
+                                return {
+                                    class: 'bg-success', label: 'Aprovado'
+                                };
+                            case 'Rejeitado':
+                                return {
+                                    class: 'bg-danger', label: 'Rejeitado'
+                                };
+                            default:
+                                return {
+                                    class: 'bg-warning text-dark', label: 'Pendente'
+                                };
+                        }
+                    };
+
+                    const formatDate = (value) => {
+                        if (!value) return '';
+                        const [y, m, d] = value.split('-');
+                        return `${d}/${m}/${y}`;
+                    };
+
+                    // remove/reaproveita se já tiveres um helper de escape no projeto
+                    const escapeHtml = (str) => String(str)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#039;');
+
+                    const html = vacationsList.map(v => {
+                        const nome = escapeHtml(v.name || 'Funcionário não identificado');
+                        const tipo = escapeHtml(v.type || 'Férias');
+                        const periodo = `${formatDate(v.start_date)} — ${formatDate(v.end_date)}`;
+                        const badge = statusBadge(v.status);
 
                         return `
                             <div class="list-item d-flex justify-content-between align-items-center mb-2">
@@ -1386,14 +1413,16 @@ require_once '../app/views/footer.php';
                                     </div>
                                     <div>
                                         <div class="fw-medium">${nome}</div>
-                                        <small class="text-muted">${p.reference_month || ''}</small>
+                                        <small class="text-muted">${tipo} · ${periodo}</small>
                                     </div>
                                 </div>
-                                <span class="fw-bold">${formatCurrency(p.net_salary)}</span>
+                                <span class="badge ${badge.class}">
+                                    ${badge.label}
+                                </span>
                             </div>`;
                     }).join('');
 
-                    $("#rh_pending_payroll_list").html(html);
+                    $("#rh_pending_vacations_list").html(html);
                 }
 
                 /* Últimas faltas registadas */

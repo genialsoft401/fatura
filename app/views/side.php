@@ -31,21 +31,6 @@
         left: 0px;
     }
 
-    /* Fora do mobile, a sidebar fica escondida por padrão em telas pequenas */
-    @media (max-width: 768px) {
-        .sidebar {
-            left: -260px;
-        }
-    }
-
-    main.mobile-active {
-        left: 250px;
-    }
-
-    header.mobile-active {
-        width: calc(100% - 250px);
-    }
-
     /* Ajusta o conteúdo ao lado da sidebar */
     main {
         flex-grow: 1;
@@ -333,6 +318,34 @@
         z-index: 1100;
         pointer-events: none;
     }
+
+    @media (max-width: 992px) {
+
+        .sidebar {
+            width: min(80vw, 280px);
+            transform: translateX(-100%);
+            transition: transform .3s ease;
+        }
+
+        .sidebar.show {
+            transform: translateX(0);
+        }
+
+        /* A sidebar fica fixa por cima do conteúdo (sem overlay/backdrop);
+           o conteúdo ocupa sempre 100% da largura em mobile/tablet */
+        main,
+        header {
+            margin-left: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+        }
+    }
+
+    /* Trava o scroll do fundo da página enquanto o menu mobile está aberto
+       (sem escurecer nem cobrir o conteúdo com nenhuma camada extra) */
+    body.menu-open {
+        overflow: hidden;
+    }
 </style>
 
 <div class="sidebar" id="sidebar">
@@ -431,10 +444,6 @@
             <span><i data-lucide="settings"></i> <span>Definições</span></span>
         </a>
 
-        <a href="subscription.php" class="nav-item" data-tooltip="Meu Plano">
-            <span><i data-lucide="credit-card"></i> <span>Meu Plano</span></span>
-        </a>
-
         <a href="help.php" target="_blank" class="nav-item" data-tooltip="Ajuda">
             <span><i data-lucide="help-circle"></i> <span>Ajuda</span></span>
         </a>
@@ -477,7 +486,7 @@
         });
     });
 
-    
+
 
     // Accordion dos submenus (responsabilidade exclusiva da sidebar)
     document.querySelectorAll('.nav-item[data-submenu]').forEach(button => {

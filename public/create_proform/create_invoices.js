@@ -1,6 +1,7 @@
 $(document).ready(function () {
   const vat_regime = JSON.parse(localStorage.getItem("vat_regime"));
   let countryMap = {};
+  let invoiceId = null;
 
   initializeTooltips();
   loadSelect2Items();
@@ -219,7 +220,6 @@ $(document).ready(function () {
     // =====================================
     // SUBTOTAL
     // =====================================
-    console.log(discount);
 
     let subtotal = price * qtd;
 
@@ -229,8 +229,10 @@ $(document).ready(function () {
 
     let taxValue = 0;
 
-    if (tax === 14) {
-      taxValue = subtotal * 0.14;
+    if (vat_regime === "geral") {
+      taxValue = (subtotal * tax) / 100;
+    } else {
+      taxValue = 0.0;
     }
 
     // total com IVA
@@ -281,7 +283,7 @@ $(document).ready(function () {
     var selected = $(this).find(":selected").data("item");
     if (selected) {
       addItemRow(selected);
-      // $(this).val('').trigger('change'); // Opcional: limpar seleção
+      $(this).val("").trigger("change"); // Opcional: limpar seleção
     }
   });
 
@@ -1122,9 +1124,11 @@ $(document).ready(function () {
 
         Swal.fire({
           icon: "success",
-          title: "Proforma criada com sucesso!",
+          title: invoiceId
+            ? "Proforma atualizada com sucesso!"
+            : "Proforma criada com sucesso!",
           text: "Clique abaixo para visualizar.",
-          confirmButtonText: "Ver Proforma",
+          confirmButtonText: "Ver fatura",
           confirmButtonColor: "#007abd",
         }).then((result) => {
           if (result.isConfirmed) {
@@ -1153,8 +1157,6 @@ $(document).ready(function () {
         Swal.fire("Erro", response.error, "error");
         return;
       }
-
-      console.log(response);
 
       const data = response?.data;
 
@@ -1204,7 +1206,7 @@ $(document).ready(function () {
           addItemRow({
             id: item.item_id || item.id,
             code: item.code,
-            description: item.description,
+            description: item.description || item.name,
             unit_price: item.unit_price,
             quantity: item.quantity,
             tax: item.tax,
@@ -1216,5 +1218,7 @@ $(document).ready(function () {
 
       $("#saveInvoiceBtn").text("Atualizar Fatura");
     });
+
+    invoiceId = id;
   }
 });

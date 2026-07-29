@@ -366,7 +366,7 @@ require_once '../app/views/layout_creation.php';
                         </div>
 
 
-                        <h4 class="mt-3"><?= t('Resumo da Fatura') ?></h4>
+                        <h4 class="mt-3"><?= t('Resumo da Proforma') ?></h4>
                         <hr>
 
                         <div class="bg-white shadow-sm p-3 rounded">
@@ -524,23 +524,35 @@ require_once '../app/views/layout_creation.php';
     }
 
     /* ===== LOCAL STORAGE ===== */
+    // Chave própria da proforma, para nunca colidir com o rascunho da fatura
+    const DRAFT_KEY = "proformaDraft";
+
+    // Campos que nunca devem ser salvos/restaurados via rascunho
+    const DRAFT_EXCLUDED_FIELDS = ["edit_invoice_id"];
+
     function saveDraft() {
         if (!form) return;
 
         const data = new FormData(form);
         const obj = {};
 
-        data.forEach((v, k) => obj[k] = v);
-        localStorage.setItem("invoiceDraft", JSON.stringify(obj));
+        data.forEach((v, k) => {
+            if (DRAFT_EXCLUDED_FIELDS.includes(k)) return;
+            obj[k] = v;
+        });
+
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(obj));
     }
 
     function loadDraft() {
         if (!form) return;
 
-        const draft = JSON.parse(localStorage.getItem("invoiceDraft"));
+        const draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
         if (!draft) return;
 
         Object.keys(draft).forEach(key => {
+            if (DRAFT_EXCLUDED_FIELDS.includes(key)) return;
+
             const field = form.querySelector(`[name="${key}"]`);
             if (field) field.value = draft[key];
         });
@@ -586,6 +598,15 @@ require_once '../app/views/layout_creation.php';
     /* ===== INIT ===== */
     document.addEventListener("DOMContentLoaded", () => {
         loadDraft();
+
+        // Só entra em modo edição se a URL tiver ?edit_id=
+        // Isso evita reaproveitar um edit_invoice_id de um rascunho antigo
+        const editId = new URLSearchParams(window.location.search).get("edit_id");
+        if (!editId) {
+            const editField = document.getElementById("edit_invoice_id");
+            if (editField) editField.value = "";
+        }
+
         showStep(currentStep);
         calc();
     });
@@ -694,6 +715,6 @@ require_once '../app/views/layout_creation.php';
 </script>
 
 
-<script src="create_proform/create_invoices.js"></script>
+<script src="create_proform/create_invoices.js?v=3.2"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

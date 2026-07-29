@@ -2,7 +2,7 @@ const init = () => {
     const sidebar = document.getElementById('sidebar');
     const mainEl = document.querySelector('.main-wrapper');
     const headerEl = document.querySelector('.app-navbar');
-    const toggleBtn = document.getElementById('sidebarToggle');
+    const toggleBtns = document.querySelectorAll('.sidebar-toggle-btn');
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 
     if (!sidebar) return;
@@ -19,7 +19,10 @@ const init = () => {
         mainEl?.classList.toggle('collapsed', collapsed);
         headerEl?.classList.toggle('collapsed', collapsed);
 
-        const icon = toggleBtn?.querySelector('i');
+        const icon = toggleBtn.forEach(element => {
+            element?.querySelector('i');
+        });
+
         if (icon) {
             icon.setAttribute('data-lucide', collapsed ? 'panel-left-open' : 'panel-left-close');
             lucide.createIcons();
@@ -29,12 +32,15 @@ const init = () => {
     const savedState = localStorage.getItem('sidebarCollapsed') === 'true';
     applySidebarState(savedState);
 
-    toggleBtn?.addEventListener('click', function (e) {
-        e.stopPropagation();
-        const isCollapsed = sidebar.classList.contains('collapsed');
-        applySidebarState(!isCollapsed);
-        localStorage.setItem('sidebarCollapsed', !isCollapsed);
+    toggleBtns.forEach(element => {
+        element?.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const isCollapsed = sidebar.classList.contains('collapsed');
+            applySidebarState(!isCollapsed);
+            localStorage.setItem('sidebarCollapsed', !isCollapsed);
+        });
     });
+    
 
     function openMobileMenu() {
         sidebar.classList.add('mobile-active');

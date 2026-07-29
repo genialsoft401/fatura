@@ -76,7 +76,15 @@ $(function () {
   // =========================
   // 6. FINALIZAR PROFORMA -> FACTURA
   // =========================
-  $("#btnChangeToInvoice").on("click", function () {
+  $("#btnChangeToInvoice").on("click", function (event) {
+    event.preventDefault();
+
+    const $btn = $(this);
+
+    // CORRIGIDO: evita cliques duplicados a abrir vários
+    // diálogos de confirmação antes do primeiro ser respondido.
+    if ($btn.prop("disabled")) return;
+
     const proformaId = currentInvoice?.id;
 
     if (!proformaId) {
@@ -87,16 +95,21 @@ $(function () {
       });
     }
 
+    $btn.prop("disabled", true);
+
     Swal.fire({
-      title: "Converter em Factura Recibo?",
-      text: "A Proforma será convertida numa Factura Recibo oficial.",
+      title: "Converter em Factura?",
+      text: "A Proforma será convertida numa Factura.",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Sim, converter",
       cancelButtonText: "Cancelar",
       reverseButtons: true,
     }).then((result) => {
-      if (!result.isConfirmed) return;
+      if (!result.isConfirmed) {
+        $btn.prop("disabled", false);
+        return;
+      }
 
       $.ajax({
         url: "proform/ajax/convert_proforma.php",
@@ -107,10 +120,10 @@ $(function () {
         },
 
         beforeSend: function () {
-          $("#btnChangeToInvoice").prop("disabled", true).html(`
-            <span class="spinner-border spinner-border-sm"></span>
-            Convertendo...
-          `);
+          $btn.html(`
+          <span class="spinner-border spinner-border-sm"></span>
+          Convertendo...
+        `);
         },
 
         success: function (response) {
@@ -128,10 +141,14 @@ $(function () {
             Swal.fire({
               icon: "info",
               title: "Factura já existente",
-              text: `A Factura Recibo ${response.reference} já foi emitida anteriormente.`,
+              text: `A Factura ${response.reference} já foi emitida anteriormente.`,
               confirmButtonText: "Abrir Factura",
-            }).then(() => {
-              window.location.href = `invoice.php?id=${response.new_invoice_id}`;
+            }).then((r) => {
+              // CORRIGIDO: só redireciona se o utilizador
+              // clicar mesmo em "Abrir Factura".
+              if (r.isConfirmed) {
+                window.location.href = `invoice.php?id=${response.new_invoice_id}`;
+              }
             });
 
             return;
@@ -143,8 +160,11 @@ $(function () {
             title: "Sucesso",
             text: `Factura Recibo ${response.reference} criada com sucesso.`,
             confirmButtonText: "Abrir Factura",
-          }).then(() => {
-            window.location.href = `invoice.php?id=${response.new_invoice_id}`;
+          }).then((r) => {
+            // CORRIGIDO: mesma verificação aqui.
+            if (r.isConfirmed) {
+              window.location.href = `invoice.php?id=${response.new_invoice_id}`;
+            }
           });
         },
 
@@ -159,10 +179,10 @@ $(function () {
         },
 
         complete: function () {
-          $("#btnChangeToInvoice").prop("disabled", false).html(`
-            <span class="material-icons-outlined">receipt_long</span>
-            Emitir Factura Recibo
-          `);
+          $btn.prop("disabled", false).html(`
+          <span class="material-icons-outlined">receipt_long</span>
+          Emitir Factura Recibo
+        `);
         },
       });
     });
@@ -173,6 +193,84 @@ $(function () {
   // =========================
   $("#btnEditar").on("click", function () {
     window.location.href = `create_proform.php?edit_id=${currentInvoice.id}`;
+  });
+
+  /* ---------- 1. inicializa Quill ---------- */
+  const quill = new Quill("#editor-container", {
+    theme: "snow",
+    modules: {
+      toolbar: "#editor-toolbar",
+    },
+  });
+
+  /* ---------- 2. abre a modal ---------- */
+  $("#modalEnviarEmail").on("show.bs.modal", function () {
+    if (!currentInvoice) {
+      return alert("Fatura ainda não carregada!");
+    }
+
+    // Id oculto
+    $("#email_invoice_id").val(currentInvoice.id);
+
+    // Assunto default
+    const codigo = `${currentInvoice.reference}`;
+    $('input[name="subject"]').val(
+      `Fatura #${codigo} – ${currentInvoice.company_name}`,
+    );
+
+    /* --- Corpo default (HTML) --- */
+    const issue = new Intl.DateTimeFormat("pt-BR").format(
+      new Date(currentInvoice.issue_date),
+    );
+    const dueDate = new Intl.DateTimeFormat("pt-BR").format(
+      new Date(
+        new Date(currentInvoice.issue_date).setDate(
+          +currentInvoice.issue_date.split("-")[2] + +currentInvoice.due_date,
+        ),
+      ),
+    );
+    const total = Number(currentInvoice.final_total).toLocaleString("pt-PT", {
+      minimumFractionDigits: 2,
+    });
+
+    const template = `
+      <p>Prezado(a) <strong>${currentInvoice.client_name}</strong>,</p>
+
+      <p>Segue em anexo a <strong>fatura Proforma nº ${codigo}</strong>,
+      no valor de <strong>${currentInvoice.company_symbol} ${total}</strong>,
+      emitida em ${issue} e com vencimento em ${dueDate}.</p>
+
+      <p>Qualquer dúvida estou à disposição.</p>
+
+      <p>Atenciosamente,<br>
+      &nbsp;</p>`;
+
+    quill.setContents(quill.clipboard.convert(template));
+  });
+
+  /* ---------- 3. submit ---------- */
+  $("#formEnviarEmail").on("submit", function (e) {
+    e.preventDefault();
+
+    // valida Bootstrap
+    if (this.checkValidity() === false) {
+      this.classList.add("was-validated");
+      return;
+    }
+
+    // passa o HTML do Quill para <textarea hidden>
+    $("#body-hidden").val(quill.root.innerHTML);
+
+    $.post("invoices/ajax/send_invoice.php", $(this).serialize())
+      .done(() => {
+        bootstrap.Modal.getInstance(
+          document.getElementById("modalEnviarEmail"),
+        ).hide();
+        alert("E‑mail enviado com sucesso!");
+      })
+      .fail((xhr) => {
+        alert("Erro: " + xhr.responseText);
+      });
   });
 
   // =========================

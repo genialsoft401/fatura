@@ -124,7 +124,7 @@
     $currentPage = basename($_SERVER['PHP_SELF']);
 
     if ($currentPage !== 'login.php' && $currentPage !== 'register.php') {
-        echo '<script src="assets/js/script.js"></script>';
+        echo '<script src="assets/js/script.js?v=0.8"></script>';
     }
     ?>
 

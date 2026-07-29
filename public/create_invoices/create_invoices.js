@@ -1,6 +1,7 @@
 $(document).ready(function () {
   const vat_regime = JSON.parse(localStorage.getItem("vat_regime"));
   let countryMap = {};
+  let invoiceId = null;
 
   initializeTooltips();
   loadSelect2Items();
@@ -229,7 +230,7 @@ $(document).ready(function () {
     let taxValue = 0;
 
     if (vat_regime === "geral") {
-      taxValue = subtotal * tax / 100;
+      taxValue = (subtotal * tax) / 100;
     } else {
       taxValue = 0.0;
     }
@@ -303,8 +304,7 @@ $(document).ready(function () {
 
     // IVA
     const itemTax = Number(item?.tax ?? 0);
-    const taxValue =
-      String(vat_regime).toLowerCase() === "geral" ? itemTax : 0;
+    const taxValue = String(vat_regime).toLowerCase() === "geral" ? itemTax : 0;
 
     console.log({
       vat_regime,
@@ -1124,7 +1124,9 @@ $(document).ready(function () {
 
         Swal.fire({
           icon: "success",
-          title: "Fatura criada com sucesso!",
+          title: invoiceId
+            ? "Fatura atualizada com sucesso!"
+            : "Fatura criada com sucesso!",
           text: "Clique abaixo para visualizar.",
           confirmButtonText: "Ver fatura",
           confirmButtonColor: "#007abd",
@@ -1204,7 +1206,7 @@ $(document).ready(function () {
           addItemRow({
             id: item.item_id || item.id,
             code: item.code,
-            description: item.description,
+            description: item.description || item.name,
             unit_price: item.unit_price,
             quantity: item.quantity,
             tax: item.tax,
@@ -1216,5 +1218,7 @@ $(document).ready(function () {
 
       $("#saveInvoiceBtn").text("Atualizar Fatura");
     });
+
+    invoiceId = id;
   }
 });

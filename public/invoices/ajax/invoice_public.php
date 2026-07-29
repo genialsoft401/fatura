@@ -192,7 +192,7 @@ $taxes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ---------- QR ----------
 $hash = randomHash();
-$qrData = "https://teusite.com/invoice_public.php?id={$inv['id']}";
+$qrData = "https://bxpert.co.ao/sistema/invoice_public.php?id={$inv['id']}";
 
 $opts = new QROptions([
   'outputType'   => QRCode::OUTPUT_IMAGE_PNG,

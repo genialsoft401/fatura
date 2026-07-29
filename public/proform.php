@@ -123,7 +123,7 @@ require_once '../app/views/layout_creation.php';
 
             <button class="btn btn-warning w-100 mb-2" id="btnChangeToInvoice">
                 <span class="material-icons-outlined">check_circle</span>
-                Emitir Factura
+                Emitir Fatura
             </button>
 
             <!-- grupo Documento -->
@@ -136,7 +136,7 @@ require_once '../app/views/layout_creation.php';
             <button class="btn text-center d-none align-items-center align-content-center btn-primary text-white w-100 mb-2" id="btnEnviar"
                 data-bs-toggle="modal" data-bs-target="#modalEnviarEmail">
                 <span class="material-icons-outlined">send</span>
-               Enviar Proforma
+                Enviar Proforma
             </button>
 
         </aside>
@@ -416,6 +416,6 @@ require_once '../app/views/layout_creation.php';
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="proform/invoice.js?v=0.1"></script>
+<script src="proform/invoice.js?v=0.3"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

@@ -694,6 +694,6 @@ require_once '../app/views/layout_creation.php';
 </script>
 
 
-<script src="create_invoices/create_invoices.js"></script>
+<script src="create_invoices/create_invoices.js?v=0.3"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

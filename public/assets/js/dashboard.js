@@ -224,7 +224,7 @@ function loadInvoices() {
             let html = '';
 
             if (data.length === 0) {
-                html = `<div class="p-3 text-center text-muted small">Sem facturas neste período</div>`;
+                html = `<div class="p-3 text-center text-muted small">Sem faturas neste período</div>`;
             }
 
             data.forEach(inv => {
@@ -649,7 +649,7 @@ function renderTopClients(apiData) {
         <div class="hover-row d-flex justify-content-between p-2 rounded">
             <div title="${nome}">
                 <strong>${nomeCurto}</strong><br>
-                <small class="text-muted">${c.total_faturas || 0} facturas</small>
+                <small class="text-muted">${c.total_faturas || 0} faturas</small>
             </div>
             <span class="text-black small">
                 ${formatCurrency(c.total_faturado)}

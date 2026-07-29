@@ -1124,3 +1124,90 @@ body.sidebar-open {
     left: 7rem;
   }
 }
+
+/* =========================================================
+   MOBILE-FIRST / RESPONSIVIDADE GERAL
+   ========================================================= */
+
+/* Evita scroll horizontal indesejado causado por larguras fixas */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Imagens e vídeos nunca ultrapassam o container */
+img,
+video,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Tabelas simples (sem wrapper .table-responsive) ganham scroll
+   horizontal em telas pequenas, sem precisar alterar o HTML.
+   Não afeta .table-bx-standard, que já tem seu próprio layout
+   em "cartões" para mobile. */
+@media (max-width: 768px) {
+  table.table:not(.table-bx-standard) {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table.table:not(.table-bx-standard) > thead,
+  table.table:not(.table-bx-standard) > tbody {
+    display: table;
+    width: 100%;
+    min-width: 560px;
+  }
+
+  /* DataTables já cria seu próprio wrapper via JS;
+     garantimos que ele possa rolar horizontalmente */
+  .dataTables_wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: calc(100% - 1rem);
+  }
+
+  main#app-main {
+    padding: 12px !important;
+  }
+
+  .card,
+  .card-body {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  /* Botões de ação em grupo passam a quebrar linha em vez de
+     espremer/sair do container */
+  .d-flex.gap-2,
+  .d-flex.gap-3 {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 576px) {
+  h1 {
+    font-size: 1.6rem;
+  }
+
+  h2 {
+    font-size: 1.35rem;
+  }
+
+  h3 {
+    font-size: 1.15rem;
+  }
+
+  .btn {
+    font-size: 0.9rem;
+  }
+}

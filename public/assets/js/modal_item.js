@@ -333,3 +333,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchStocks();
   loadCompany();
 });
+
+// $(document).ready(function () {
+
+// });

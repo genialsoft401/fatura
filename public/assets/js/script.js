@@ -85,13 +85,32 @@ $(document).ready(function () {
       contentType: false,
       dataType: "json",
       success: function (response) {
-        Swal.fire(
-          response.status || "",
-          response.message || "",
-          response.type || "info",
-        );
+        Swal.fire({
+          icon: response.type || "info",
+          title: response.status || "",
+          text: response.message || "",
+        });
 
-        $("#itemModal").modal("hide");
+        const modalEl = document.getElementById("itemModal");
+        const modal = bootstrap.Modal.getInstance(modalEl);
+
+        if (modal) {
+          modal.hide();
+        }
+
+        setTimeout(() => {
+          document
+            .querySelectorAll(".modal-backdrop")
+            .forEach((el) => el.remove());
+          document.body.classList.remove("modal-open");
+          document.body.style.removeProperty("padding-right");
+          document.body.style.removeProperty("overflow");
+        }, 300);
+
+        if (modal) {
+          modal.hide();
+        }
+
         $("#itemForm")[0].reset();
 
         loadItems();
@@ -374,8 +393,6 @@ function formatCurrency(value, currencySymbol, currencyPosition) {
     ? `${currencySymbol} ${formattedValue}`
     : `${formattedValue} ${currencySymbol}`;
 }
-
-
 
 // btn.addEventListener("click", () => {
 //   sidebar.classList.toggle("mobile-active");

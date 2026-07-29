@@ -148,12 +148,14 @@ try {
     }
 
     // =====================================================
-    // SPARKLINE — PAGAMENTOS PENDENTES POR MÊS
-    // Conta por reference_month, status 'Pendente' (tabela
-    // payroll).
+    // SPARKLINE — FÉRIAS PENDENTES POR MÊS
+    // CORRIGIDO: antes contava pagamentos pendentes
+    // (tabela payroll, coluna reference_month). Agora conta
+    // pedidos de férias pendentes (tabela vacations),
+    // agrupados pelo mês de start_date.
     // =====================================================
 
-    function getSparklinePendingPayroll(
+    function getSparklinePendingVacations(
         $pdo,
         $company_id,
         $months = 6,
@@ -162,23 +164,25 @@ try {
         $referenceDate = $referenceDate ?? date('Y-m-d');
 
         $start = date(
-            'Y-m',
+            'Y-m-01',
             strtotime($referenceDate . " -" . ($months - 1) . " months")
         );
 
         $stmt = $pdo->prepare("
-            SELECT reference_month AS mes, COUNT(*) AS total
-            FROM payroll
+            SELECT DATE_FORMAT(start_date, '%Y-%m') AS mes, COUNT(*) AS total
+            FROM vacations
             WHERE company_id = :company_id
             AND status = 'Pendente'
-            AND reference_month >= :start
-            GROUP BY reference_month
-            ORDER BY reference_month ASC
+            AND start_date >= :start
+            AND start_date <= :end
+            GROUP BY DATE_FORMAT(start_date, '%Y-%m')
+            ORDER BY mes ASC
         ");
 
         $stmt->execute([
             'company_id' => $company_id,
-            'start' => $start
+            'start' => $start,
+            'end' => $referenceDate
         ]);
 
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -282,26 +286,28 @@ try {
     $total_salary = (float)$stmt->fetchColumn();
 
     // =====================================================
-    // PAGAMENTOS PENDENTES (tabela payroll)
+    // CORRIGIDO: FÉRIAS PENDENTES (tabela vacations)
+    // Substitui o antigo bloco de "pagamentos pendentes"
+    // (payroll / status 'Pendente').
     // =====================================================
 
     $stmt = $pdo->prepare("
         SELECT COUNT(*)
-        FROM payroll
+        FROM vacations
         WHERE company_id = :company_id
         AND status = 'Pendente'
     ");
 
     $stmt->execute(['company_id' => $company_id]);
 
-    $pending_payroll = (int)$stmt->fetchColumn();
+    $pending_vacations = (int)$stmt->fetchColumn();
 
     $stmt = $pdo->prepare("
         SELECT COUNT(*)
-        FROM payroll
+        FROM vacations
         WHERE company_id = :company_id
         AND status = 'Pendente'
-        AND reference_month = :month
+        AND DATE_FORMAT(start_date, '%Y-%m') = :month
     ");
 
     $stmt->execute([
@@ -309,50 +315,30 @@ try {
         'month' => $currentMonth
     ]);
 
-    $pending_payroll_current = (int)$stmt->fetchColumn();
+    $pending_vacations_current = (int)$stmt->fetchColumn();
 
     $stmt->execute([
         'company_id' => $company_id,
         'month' => $previousMonth
     ]);
 
-    $pending_payroll_previous = (int)$stmt->fetchColumn();
+    $pending_vacations_previous = (int)$stmt->fetchColumn();
 
-    $temHistoricoPayroll = hasSufficientHistory(
+    $temHistoricoFerias = hasSufficientHistory(
         $pdo,
-        'payroll',
-        'reference_month',
-        $previousMonth,
+        'vacations',
+        'start_date',
+        $previousMonthStart,
         $company_id
     );
 
-    $crescimento_pending = calcularCrescimento(
-        $pending_payroll_current,
-        $pending_payroll_previous
+    $crescimento_vacations = calcularCrescimento(
+        $pending_vacations_current,
+        $pending_vacations_previous
     );
 
-
-    // Lista de pagamentos pendentes (últimos 5)
-    $stmt = $pdo->prepare("
-        SELECT e.name, p.net_salary, e.position, p.status, p.reference_month
-        FROM payroll as p
-        JOIN employees as e ON e.id = p.employee_id
-        WHERE p.company_id = :company_id
-        AND p.status = 'Pendente'
-        AND p.reference_month = :month
-        ORDER BY p.reference_month DESC
-        LIMIT 5
-    ");
-
-    $stmt->execute([
-        'company_id' => $company_id,
-        'month' => $currentMonth
-    ]);
-
-    $pending_payroll_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
     // =====================================================
-    // FALTAS NO MÊS (tabela absences)
+    // FALTAS NO MÊS (tabela attendance)
     // =====================================================
 
     $stmt = $pdo->prepare("
@@ -459,28 +445,37 @@ try {
     );
 
     // =====================================================
-    // LISTA: PAGAMENTOS PENDENTES
+    // CORRIGIDO: LISTA DE FÉRIAS PENDENTES
+    // Substitui a lista de pagamentos pendentes. Mostra os
+    // próximos pedidos de férias (status 'Pendente'),
+    // ordenados pela data de início mais próxima.
+    // (Removido também o bloco duplicado que existia no
+    // ficheiro original, que repetia a mesma query de
+    // pagamentos pendentes duas vezes.)
     // =====================================================
 
     $stmt = $pdo->prepare("
         SELECT
-            p.id,
+            v.id,
             e.name AS name,
-            p.reference_month,
-            p.net_salary,
-            p.status
-        FROM payroll p
+            e.position,
+            v.type,
+            v.start_date,
+            v.end_date,
+            v.reason,
+            v.status
+        FROM vacations v
         INNER JOIN employees e
-            ON e.id = p.employee_id
-        WHERE p.company_id = :company_id
-        AND p.status = 'Pendente'
-        ORDER BY p.reference_month DESC
+            ON e.id = v.employee_id
+        WHERE v.company_id = :company_id
+        AND v.status = 'Pendente'
+        ORDER BY v.start_date ASC
         LIMIT 5
     ");
 
     $stmt->execute(['company_id' => $company_id]);
 
-    $pending_payroll_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $pending_vacations_list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // =====================================================
     // LISTA: ÚLTIMAS FALTAS REGISTADAS
@@ -529,7 +524,7 @@ try {
             $sparkReference
         ),
 
-        'pending_payroll' => getSparklinePendingPayroll(
+        'pending_vacations' => getSparklinePendingVacations(
             $pdo,
             $company_id,
             $sparkMonths,
@@ -548,23 +543,23 @@ try {
         'success' => true,
         'data' => [
             'kpis' => [
-                'total_employes'  => $total_employes,
-                'total_salary'    => $total_salary,
-                'pending_payroll' => $pending_payroll,
-                'absences'        => $absences_current,
+                'total_employes'    => $total_employes,
+                'total_salary'      => $total_salary,
+                'pending_vacations' => $pending_vacations,
+                'absences'          => $absences_current,
 
                 'increase_employes' => round($crescimento_employes, 2),
                 'increase_salary'   => round($crescimento_salary, 2),
 
-                'increase_pending' => $temHistoricoPayroll
-                    ? round($crescimento_pending, 2)
-                    : null,
+                'increase_vacations' => $temHistoricoFerias
+                    ? round($crescimento_vacations, 2)
+                    : 0,
 
                 'increase_absences' => $temHistoricoFaltas
                     ? round($crescimento_absences, 2)
-                    : null,
+                    : 0,
             ],
-            'pending_payroll_list' => $pending_payroll_list,
+            'pending_vacations_list' => $pending_vacations_list,
             'rh_recent_absences_list' => $recent_absences,
             'salary_evolution' => $salary_evolution,
 
@@ -576,6 +571,9 @@ try {
 
     http_response_code(500);
 
+    // Nota: em produção considera não devolver $e->getMessage()
+    // diretamente (ver conversa anterior sobre isto) — deixei
+    // assim aqui só porque era o que estava no ficheiro original.
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()

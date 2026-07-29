@@ -4,6 +4,7 @@ require_once '../app/views/layout_creation.php';
 <!-- DataTables CSS com Bootstrap 5 -->
 <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.2/css/responsive.bootstrap5.min.css">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <style>
     /* Estilos para transformar a tabela em cards no mobile */
@@ -321,26 +322,29 @@ require_once '../app/views/layout_creation.php';
 
             </div>
 
-            <table id="itemsTable" class="table nowrap w-100">
-                <thead>
-                    <tr>
-                        <th>
-                            <input type="checkbox" id="selectAll" class="p-4">
-                        </th>
-                        <th>#</th>
-                        <th>Código</th>
-                        <th>Nome</th>
-                        <th>Descrição</th>
-                        <th>Preço Unitário</th>
-                        <th>Taxa/IVA</th>
-                        <th>PVP</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    <!-- Aqui o JS vai inserir os dados -->
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table id="itemsTable" class="table table-striped table-hover w-100">
+                    <thead>
+                        <tr>
+                            <th style="width:40px;">
+                                <input type="checkbox" id="selectAll">
+                            </th>
+                            <th>#</th>
+                            <th>Código</th>
+                            <th>Nome</th>
+                            <th>Descrição</th>
+                            <th class="text-end">Preço Unitário</th>
+                            <th class="text-center">Taxa/IVA</th>
+                            <th class="text-end">PVP</th>
+                            <th class="text-center" style="width:120px;">Ações</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="tableBody">
+                        <!-- Os dados serão inseridos via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
         </div>
 
         <?php require_once '../app/models/modal_editItem.php'; ?>

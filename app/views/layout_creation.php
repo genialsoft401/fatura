@@ -10,6 +10,7 @@ require_once '../app/views/head.php';
 $currentPage = basename($_SERVER['SCRIPT_NAME']);
 ?>
 
+
 <style>
     .app-wrapper {
         display: flex;
@@ -70,88 +71,94 @@ $currentPage = basename($_SERVER['SCRIPT_NAME']);
     </div>
 </div>
 
-<script src="assets/js/spa-router.js"></script>
 
 <!-- Script central de layout: coordena sidebar + header + main -->
 <script>
     const init = () => {
         const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+
         const mainEl = document.querySelector('.main-wrapper');
         const headerEl = document.querySelector('.app-navbar');
+
         const toggleBtn = document.getElementById('sidebarToggle');
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
 
-        if (!sidebar) return;
-
-        let overlay = document.querySelector('.overlay');
-        if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.className = 'overlay';
-            document.body.appendChild(overlay);
-        }
-
-        function applySidebarState(collapsed) {
+        const applySidebarState = (collapsed) => {
             sidebar.classList.toggle('collapsed', collapsed);
             mainEl?.classList.toggle('collapsed', collapsed);
             headerEl?.classList.toggle('collapsed', collapsed);
 
-            // Com a classe já mesclada corretamente no HTML
-            // (side.php) e a regra CSS ".sidebar.collapsed .menu-link-icon"
-            // já cuidando da ocultação, este loop em JS é apenas
-            // um reforço redundante e opcional. Mantido caso você
-            // precise de lógica adicional além do display:none.
-            const menuIcons = sidebar.querySelectorAll('.menu-link-icon');
-            menuIcons.forEach(icon => {
-                icon.style.display = collapsed ? 'none' : '';
-            });
+            localStorage.setItem('sidebarCollapsed', collapsed);
 
             const icon = toggleBtn?.querySelector('i, svg');
+
             if (icon) {
-                icon.setAttribute('data-lucide', collapsed ? 'panel-left-open' : 'panel-left-close');
+                icon.setAttribute(
+                    'data-lucide',
+                    collapsed ?
+                    'panel-left-open' :
+                    'panel-left-close'
+                );
+
                 lucide.createIcons();
             }
-        }
+        };
 
+        const openMobileMenu = () => {
+            sidebar.classList.add('show');
+            document.body.classList.add('menu-open');
+        };
+
+        const closeMobileMenu = () => {
+            sidebar.classList.remove('show');
+            document.body.classList.remove('menu-open');
+        };
+
+        const toggleSidebar = (e) => {
+            e?.stopPropagation();
+
+            if (window.innerWidth <= 992) {
+                if (sidebar.classList.contains('show')) {
+                    closeMobileMenu();
+                } else {
+                    openMobileMenu();
+                }
+                return;
+            }
+
+            const collapsed = sidebar.classList.contains('collapsed');
+            applySidebarState(!collapsed);
+        };
+
+        // Estado inicial desktop
         const savedState = localStorage.getItem('sidebarCollapsed') === 'true';
         applySidebarState(savedState);
 
-        toggleBtn?.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const isCollapsed = sidebar.classList.contains('collapsed');
-            applySidebarState(!isCollapsed);
-            localStorage.setItem('sidebarCollapsed', !isCollapsed);
+
+        toggleBtn?.addEventListener('click', toggleSidebar);
+        mobileMenuBtn?.addEventListener('click', toggleSidebar);
+
+
+        // Fechar menu ao clicar num link em mobile
+        sidebar.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 992) {
+                    closeMobileMenu();
+                }
+            });
         });
 
-        function openMobileMenu() {
-            sidebar.classList.add('mobile-active');
-            overlay.classList.add('show');
-        }
 
-        function closeMobileMenu() {
-            sidebar.classList.remove('mobile-active');
-            overlay.classList.remove('show');
-        }
-
-        mobileMenuBtn?.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (sidebar.classList.contains('mobile-active')) {
-                closeMobileMenu();
-            } else {
-                openMobileMenu();
-            }
-        });
-
-        overlay.addEventListener('click', closeMobileMenu);
-
-        window.addEventListener('resize', function() {
+        window.addEventListener('resize', () => {
             if (window.innerWidth > 992) {
                 closeMobileMenu();
             }
         });
 
+
         window.__closeMobileMenu = closeMobileMenu;
-    }
+    };
 
     document.addEventListener('DOMContentLoaded', function() {
         init();

@@ -125,6 +125,26 @@ try {
         return (float) $stmt->fetchColumn();
     }
 
+    function getTotalPeriod($pdo, $start, $end, $company_id)
+    {
+        $sql = "
+        SELECT COALESCE(SUM(final_total), 0)
+        FROM invoices
+        WHERE company_id = :company_id
+        AND DATE(issue_date) BETWEEN :start AND :end
+    ";
+
+        $stmt = $pdo->prepare($sql);
+
+        $stmt->execute([
+            'start' => $start,
+            'end' => $end,
+            'company_id' => $company_id
+        ]);
+
+        return (float) $stmt->fetchColumn();
+    }
+
     // =====================================================
     // TOTAL LÍQUIDO (STATUS 3 E 4)
     // =====================================================
@@ -149,36 +169,83 @@ try {
 
         return (float) $stmt->fetchColumn();
     }
-
-    function getMediaMensalTotalLiquid($pdo, $start, $end, $company_id)
+    function getRecebimentosMesAtual($pdo, $company_id)
     {
         $sql = "
-        SELECT COALESCE(AVG(total_mes), 0)
-        FROM (
-            SELECT 
-                DATE_FORMAT(issue_date, '%Y-%m') AS periodo,
-                SUM(final_total) AS total_mes
-            FROM invoices
-            WHERE company_id = :company_id
-              AND status IN (3,4)
-              AND issue_date >= :start
-              AND issue_date <= :end
-            GROUP BY DATE_FORMAT(issue_date, '%Y-%m')
-        ) AS meses
+        SELECT COALESCE(SUM(final_total), 0)
+        FROM invoices
+        WHERE company_id = :company_id
+          AND status IN (3,4)
+          AND YEAR(issue_date) = YEAR(CURDATE())
+          AND MONTH(issue_date) = MONTH(CURDATE())
     ";
 
         $stmt = $pdo->prepare($sql);
-
         $stmt->execute([
-            'company_id' => $company_id,
-            'start'      => $start . ' 00:00:00',
-            'end'        => $end . ' 23:59:59'
+            'company_id' => $company_id
         ]);
 
         return (float)$stmt->fetchColumn();
     }
 
-    $volumeLiquidMensal = getMediaMensalTotalLiquid($pdo, $previous['start'], $previous['end'], $company_id);
+    $volumeLiquidMensal = getRecebimentosMesAtual($pdo, $company_id);
+
+
+    // recebimentos mensais crescimento
+    function getVariacaoRecebimentosMes($pdo, $company_id)
+    {
+        $sql = "
+        SELECT
+            COALESCE(SUM(
+                CASE
+                    WHEN YEAR(issue_date) = YEAR(CURDATE())
+                     AND MONTH(issue_date) = MONTH(CURDATE())
+                    THEN final_total
+                END
+            ), 0) AS mes_atual,
+
+            COALESCE(SUM(
+                CASE
+                    WHEN YEAR(issue_date) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+                     AND MONTH(issue_date) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+                    THEN final_total
+                END
+            ), 0) AS mes_anterior
+
+        FROM invoices
+        WHERE company_id = :company_id
+          AND status IN (3,4)
+    ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            'company_id' => $company_id
+        ]);
+
+        $dados = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        $atual = (float) $dados['mes_atual'];
+        $anterior = (float) $dados['mes_anterior'];
+
+        if ($anterior > 0) {
+            $percentual = (($atual - $anterior) / $anterior) * 100;
+        } elseif ($atual > 0) {
+            // Não houve recebimentos no mês anterior
+            $percentual = 100;
+        } else {
+            // Ambos os meses sem recebimentos
+            $percentual = 0;
+        }
+
+        return [
+            'mes_atual'    => $atual,
+            'mes_anterior' => $anterior,
+            'percentual'   => round($percentual, 2)
+        ];
+    }
+
+    $volumeLiquidMensalCrescimento = getVariacaoRecebimentosMes($pdo, $company_id);
+
 
     // =====================================================
     // FUNÇÃO CRESCIMENTO
@@ -403,7 +470,7 @@ try {
     // VENDA PERÍODO
     // =====================================================
 
-    $vendaPeriodo = getTotal(
+    $vendaPeriodo = getTotalPeriod(
         $pdo,
         $monthStart,
         $monthEnd,
@@ -756,6 +823,7 @@ try {
                 'volume_global' => round($volumeGlobal, 2),
                 'volume_liquid' => round($volumeLiquid, 2),
                 'volume_liquid_mensal' => round($volumeLiquidMensal, 2),
+                'volume_liquid_mensal_crescimento' => $volumeLiquidMensalCrescimento,
 
                 'media_mensal' => round($mediaMensal, 2),
 

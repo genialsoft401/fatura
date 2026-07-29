@@ -79,6 +79,37 @@
         background: #f5f5f5;
     }
 
+    .dropdown-menu-custom {
+        position: absolute;
+        left: 0;
+        top: 110%;
+        min-width: 220px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        list-style: none;
+        margin: 0;
+        padding: 8px 0;
+        font-size: 14px;
+        z-index: 999;
+    }
+
+    .dropdown-menu-custom li {
+        padding: 0;
+    }
+
+    .dropdown-menu-custom .dropdown-item {
+        display: block;
+        padding: 8px 15px;
+        color: #212529;
+        text-decoration: none;
+        transition: 0.2s;
+    }
+
+    .dropdown-menu-custom .dropdown-item:hover {
+        background: #f5f5f5;
+    }
+
     /* Animação */
     @keyframes fadeIn {
         from {
@@ -93,7 +124,48 @@
     }
 
     #perfil-menu {
-        width: 80px !important;
+        min-width: 200px;
+        width: auto !important;
+    }
+
+    /* Botão hamburguer (apenas mobile/tablet) */
+    #mobileMenuBtn {
+        display: none;
+        border: none;
+        background: transparent;
+        padding: 8px;
+        border-radius: 10px;
+        align-items: center;
+        justify-content: center;
+        transition: 0.2s;
+        color: var(--primary-color, #007abd);
+    }
+
+    #mobileMenuBtn:hover {
+        background: rgba(0, 0, 0, 0.05);
+    }
+
+    #mobileMenuBtn i {
+        width: 22px;
+        height: 22px;
+    }
+
+    @media (max-width: 992px) {
+        #mobileMenuBtn {
+            display: inline-flex;
+        }
+    }
+
+    /* Em telas muito pequenas, encolhe um pouco os espaçamentos do header */
+    @media (max-width: 576px) {
+        .app-navbar {
+            padding-left: 0.5rem !important;
+            padding-right: 0.5rem !important;
+        }
+
+        .d-flex.align-items-center.gap-3 {
+            gap: 0.5rem !important;
+        }
     }
 </style>
 
@@ -106,22 +178,28 @@
         <!-- LEFT -->
         <div class="d-flex align-items-center gap-3">
 
+            <!-- Botão de menu (mobile/tablet) -->
+            <button id="mobileMenuBtn" title="Ocultar/Mostrar menu">
+                <i data-lucide="panel-left-close"></i>
+            </button>
+
             <!-- Empresa -->
-            <div class="dropdown">
-                <button class="btn nav-pill dropdown-toggle d-flex align-items-center gap-2"
-                    id="empresaDropdown" data-bs-toggle="dropdown">
+            <div class="dropdown-custom position-relative">
+                <button class="btn nav-pill d-flex align-items-center gap-2"
+                    id="empresaDropdown" onclick="togglePopup('empresaDropdownMenu')">
 
                     <i data-lucide="building-2"></i>
                     <span class="d-none d-sm-inline">
                         <?= $_SESSION['user']['name_company'] ?? 'Empresa' ?>
                     </span>
-
+                    
                     <span class="d-inline d-sm-none text-uppercase">
                         <?= $_SESSION['user']['acronym'] ?? 'EMP' ?>
                     </span>
+                    <i data-lucide="chevron-down"></i>
                 </button>
 
-                <ul class="dropdown-menu aling-items-center text-center" id="empresaDropdownMenu" aria-labelledby="empresaDropdown" style="font-size: 14px!important;">
+                <ul class="popup-menu dropdown-menu-custom text-left" id="empresaDropdownMenu">
                     <!-- Empresas serão carregadas aqui via AJAX -->
                 </ul>
             </div>
@@ -170,10 +248,11 @@
                         <small class="text-muted opacity-50" style="margin-top: -5px;"><?= t($_SESSION['user']['role']) ?></small>
                     </div>
                 </a>
-                <div class="popup-menu text-left mt-2" style="width: 80px !important;" id="perfil-menu">
-                    <a class="popup-item p-2" href="perfil.php"><?= t('Perfil do utilizador') ?></a>
+                <div class="popup-menu text-left mt-2" id="perfil-menu">
+                    <a class="popup-item p-2" href="perfil.php"><i class="bi bi-person"></i> <?= t('Perfil do utilizador') ?></a>
+                    <a class="popup-item p-2" href="subscription.php"><i class="bi bi-credit-card-2-back"></i> Meu Plano</a>
                     <hr class="opacity-25">
-                    <a class="popup-item p-2" href="logout.php"><?= t('Sair') ?></a>
+                    <a class="popup-item p-2" href="logout.php"><i class="bi bi-box-arrow-in-left"></i> <?= t('Sair') ?></a>
                 </div>
             </div>
 
@@ -185,9 +264,11 @@
 <script>
     lucide.createIcons();
 
-    const userName = document.getElementById("userName");
-    const nameAttr = userName.getAttribute("data-text");
-    userName.innerText = nameAttr;
+    const userNameEl = document.getElementById("userName");
+    if (userNameEl) {
+        const nameAttr = userNameEl.getAttribute("data-text");
+        userNameEl.innerText = nameAttr;
+    }
 
     function togglePopup(id) {
         const current = document.getElementById(id);
@@ -200,7 +281,7 @@
     }
 
     document.addEventListener("click", function(e) {
-        if (!e.target.closest(".perfil-container, .nav-icon-btn")) {
+        if (!e.target.closest(".perfil-container, .nav-icon-btn, .dropdown-custom")) {
             document.querySelectorAll('.popup-menu')
                 .forEach(menu => menu.classList.remove('show'));
         }
@@ -269,12 +350,13 @@
                 data.forEach(empresa => {
                     let li = document.createElement("li");
                     li.innerHTML = `<a class="dropdown-item" href="#" onclick="trocarEmpresa(${empresa.id}, '${empresa.name}', '${empresa.registration_number}', '${empresa.email}')">
-                                ${empresa.name}
-                            </a>`;
+                            ${empresa.name}
+                        </a>`;
                     dropdown.appendChild(li);
                 });
             })
             .catch(error => console.error('Erro ao carregar empresas:', error));
     }
+
     carregarEmpresas();
 </script>

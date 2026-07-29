@@ -25,6 +25,7 @@ function generateProformaReference(PDO $pdo, int $companyId): string
         WHERE company_id = ?
         AND reference LIKE ?
         FOR UPDATE
+        LIMIT 1
     ");
 
     $stmt->execute([
@@ -329,6 +330,7 @@ try {
 
     echo json_encode([
         'success' => false,
-        'error' => $e->getMessage()
+        'error' => $e->getMessage(),
+        'message' => $e->getMessage()
     ]);
 }

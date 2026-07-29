@@ -134,5 +134,5 @@ require_once '../app/views/head.php';
 </script>
 
 <script src="./assets/js/jsencrypt.min.js"></script>
-<script src="login/login.js"></script>
+<script src="login/login.js?v=0.1"></script>
 <?php require_once '../app/views/footer.php'; ?>
