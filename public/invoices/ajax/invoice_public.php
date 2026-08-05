@@ -297,7 +297,7 @@ if ($paid_total >= $inv['final_total']) {  // quitada
       </div>
 
       <span class="d-block fs-6 title-line tag-title">
-        <?= $inv["document_type"] === "PF" ? "Proforma" : "Factura"?> n.º <?= htmlspecialchars($inv['status'] != 1 ? $inv['reference'] :  " ") ?>
+        <?= $inv["status"] === 1 ? "Factura Rascunho" : "Factura" ?> n.º <?= htmlspecialchars($inv['status'] != 1 ? $inv['reference'] :  " ") ?>
       </span>
 
       <!-- Bloco flex com 2 colunas -->
@@ -386,10 +386,10 @@ if ($paid_total >= $inv['final_total']) {  // quitada
           <div class="sum-row mt-2">
             <span class="small">Regime de IVA:</span>
             <span class="small" style="margin-left: -90px; width: 250px !important;"><?= match ($inv["vat_regime"]) {
-                "geral" => "Regime Geral",
-                "simplificado" => "Regime Simplificado",
-                default => ""
-              } ?>
+                                                                                        "geral" => "Regime Geral",
+                                                                                        "simplificado" => "Regime Simplificado",
+                                                                                        default => ""
+                                                                                      } ?>
             </span>
           </div>
 

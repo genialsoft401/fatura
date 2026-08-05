@@ -340,7 +340,7 @@ require_once '../app/views/layout_creation.php';
                 <div class="modal-header">
                     <h5 class="modal-title">
                         <span class="material-icons-outlined me-1">mail</span>
-                        Enviar fatura por e‑mail
+                        Enviar proforma por e‑mail
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
@@ -397,7 +397,7 @@ require_once '../app/views/layout_creation.php';
                         <input class="form-check-input" type="checkbox" id="chkAnexar" name="attach" checked>
                         <label class="form-check-label" for="chkAnexar">
                             <span class="material-icons-outlined align-middle">picture_as_pdf</span>
-                            Anexar PDF da fatura
+                            Anexar PDF da proforma
                         </label>
                     </div>
 
@@ -416,6 +416,6 @@ require_once '../app/views/layout_creation.php';
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="proform/invoice.js?v=0.3"></script>
+<script src="proform/invoice.js?v=0.4"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

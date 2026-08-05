@@ -206,7 +206,7 @@ $(function () {
   /* ---------- 2. abre a modal ---------- */
   $("#modalEnviarEmail").on("show.bs.modal", function () {
     if (!currentInvoice) {
-      return alert("Fatura ainda não carregada!");
+      return alert("Proforma ainda não carregada!");
     }
 
     // Id oculto
@@ -215,7 +215,7 @@ $(function () {
     // Assunto default
     const codigo = `${currentInvoice.reference}`;
     $('input[name="subject"]').val(
-      `Fatura #${codigo} – ${currentInvoice.company_name}`,
+      `Proforma #${codigo} – ${currentInvoice.company_name}`,
     );
 
     /* --- Corpo default (HTML) --- */
@@ -236,7 +236,7 @@ $(function () {
     const template = `
       <p>Prezado(a) <strong>${currentInvoice.client_name}</strong>,</p>
 
-      <p>Segue em anexo a <strong>fatura Proforma nº ${codigo}</strong>,
+      <p>Segue em anexo a <strong>Proforma nº ${codigo}</strong>,
       no valor de <strong>${currentInvoice.company_symbol} ${total}</strong>,
       emitida em ${issue} e com vencimento em ${dueDate}.</p>
 

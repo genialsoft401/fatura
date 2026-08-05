@@ -74,7 +74,7 @@ $(function () {
 
       // Esconde todos os botões antes
       $(
-        "#btnFinalizar, #btnEditar, #btnCloneToInvoice, #btnNotaCredito, #generatePdf, #btnEnviar",
+        "#btnFinalizar, #btnEditar, #btnCloneToInvoice, #btnNotaCredito, #generatePdf, #btnEnviar, #btnDeleteInvoice, #btnRecibo",
       ).addClass("d-none");
 
       // Preenche formulário/UI
@@ -93,7 +93,12 @@ $(function () {
       if (inv.status_invoice === "Rascunho") {
         $("#btnFinalizar").removeClass("d-none");
         $("#btnEditar").removeClass("d-none");
+        $("#generatePdf").removeClass("d-none");
+        $("#btnEnviar").removeClass("d-none");
+        $("#btnCloneToInvoice").removeClass("d-none");
+        $("#btnDeleteInvoice").removeClass("d-none");
       } else {
+        $("#btnRecibo").removeClass("d-none");
         $("#btnCloneToInvoice").removeClass("d-none");
         $("#btnNotaCredito").removeClass("d-none");
         $("#generatePdf").removeClass("d-none");
@@ -110,6 +115,80 @@ $(function () {
           xhr.responseJSON?.message || "Não foi possível carregar os dados.",
         timer: 2000,
         showConfirmButton: false,
+      });
+    });
+
+  $("#btnDeleteInvoice")
+    .off("click")
+    .on("click", function () {
+      Swal.fire({
+        title: "Tem a certeza?",
+        text: "Se a fatura estiver em rascunho será eliminada. Caso contrário será cancelada.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#6c757d",
+        confirmButtonText: "Sim, continuar",
+        cancelButtonText: "Cancelar",
+        reverseButtons: true,
+      }).then((result) => {
+        if (!result.isConfirmed) {
+          return;
+        }
+
+        const $btn = $("#btnDeleteInvoice");
+        $btn.prop("disabled", true);
+
+        $.ajax({
+          url: "invoices/ajax/delete_invoice.php",
+          type: "POST",
+          dataType: "json",
+          data: {
+            invoice_id: invoiceId,
+          },
+
+          success: function (response) {
+            if (response.success) {
+              Swal.fire({
+                icon: "success",
+                title: "Sucesso",
+                text: response.message,
+                confirmButtonText: "OK",
+              }).then(() => {
+                // Atualiza a tabela sem voltar à primeira página
+                $("#invoicesTable").DataTable().ajax.reload(null, false);
+
+                if (typeof loadDashboardCards === "function") {
+                  loadDashboardCards();
+                }
+
+                // Se estiver na página de edição pode recarregar
+                location.replace("list_invoices.php");
+              });
+            } else {
+              Swal.fire({
+                icon: "error",
+                title: "Erro",
+                text:
+                  response.message || "Não foi possível concluir a operação.",
+              });
+            }
+          },
+
+          error: function (xhr) {
+            Swal.fire({
+              icon: "error",
+              title: "Erro",
+              text:
+                xhr.responseJSON?.message ||
+                "Erro de comunicação com o servidor.",
+            });
+          },
+
+          complete: function () {
+            $btn.prop("disabled", false);
+          },
+        });
       });
     });
 
@@ -365,137 +444,699 @@ $(function () {
       });
   });
 
-  // ---------- 5) botão PDF ----------
+  /*============================================================================================= 
+                                    FUNÇÃO GERAR PDF DA FACTURA
+  ============================================================================================= */
+
   /**
-   * Gera um PDF (A4 – retrato) a partir de um elemento HTML.
-   * @param {String|HTMLElement} el        seletor ou nó DOM com a fatura
-   * @param {String}             filename  nome do arquivo .pdf
-   * @param {Number}             copies    nº de vias (default = 2)
-   * @returns {Promise<void>}
+   * gerarPdfFatura.js
+   * -----------------------------------------------------------------------
+   * Geração de PDF de fatura 100% orientada a DADOS — não depende de nenhum
+   * elemento HTML renderizado na página.
+   *
+   * Usa jsPDF (client-side), com posicionamento MANUAL (x/y) igual ao layout
+   * original — dá controle total pixel a pixel. A tabela de itens pagina
+   * automaticamente: a cada linha checamos se ainda cabe na página atual;
+   * se não couber, abrimos uma nova página e repetimos o cabeçalho da tabela.
+   *
+   * Dependências (CDN — coloque antes deste arquivo):
+   *   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+   *   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+   *   (qrcodejs só é necessário se você quiser gerar o QR no próprio browser,
+   *   ver gerarQrCodeDataURL() mais abaixo)
+   *
+   * -----------------------------------------------------------------------
+   * FORMATO DOS DADOS ESPERADOS (invoiceData) — igual ao da versão anterior
+   * -----------------------------------------------------------------------
+   * {
+   *   document_type: 'PF' | 'FT',
+   *   reference:     'PF 2026/000005',
+   *   issue_date:    '2026-06-24',
+   *   due_date:      '2026-06-24',
+   *   observation:   '-',
+   *   company: { name, address, phone, email, website, registration_number,
+   *              logoImage: 'data:image/png;base64,....' },
+   *   client:  { name, contributor, address },
+   *   items:   [ { code, name, description, unit_price, quantity, tax, discount } ],
+   *   totals:  { total_sum, total_discount, total_tax, retention_value, final_total }, // opcional
+   *   moneySymbol: 'Kz', moneyPos: 'right',
+   *   vat_regime:  'geral' | 'simplificado',
+   *   iban:        'AO06.0006.0000.1234.5678.9012.3',
+   *   qrImage:     'data:image/png;base64,....'
+   * }
+   * -----------------------------------------------------------------------
    */
-  function gerarPdfFatura(el, filename = "fatura.pdf", copies = 2) {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const original =
-          typeof el === "string" ? document.querySelector(el) : el;
 
-        if (!original) return reject("Elemento não encontrado");
+  // ---------------------------------------------------------------------------
+  // Constantes de layout (pt — A4 = 595.28 x 841.89)
+  // ---------------------------------------------------------------------------
+  const PAGE_WIDTH = 595.28;
+  const PAGE_HEIGHT = 841.89;
+  const MARGIN_LEFT = 40;
+  const MARGIN_RIGHT = 40;
+  const MARGIN_TOP = 40;
+  const MARGIN_BOTTOM = 70;
+  const CONTENT_RIGHT = PAGE_WIDTH - MARGIN_RIGHT; // 555.28
+  const GRAY = [139, 139, 139]; // #8b8b8b — linhas divisórias
+  const GRAY_LABEL = [102, 102, 102]; // #666666 — rótulos "opacos"
+  const GRAY_FOOTER = [150, 150, 150];
+  const BLACK = [0, 0, 0];
 
-        $("#address").addClass("d-none");
+  // colunas da tabela de itens
+  const COL_CODE_X = MARGIN_LEFT; // 40
+  const COL_DESC_X = 125;
+  const COL_DESC_WIDTH = 260;
+  const COL_PRECO_RIGHT_X = 390; // valor termina aqui (right-align)
+  const COL_QTD_CENTER_X = 415;
+  const COL_TAXA_CENTER_X = 460;
+  const COL_DESCPCT_CENTER_X = 500;
+  const COL_TOTAL_RIGHT_X = CONTENT_RIGHT; // 555.28
 
-        const waitImages = (container) => {
-          const imgs = container.querySelectorAll("img");
-          return Promise.all(
-            Array.from(imgs).map((img) => {
-              if (img.complete) return Promise.resolve();
-              return new Promise((res) => {
-                img.onload = res;
-                img.onerror = res;
-              });
-            }),
-          );
-        };
+  // ---------------------------------------------------------------------------
+  // Utils
+  // ---------------------------------------------------------------------------
 
-        const tempDiv = document.createElement("div");
-        tempDiv.style.width = "210mm";
-        tempDiv.style.background = "#fff";
+  function formatCurrency(value, symbol = "Kz", position = "right") {
+    const n = Number(value) || 0;
+    const fixed = n.toFixed(2);
+    const [intPart, decPart] = fixed.split(".");
+    const withThousands = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    const formatted = `${withThousands},${decPart}`;
+    return position === "left"
+      ? `${symbol} ${formatted}`
+      : `${formatted} ${symbol}`;
+  }
 
-        for (let i = 0; i < copies; i++) {
-          const clone = original.cloneNode(true);
+  function dateBr(dateStr) {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    if (isNaN(d)) return "-";
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    return `${dd}/${mm}/${d.getFullYear()}`;
+  }
 
-          // garantir footer visível
-          clone.querySelectorAll(".inv-footer").forEach((el) => {
-            el.classList.remove("d-none");
-          });
+  function calcItemTotal(it) {
+    const base = it.unit_price * it.quantity;
+    const discount = base * ((it.discount || 0) / 100);
+    const tax = (base - discount) * ((it.tax || 0) / 100);
+    return { base, discount, tax, total: base - discount + tax };
+  }
 
-          const wrapper = document.createElement("div");
-
-          //  CORREÇÃO PRINCIPAL: NÃO forçar altura fixa
-          wrapper.style.width = "210mm";
-          wrapper.style.boxSizing = "border-box";
-
-          //  MAIS MARGEM NO CABEÇALHO
-          wrapper.style.paddingTop = "25mm"; // ajusta aqui o espaço do header
-          wrapper.style.paddingBottom = "10mm";
-
-          wrapper.appendChild(clone);
-          tempDiv.appendChild(wrapper);
-
-          // ❌ REMOVIDO pageBreakAfter (causava página em branco)
-        }
-
-        document.body.appendChild(tempDiv);
-
-        $(".action-panel").addClass("d-none");
-
-        await waitImages(tempDiv);
-
-        const opt = {
-          margin: 0,
-          filename,
-          image: { type: "jpeg", quality: 1 },
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#ffffff",
-          },
-          jsPDF: {
-            unit: "mm",
-            format: "a4",
-            orientation: "portrait",
-          },
-        };
-
-        html2pdf()
-          .set(opt)
-          .from(tempDiv)
-          .toPdf()
-          .get("pdf")
-          .then((pdf) => {
-            const pageCount = pdf.internal.getNumberOfPages();
-
-            pdf.setFont("helvetica", "normal");
-            pdf.setFontSize(8);
-
-            const footerText = "Powered By BXpert";
-
-            for (let i = 1; i <= pageCount; i++) {
-              pdf.setPage(i);
-
-              pdf.text(footerText, 105, 290, { align: "center" });
-              pdf.text(`${i}/${pageCount}`, 200, 293, { align: "right" });
-            }
-          })
-          .save()
-          .then(() => {
-            cleanup();
-            resolve();
-          })
-          .catch((err) => {
-            cleanup();
-            reject(err);
-          });
-
-        function cleanup() {
-          $(".action-panel").removeClass("d-none");
-          $("#address").removeClass("d-none");
-
-          if (tempDiv && tempDiv.parentNode) {
-            tempDiv.parentNode.removeChild(tempDiv);
-          }
-        }
-      } catch (error) {
-        reject(error);
-      }
+  async function imageUrlToDataURL(url) {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
     });
   }
 
-  $("#btnPdf, #generatePdf").on("click", function () {
-    gerarPdfFatura(
-      "#fatura-container",
-      `${currentInvoice.reference}.pdf`, // nome dinâmico
-      2, // nº de vias
-    ).catch(console.error);
+  function gerarQrCodeDataURL(text, size = 200) {
+    return new Promise((resolve, reject) => {
+      if (typeof QRCode === "undefined") {
+        reject(
+          new Error("Biblioteca qrcodejs não carregada (ver topo do arquivo)."),
+        );
+        return;
+      }
+      const div = document.createElement("div");
+      div.style.display = "none";
+      document.body.appendChild(div);
+      new QRCode(div, {
+        text,
+        width: size,
+        height: size,
+        correctLevel: QRCode.CorrectLevel.L,
+      });
+      setTimeout(() => {
+        const el = div.querySelector("canvas") || div.querySelector("img");
+        const dataUrl =
+          el.tagName === "CANVAS" ? el.toDataURL("image/png") : el.src;
+        document.body.removeChild(div);
+        resolve(dataUrl);
+      }, 50);
+    });
+  }
+
+  /** Carrega uma dataURL como HTMLImageElement (para saber a proporção real). */
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  /** Ajusta um retângulo maxW x maxH mantendo a proporção original da imagem. */
+  function fitBox(imgW, imgH, maxW, maxH) {
+    const ratio = Math.min(maxW / imgW, maxH / imgH);
+    return { w: imgW * ratio, h: imgH * ratio };
+  }
+
+  function getImageFormat(dataUrl) {
+    const match = /^data:image\/(\w+);/.exec(dataUrl || "");
+    if (!match) return "PNG";
+    const ext = match[1].toUpperCase();
+    return ext === "JPG" ? "JPEG" : ext;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Adaptador: converte o JSON "achatado" da sua API para o formato esperado
+  // ---------------------------------------------------------------------------
+
+  async function prepareInvoiceData(api, options = {}) {
+    // reproduz literalmente a concatenação do PHP original:
+    // "{endereco}, {cidade} - {país}" — mesmo que cidade/país venham vazios
+    const juntarEndereco = (endereco, cidade, pais) =>
+      `${endereco || ""}, ${cidade || ""} - ${pais || ""}`;
+
+    const issueDate = new Date(api.issue_date);
+    const dueDate = new Date(issueDate);
+    dueDate.setDate(dueDate.getDate() + (Number(api.due_date) || 0));
+
+    const invoiceData = {
+      document_type: api.document_type,
+      reference: api.reference,
+      issue_date: api.issue_date,
+      due_date: dueDate.toISOString().slice(0, 10),
+      observation: api.observation,
+
+      company: {
+        name: api.company_name,
+        address: juntarEndereco(
+          api.company_address,
+          api.company_city,
+          api.company_country,
+        ),
+        phone: api.company_phone,
+        email: api.company_email,
+        website: api.website,
+        registration_number: api.registration_number,
+        logoImage: null,
+      },
+
+      client: {
+        name: api.client_name,
+        contributor: api.client_contributor,
+        address: juntarEndereco(
+          api.client_address,
+          api.client_city,
+          api.client_country,
+        ),
+      },
+
+      items: api.items,
+
+      totals: {
+        total_sum: api.total_sum,
+        total_discount: api.total_discount,
+        total_tax: api.total_tax,
+        retention_value: api.retention_value,
+        final_total: api.final_total,
+      },
+
+      moneySymbol: api.symbol,
+      moneyPos: api.position,
+      vat_regime: api.vat_regime,
+      iban: api.bank_details || "-",
+      qrImage: null,
+    };
+
+    if (api.logo_url && options.logoBaseUrl) {
+      try {
+        invoiceData.company.logoImage = await imageUrlToDataURL(
+          options.logoBaseUrl + api.logo_url,
+        );
+      } catch (e) {
+        console.warn("Não foi possível carregar o logo:", e);
+      }
+    }
+
+    if (api.id && options.qrBaseUrl) {
+      try {
+        invoiceData.qrImage = await gerarQrCodeDataURL(
+          options.qrBaseUrl + api.id,
+        );
+      } catch (e) {
+        console.warn("Não foi possível gerar o QR code:", e);
+      }
+    }
+
+    return invoiceData;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Desenho — cabeçalho (empresa + logo)
+  // ---------------------------------------------------------------------------
+
+  function drawCompanyHeader(doc, company, logoImg) {
+    let y = MARGIN_TOP + 12;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(...BLACK);
+    doc.text((company.name || "").toUpperCase(), MARGIN_LEFT, y);
+    y += 15;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8.5);
+    const enderecoLinhas = doc.splitTextToSize(
+      String(company.address || ""),
+      260,
+    );
+    enderecoLinhas.forEach((linha) => {
+      doc.text(linha, MARGIN_LEFT, y);
+      y += 10;
+    });
+    y += 2;
+
+    [
+      `Tel: ${company.phone || "-"}`,
+      `E-mail: ${company.email || "-"}`,
+      `Website: ${company.website || "-"}`,
+      `Contribuinte: ${company.registration_number || "-"}`,
+    ].forEach((linha) => {
+      doc.text(linha, MARGIN_LEFT, y);
+      y += 10;
+    });
+
+    // logo / imagem à direita
+    let imgBottom = MARGIN_TOP;
+    if (logoImg) {
+      const box = 105;
+      const { w, h } = fitBox(
+        logoImg.naturalWidth,
+        logoImg.naturalHeight,
+        box,
+        box,
+      );
+      const x = CONTENT_RIGHT - w;
+      doc.addImage(logoImg, getImageFormat(logoImg.src), x, MARGIN_TOP, w, h);
+      imgBottom = MARGIN_TOP + h;
+    }
+
+    return Math.max(y, imgBottom) + 28; // espaço antes do "Original"
+  }
+
+  // ---------------------------------------------------------------------------
+  // Desenho — meta (Original / Título / Cliente / Datas)
+  // ---------------------------------------------------------------------------
+
+  function drawMeta(doc, invoiceData, y) {
+    const {
+      document_type,
+      reference,
+      issue_date,
+      due_date,
+      observation,
+      client,
+    } = invoiceData;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...BLACK);
+    doc.text("Original", MARGIN_LEFT, y);
+    y += 17;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    const docTitle = document_type === "PF" ? "Proforma" : "Factura";
+    doc.text(`${docTitle} n.º ${reference || ""}`, MARGIN_LEFT, y);
+    y += 20;
+
+    const leftLabelX = MARGIN_LEFT;
+    const leftValueX = MARGIN_LEFT + 72;
+    const rightLabelX = MARGIN_LEFT + 260;
+    const rightValueX = rightLabelX + 95;
+    const rowGap = 13;
+
+    doc.setFontSize(9);
+
+    // ----- coluna esquerda -----
+    let ly = y;
+    doc.setFont("helvetica", "normal");
+    doc.text("Cliente:", leftLabelX, ly);
+    doc.setFont("helvetica", "bold");
+    doc.text((client.name || "").toUpperCase(), leftValueX, ly);
+    ly += rowGap;
+
+    doc.setFont("helvetica", "normal");
+    doc.text("Contribuinte:", leftLabelX, ly);
+    doc.text(client.contributor || "-", leftValueX, ly);
+    ly += rowGap;
+
+    doc.text("Endereço:", leftLabelX, ly);
+    const enderecoWidth = rightLabelX - leftValueX - 10;
+    const enderecoLinhas = doc.splitTextToSize(
+      client.address || "-",
+      enderecoWidth,
+    );
+    doc.text(enderecoLinhas, leftValueX, ly);
+    const leftBottom = ly + enderecoLinhas.length * 11;
+
+    // ----- coluna direita -----
+    let ry = y;
+    doc.text("Data de emissão:", rightLabelX, ry);
+    doc.text(dateBr(issue_date), rightValueX, ry);
+    ry += rowGap;
+
+    doc.text("Vencimento:", rightLabelX, ry);
+    doc.text(dateBr(due_date), rightValueX, ry);
+    ry += rowGap;
+
+    doc.text("Observações:", rightLabelX, ry);
+    const obsWidth = CONTENT_RIGHT - rightValueX;
+    const obsLinhas = doc.splitTextToSize(observation || "-", obsWidth);
+    doc.text(obsLinhas, rightValueX, ry);
+    const rightBottom = ry + obsLinhas.length * 11;
+
+    return Math.max(leftBottom, rightBottom) + 14;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Desenho — tabela de itens (com paginação manual)
+  // ---------------------------------------------------------------------------
+
+  function drawItemsTableHeader(doc, y) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY_LABEL);
+    doc.text("Código", COL_CODE_X, y);
+    doc.text("Descrição", 100, y);
+    doc.text("Preço Uni.", COL_PRECO_RIGHT_X, y, { align: "right" });
+    doc.text("Qtd.", COL_QTD_CENTER_X, y, { align: "center" });
+    doc.text("Taxa/IVA", COL_TAXA_CENTER_X, y, { align: "center" });
+    doc.text("Desc.", COL_DESCPCT_CENTER_X, y, { align: "center" });
+    doc.text("Total", COL_TOTAL_RIGHT_X, y, { align: "right" });
+    doc.setTextColor(...BLACK);
+    return y + 14;
+  }
+
+  function drawTopBorder(doc, y) {
+    doc.setDrawColor(...GRAY);
+    doc.setLineWidth(1.3);
+    doc.line(MARGIN_LEFT, y, CONTENT_RIGHT, y);
+  }
+
+  function drawItemsTable(doc, invoiceData, y) {
+    const { items, moneySymbol = "Kz", moneyPos = "right" } = invoiceData;
+    const bottomLimit = PAGE_HEIGHT - MARGIN_BOTTOM - 90; // reserva espaço p/ sumário
+
+    drawTopBorder(doc, y);
+    y += 10;
+    y = drawItemsTableHeader(doc, y);
+    y += 5;
+
+    items.forEach((it) => {
+      const descLinhas = doc.splitTextToSize(
+        it.name || it.description || "",
+        COL_DESC_WIDTH,
+      );
+      const rowHeight = Math.max(14, descLinhas.length * 10 + 4);
+
+      if (y + rowHeight > bottomLimit) {
+        // fecha o bloco atual e continua numa nova página
+        doc.setDrawColor(...GRAY);
+        doc.setLineWidth(1.3);
+        doc.line(MARGIN_LEFT, y, CONTENT_RIGHT, y);
+
+        doc.addPage();
+        y = MARGIN_TOP + 20;
+        drawTopBorder(doc, y);
+        y += 10;
+        y = drawItemsTableHeader(doc, y);
+        y += 5;
+      }
+
+      const { total } = calcItemTotal(it);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...BLACK);
+      doc.text(it.code || "", COL_CODE_X, y);
+      doc.text(descLinhas, COL_DESC_X, y);
+      doc.text(
+        formatCurrency(it.unit_price, moneySymbol, moneyPos),
+        COL_PRECO_RIGHT_X,
+        y,
+        { align: "right" },
+      );
+      doc.text(String(it.quantity), COL_QTD_CENTER_X, y, { align: "center" });
+      doc.text(`${it.tax || 0}%`, COL_TAXA_CENTER_X, y, { align: "center" });
+      doc.text(`${it.discount || 0}%`, COL_DESCPCT_CENTER_X, y, {
+        align: "center",
+      });
+      doc.text(
+        formatCurrency(total, moneySymbol, moneyPos),
+        COL_TOTAL_RIGHT_X,
+        y,
+        { align: "right" },
+      );
+
+      y += rowHeight;
+    });
+
+    // barra grossa final do bloco de itens
+    doc.setDrawColor(...GRAY);
+    doc.setLineWidth(1.5);
+    doc.line(MARGIN_LEFT, y, CONTENT_RIGHT, y);
+    y += 18;
+
+    return y;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Desenho — Dados fiscais/bancários + Sumário
+  // ---------------------------------------------------------------------------
+
+  function drawTotalsSection(doc, invoiceData, y) {
+    const {
+      vat_regime,
+      iban,
+      moneySymbol = "Kz",
+      moneyPos = "right",
+    } = invoiceData;
+
+    const calcTotals = () => {
+      let total_sum = 0,
+        total_discount = 0,
+        total_tax = 0;
+      invoiceData.items.forEach((it) => {
+        const { base, discount, tax } = calcItemTotal(it);
+        total_sum += base;
+        total_discount += discount;
+        total_tax += tax;
+      });
+      return {
+        total_sum,
+        total_discount,
+        total_tax,
+        retention_value: 0,
+        final_total: total_sum - total_discount + total_tax,
+      };
+    };
+    const totals = invoiceData.totals || calcTotals();
+
+    const leftX = MARGIN_LEFT;
+    const leftWidth = 260;
+    const rightX = MARGIN_LEFT + 300;
+    const rightValueRightX = CONTENT_RIGHT;
+
+    // ----- ESQUERDA: Dados fiscais e bancários -----
+    let ly = y;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY_LABEL);
+    doc.text("Dados fiscais e bancários", leftX, ly);
+    ly += 14;
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...BLACK);
+    doc.text(
+      `Regime de IVA: ${vat_regime === "simplificado" ? "Regime Simplificado" : "Regime Geral"}`,
+      leftX,
+      ly,
+    );
+    ly += 12;
+
+    const bensLinhas = doc.splitTextToSize(
+      "Bens e serviços: Os bens e serviços foram colocados à disposição do adquirente na data do documento.",
+      leftWidth,
+    );
+    doc.text(bensLinhas, leftX, ly);
+    ly += bensLinhas.length * 10 + 2;
+
+    doc.text(`Dados bancários: ${iban || "-"}`, leftX, ly);
+    ly += 8;
+
+    doc.setDrawColor(...GRAY);
+    doc.setLineWidth(1);
+    doc.line(leftX, ly, leftX + leftWidth, ly);
+    ly += 4;
+
+    // ----- DIREITA: Sumário -----
+    let ry = y;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(...GRAY_LABEL);
+    doc.text("Sumário", rightX, ry);
+    ry += 14;
+
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...BLACK);
+
+    const rows = [
+      [
+        "Total ilíquido:",
+        formatCurrency(totals.total_sum, moneySymbol, moneyPos),
+      ],
+      [
+        "Desconto:",
+        formatCurrency(totals.total_discount, moneySymbol, moneyPos),
+      ],
+      [
+        "Sem Imposto/IVA c Desc.:",
+        formatCurrency(
+          totals.total_sum - totals.total_discount,
+          moneySymbol,
+          moneyPos,
+        ),
+      ],
+      ["Imposto/IVA:", formatCurrency(totals.total_tax, moneySymbol, moneyPos)],
+      [
+        "Retenção:",
+        formatCurrency(totals.retention_value, moneySymbol, moneyPos),
+      ],
+    ];
+    rows.forEach(([label, value]) => {
+      doc.text(label, rightX, ry);
+      doc.text(value, rightValueRightX, ry, { align: "right" });
+      ry += 12;
+    });
+
+    // barra grossa acima do Total
+    doc.setDrawColor(...GRAY);
+    doc.setLineWidth(1.5);
+    doc.line(rightX, ry, rightValueRightX, ry);
+    ry += 15;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.text("Total:", rightX, ry);
+    doc.text(
+      formatCurrency(totals.final_total, moneySymbol, moneyPos),
+      rightValueRightX,
+      ry,
+      { align: "right" },
+    );
+
+    return Math.max(ly, ry) + 20;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Desenho — rodapé (aplicado em todas as páginas, no final)
+  // ---------------------------------------------------------------------------
+
+  function drawFooter(doc, qrImg, qrDataUrl, page, totalPages) {
+    const y = PAGE_HEIGHT - 32;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(...GRAY_FOOTER);
+    doc.text("Powered By BXpert", MARGIN_LEFT, y);
+
+    if (qrImg) {
+      const size = 58;
+      const x = CONTENT_RIGHT - size;
+      doc.addImage(
+        qrImg,
+        getImageFormat(qrDataUrl),
+        x,
+        y - size + 12,
+        size,
+        size,
+      );
+    } else {
+      doc.text(`${page} / ${totalPages}`, CONTENT_RIGHT, y, { align: "right" });
+    }
+    doc.setTextColor(...BLACK);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Uma via completa da fatura
+  // ---------------------------------------------------------------------------
+
+  function drawInvoicePage(doc, invoiceData, assets) {
+    let y = drawCompanyHeader(doc, invoiceData.company, assets.logoImg);
+    y = drawMeta(doc, invoiceData, y);
+    y = drawItemsTable(doc, invoiceData, y);
+    drawTotalsSection(doc, invoiceData, y);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Função principal
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Gera o PDF da fatura direto dos dados, usando jsPDF puro (sem DOM).
+   * @param {Object} invoiceData
+   * @param {String} filename
+   * @param {Number} copies  nº de vias (default = 2)
+   */
+  async function gerarPdfFatura(
+    invoiceData,
+    filename = "fatura.pdf",
+    copies = 2,
+  ) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+
+    const assets = { logoImg: null };
+    if (invoiceData.company?.logoImage) {
+      try {
+        assets.logoImg = await loadImage(invoiceData.company.logoImage);
+      } catch (e) {
+        console.warn("Falha ao carregar logo:", e);
+      }
+    }
+
+    let qrImg = null;
+    if (invoiceData.qrImage) {
+      try {
+        qrImg = await loadImage(invoiceData.qrImage);
+      } catch (e) {
+        console.warn("Falha ao carregar QR:", e);
+      }
+    }
+
+    for (let i = 0; i < copies; i++) {
+      if (i > 0) doc.addPage();
+      drawInvoicePage(doc, invoiceData, assets);
+    }
+
+    const totalPages = doc.internal.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      doc.setPage(p);
+      drawFooter(doc, qrImg, invoiceData.qrImage, p, totalPages);
+    }
+
+    doc.save(filename);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Exemplo de uso (substitui o antigo #btnPdf / #generatePdf)
+  // ---------------------------------------------------------------------------
+  //
+  $("#btnPdf, #generatePdf").on("click", async function () {
+    const invoiceData = await prepareInvoiceData(currentInvoice, {
+      logoBaseUrl: "https://SEU-DOMINIO/sistema/assets/img/companies/",
+      qrBaseUrl: "https://bxpert.co.ao/sistema/invoice_public.php?id=",
+    });
+
+    await gerarPdfFatura(invoiceData, `${currentInvoice.reference}.pdf`, 2);
   });
 
   // ---------- Nota de Crédito ----------

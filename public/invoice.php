@@ -87,6 +87,25 @@ require_once '../app/views/layout_creation.php';
         padding-bottom: 2px;
         color: #6c757d;
     }
+
+    .btn-purple {
+        background-color: #6f42c1;
+        border-color: #6f42c1;
+        color: #fff;
+    }
+
+    .btn-purple:hover {
+        background-color: #5a32a3;
+        border-color: #5a32a3;
+        color: #fff;
+    }
+
+    .btn-purple:focus,
+    .btn-purple:active {
+        background-color: #512d91;
+        border-color: #512d91;
+        color: #fff;
+    }
 </style>
 
 <main>
@@ -122,21 +141,40 @@ require_once '../app/views/layout_creation.php';
                 Pagamento / Recibo
             </button>
 
-            <button class="d-none btn text-center align-items-center align-content-center btn-primary w-100 mb-2" id="btnEditar">
-                <span class="material-icons-outlined">edit</span>
-                Editar 
-            </button>
-
             <button class="d-none btn btn-warning w-100 mb-2" id="btnFinalizar">
                 <span class="material-icons-outlined">check_circle</span>
                 Finalizar 
             </button>
 
-            <button class="d-none btn btn-warning w-100 mb-2" id="btnCloneToInvoice">
+            <button class="d-none btn text-center align-items-center align-content-center btn-secondary w-100 mb-2" id="btnEditar">
+                <span class="material-icons-outlined">edit</span>
+                Editar 
+            </button>
+
+            <!-- grupo Documento -->
+
+            <button class="d-none btn text-center d-none align-items-center align-content-center btn-primary w-100 mb-2" id="generatePdf">
+                <span class="material-icons-outlined">picture_as_pdf</span>
+                Baixar PDF
+            </button>
+
+            <button class="d-none btn text-center d-none align-items-center align-content-center btn-info text-white w-100 mb-2" id="btnEnviar"
+                data-bs-toggle="modal" data-bs-target="#modalEnviarEmail">
+                <span class="material-icons-outlined">send</span>
+                Enviar fatura
+            </button>
+
+            <button class="d-none btn btn-purple w-100 mb-2" id="btnCloneToInvoice">
                 <span class="material-icons-outlined">copy</span>
                 Clonar Fatura
             </button>
 
+            <!-- <h6 class="section-title">Documento</h6> -->
+
+            <button class="d-none btn text-center align-items-center align-content-center btn-danger w-100 mb-2" id="btnDeleteInvoice">
+                <span class="material-icons-outlined">close</span>
+                Apagar
+            </button>
             <!-- <h6 class="section-title">Documento</h6> -->
 
             <button class="d-none btn text-center align-items-center align-content-center btn-dark w-100 mb-2" id="btnNotaCredito">
@@ -144,18 +182,6 @@ require_once '../app/views/layout_creation.php';
                 Nota de Crédito
             </button>
 
-            <!-- grupo Documento -->
-
-            <button class="d-none btn text-center d-none align-items-center align-content-center btn-danger w-100 mb-2" id="generatePdf">
-                <span class="material-icons-outlined">picture_as_pdf</span>
-                Baixar PDF
-            </button>
-
-            <button class="d-none btn text-center d-none align-items-center align-content-center btn-primary text-white w-100 mb-2" id="btnEnviar"
-                data-bs-toggle="modal" data-bs-target="#modalEnviarEmail">
-                <span class="material-icons-outlined">send</span>
-                Enviar fatura
-            </button>
 
         </aside>
     </div>
@@ -434,6 +460,6 @@ require_once '../app/views/layout_creation.php';
 </main>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="invoices/invoice.js?v=2.6"></script>
+<script src="invoices/invoice.js?v=3.8"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

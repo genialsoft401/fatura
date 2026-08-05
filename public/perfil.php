@@ -152,25 +152,25 @@ require_once '../app/views/layout_creation.php';
                             <div class="row g-3 mt-3">
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold opacity-50">Nome</label>
-                                    <input type="text" class="form-control"
+                                    <input type="text" class="form-control" name="name"
                                         value="<?= $_SESSION['user']['name'] ?>">
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold opacity-50">Usuário</label>
-                                    <input type="text" class="form-control"
+                                    <input type="text" class="form-control" name="username"
                                         value="<?= $_SESSION['user']['username'] ?>">
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold opacity-50">Telefone</label>
-                                    <input type="text" class="form-control"
+                                    <input type="text" class="form-control" name="phone"
                                         value="<?= $_SESSION['user']['phone'] ?>">
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold opacity-50">E-mail</label>
-                                    <input type="email" class="form-control"
+                                    <input type="email" class="form-control" name="email"
                                         value="<?= $_SESSION['user']['email'] ?>">
                                 </div>
 
@@ -183,18 +183,19 @@ require_once '../app/views/layout_creation.php';
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold opacity-50">País</label>
-                                    <select class="form-select" id="country"></select>
+                                    <select class="form-select" id="country" name="country"></select>
                                 </div>
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold opacity-50">Cidade</label>
-                                    <select class="form-select" id="city"></select>
+                                    <!-- name alterado de "city" para "address_district", que é a coluna real no banco -->
+                                    <select class="form-select" id="city" name="address_district"></select>
                                 </div>
 
 
                                 <div class="col-md-6">
                                     <label class="form-label fw-semibold opacity-50">Endereço</label>
-                                    <input type="text" class="form-control"
+                                    <input type="text" class="form-control" name="address"
                                         value="<?= $_SESSION['user']['address'] ?>">
                                 </div>
 
@@ -214,7 +215,7 @@ require_once '../app/views/layout_creation.php';
                             </div>
 
                             <div class="mt-4">
-                                <button id="update-profile" class="btn btn-primary"><?= t('Actualizar') ?></button>
+                                <button id="update-profile" type="submit" class="btn btn-primary"><?= t('Actualizar') ?></button>
 
                             </div>
 
@@ -234,7 +235,7 @@ require_once '../app/views/layout_creation.php';
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
 
-<script src="perfil/perfil.js?v=0.1"></script>
+<script src="perfil/perfil.js?v=1.9"></script>
 <script>
     var selectedCountry = "<?php echo isset($_SESSION['user']['country']) ? $_SESSION['user']['country'] : ''; ?>";
     var selectedCity = "<?php echo isset($_SESSION['user']['address_district']) ? $_SESSION['user']['address_district'] : ''; ?>";

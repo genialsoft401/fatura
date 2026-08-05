@@ -74,17 +74,60 @@ $(document).ready(function () {
       // CONTATO ATIVO
       // =====================================
 
-      if (parseInt(is_active) === 1) {
+      if (parseInt(is_active, 10) === 1) {
+        let status = is_active === 1 ? 0 : 1;
         buttons += `
-        <button 
+        <button
           class="btn p-0 archive-contact"
           data-id="${id}"
           data-bs-toggle="tooltip"
           title="Arquivar"
+          onclick="changeStatus(${id}, ${status})"
         >
           <i class="bi bi-archive text-warning"></i>
         </button>
       `;
+
+        document.changeStatus = (contactId, status) => {
+          $.ajax({
+            url: "contacts/ajax/change_status.php",
+            type: "POST",
+            data: { id: contactId, status: status }, // objeto simples: deixa o jQuery serializar (não use processData:false/contentType:false aqui)
+            dataType: "json",
+            success: function (response) {
+              if (response.status === "success") {
+                Swal.fire({
+                  icon: "success",
+                  title: "Sucesso!",
+                  text:
+                    status === 1
+                      ? "Contato arquivado com sucesso."
+                      : "Contato reativado com sucesso.",
+                  timer: 2000,
+                  showConfirmButton: false,
+                }).then(() => {
+                  location.reload();
+                });
+              } else {
+                Swal.fire({
+                  icon: "error",
+                  title: "Erro!",
+                  text:
+                    response.message ||
+                    "Houve um problema ao atualizar o perfil.",
+                });
+              }
+            },
+            error: function () {
+              console.log("ERRO BRUTO:", xhr.responseText); // <-- útil se o JSON vier quebrado (ex: erro PHP misturado no output)
+              Swal.fire({
+                icon: "error",
+                title: "Erro!",
+                text: "Erro inesperado. Tente novamente.",
+              });
+            },
+          });
+        };
       }
 
       // =====================================

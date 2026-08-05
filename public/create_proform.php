@@ -440,7 +440,7 @@ require_once '../app/views/layout_creation.php';
                 <button type="button" id="prevBtn" class="btn btn-light d-none">← Anterior</button>
                 <button type="button" id="nextBtn" class="btn btn-primary">Próximo →</button>
                 <button id="saveInvoiceBtn" type="button" class="btn btn-success d-none">
-                    <?= t('Finalizar Fatura') ?>
+                    <?= t('Finalizar Proforma') ?>
                 </button>
             </div>
 
@@ -715,6 +715,6 @@ require_once '../app/views/layout_creation.php';
 </script>
 
 
-<script src="create_proform/create_invoices.js?v=3.2"></script>
+<script src="create_proform/create_invoices.js?v=3.3"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

@@ -1118,7 +1118,7 @@ $(document).ready(function () {
           return Swal.fire({
             icon: "error",
             title: "Erro",
-            text: response.message || "Erro ao salvar a fatura.",
+            text: response.message || "Erro ao salvar a proforma.",
           });
         }
 
@@ -1128,7 +1128,7 @@ $(document).ready(function () {
             ? "Proforma atualizada com sucesso!"
             : "Proforma criada com sucesso!",
           text: "Clique abaixo para visualizar.",
-          confirmButtonText: "Ver fatura",
+          confirmButtonText: "Ver Proforma",
           confirmButtonColor: "#007abd",
         }).then((result) => {
           if (result.isConfirmed) {
@@ -1216,7 +1216,7 @@ $(document).ready(function () {
       }
       updateInvoiceSummary();
 
-      $("#saveInvoiceBtn").text("Atualizar Fatura");
+      $("#saveInvoiceBtn").text("Atualizar Proforma");
     });
 
     invoiceId = id;

@@ -135,15 +135,33 @@ require_once '../app/views/layout_creation.php';
     }
 
     #clients {
-        height: 320px !important;
-        overflow-y: hidden;
+        height: 500px !important;
         margin-top: 5px;
-        padding-bottom: 200px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        /* aqui pode continuar hidden, é só o wrapper externo */
+    }
+
+    #clients .d-flex.justify-content-between {
+        flex-shrink: 0;
+        /* cabeçalho nunca encolhe nem rola */
     }
 
     #topClients {
-        overflow-y: scroll;
-        height: 100%;
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 4px;
+        /* espaço pra não colar a barra de scroll no texto */
+    }
+
+    #topClients::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #topClients::-webkit-scrollbar-thumb {
+        background-color: #ccc;
+        border-radius: 10px;
     }
 
     .text-green {
@@ -186,6 +204,10 @@ require_once '../app/views/layout_creation.php';
     .text-muted-dif {
         color: #6c757d !important;
         font-weight: normal !important;
+    }
+
+    .top-cards {
+        height: 200px !important;
     }
 
     /* ============================= */
@@ -330,84 +352,133 @@ require_once '../app/views/layout_creation.php';
 
                         <!-- Sessao Gestao de Vendas -->
                         <div class="col-12 tag-content active" data-tag-content="sell">
-                            <!-- ================== CARDS ================== -->
-                            <div class="row g-3 mb-4">
+                            <div class="row g-4">
 
-                                <div class="col-lg-3 col-12">
-                                    <div class="card card-custom p-3">
-                                        <div class="d-flex justify-content-between">
-                                            <div class="icon-box"><i class="bi bi-coin text-primary"></i></div>
+                                <!-- ================== COLUNA ESQUERDA: CARDS + GRÁFICO ================== -->
+                                <div class="col-lg-8 col-12">
+
+                                    <!-- ================== CARDS ================== -->
+                                    <div class="row g-3 mb-4" id="top-cards">
+
+                                        <!-- CARD 1: Vendas este Ano -->
+                                        <div class="col-md-4 col-sm-6 col-12">
+                                            <div class="card card-custom top-cards p-3 h-100">
+
+                                                <!-- Cabeçalho: ícone + média mensal -->
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="icon-box">
+                                                        <i class="bi bi-coin text-primary"></i>
+                                                    </div>
+
+                                                    <div class="d-flex flex-column align-items-end">
+                                                        <small class="fw-semibold text-success" id="month_average" aria-live="polite">0</small>
+                                                        <span class="small-text text-muted">Média Mensal</span>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Valor principal -->
+                                                <h5 class="mt-3 mb-0 fw-semibold" id="trimestral_volume" aria-live="polite">0</h5>
+                                                <span class="small-text text-muted">Vendas este Ano</span>
+
+                                                <hr class="my-3 opacity-25">
+
+                                                <!-- Rodapé: crescimento + sparkline -->
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span id="trimestral_volume_dif"
+                                                        class="badge rounded-pill small fw-semibold"
+                                                        aria-live="polite">
+                                                    </span>
+
+                                                    <div style="width:80px;height:32px">
+                                                        <canvas id="spark1"></canvas>
+                                                    </div>
+                                                </div>
+
+                                            </div>
                                         </div>
-                                        <h4 class="mt-3 fw-semibold" id="trimestral_volume">0</h4>
-                                        <div style="height:32px;margin:6px 0"><canvas id="spark1"></canvas></div>
-                                        <div class="d-flex justify-content-between">
-                                            <span class="small-text">Vendas este Ano</span>
-                                            <span id="trimestral_volume_dif" class="small"></span>
+
+                                        <!-- CARD 2: Vendas este Mês -->
+                                        <div class="col-md-4 col-sm-6 col-12">
+                                            <div class="card card-custom top-cards p-3 h-100">
+
+                                                <!-- Cabeçalho: ícone -->
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="icon-box">
+                                                        <i class="bi bi-graph-up text-success"></i>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Valor principal -->
+                                                <h5 class="mt-3 mb-0 fw-semibold" id="month_sell" aria-live="polite">AOA 0</h5>
+                                                <span class="small-text text-muted">Vendas este Mês</span>
+
+                                                <hr class="my-3 opacity-25">
+
+                                                <!-- Rodapé: crescimento + sparkline -->
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span id="month_sell_dif"
+                                                        class="badge rounded-pill small fw-semibold"
+                                                        aria-live="polite">
+                                                    </span>
+
+                                                    <div style="width:80px;height:32px">
+                                                        <canvas id="spark3"></canvas>
+                                                    </div>
+                                                </div>
+
+                                            </div>
                                         </div>
+
+                                        <!-- CARD 3: Recebimentos este Mês -->
+                                        <div class="col-md-4 col-sm-6 col-12">
+                                            <div class="card card-custom top-cards p-3 h-100 position-relative">
+
+                                                <!-- Cabeçalho: ícone -->
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div class="icon-box">
+                                                        <i class="bi bi-file-earmark-text text-primary"></i>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Valor principal -->
+                                                <h5 class="mt-3 mb-0 fw-semibold" id="recebimento_mensal" aria-live="polite">0</h5>
+                                                <span class="small-text text-muted">Recebimentos este Mês</span>
+
+                                                <hr class="my-3 opacity-25">
+
+                                                <!-- Rodapé: crescimento + sparkline -->
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <span id="total_doc_dif"
+                                                        class="badge rounded-pill small fw-semibold"
+                                                        aria-live="polite">
+                                                    </span>
+
+                                                    <div style="width:80px;height:32px">
+                                                        <canvas id="spark4"></canvas>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+                                        </div>
+
                                     </div>
-                                </div>
 
-                                <div class="col-lg-3 col-12">
-                                    <div class="card card-custom p-3">
-                                        <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
-                                        <h4 class="mt-3 fw-semibold" id="month_average">0</h4>
-                                        <div style="height:32px;margin:6px 0"><canvas id="spark2"></canvas></div>
-                                        <div class="d-flex justify-content-between">
-                                            <span class="small-text">Média Mensal de Vendas</span>
-                                            <span id="month_average_dif" class="small"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-3 col-12">
-                                    <div class="card card-custom p-3">
-                                        <div class="icon-box"><i class="bi bi-graph-up text-success"></i></div>
-                                        <h4 class="mt-3 fw-semibold" id="month_sell">AOA 0</h4>
-                                        <div style="height:32px;margin:6px 0"><canvas id="spark3"></canvas></div>
-                                        <div class="d-flex justify-content-between">
-                                            <span class="small-text">Vendas este Mês</span>
-                                            <span id="month_sell_dif" class="small"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="col-lg-3 col-12">
-                                    <div class="card card-custom p-3 position-relative">
-                                        <div class="icon-box">
-                                            <i class="bi bi-file-earmark-text text-primary"></i>
-                                        </div>
-
-                                        <h4 class="mt-3 fw-semibold" id="recebimento_mensal">0</h4>
-
-                                        <div style="height:32px;margin:6px 0">
-                                            <canvas id="spark4"></canvas>
-                                        </div>
-
-                                        <div class="d-flex justify-content-between">
-                                            <span class="small-text">Recebimentos este Mês</span>
-                                            <span id="total_doc_dif" class="small"></span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <!-- ================== CHART + CLIENTES ================== -->
-                            <div class="row g-3 mb-4 d-flex">
-
-                                <div class="col-lg-8">
+                                    <!-- ================== GRÁFICO ================== -->
                                     <div class="card card-custom p-4" id="chart-card">
                                         <div class="d-flex justify-content-between mb-3">
                                             <h6 class="h-title"><i class="bi bi-graph-up"></i> Evolução Anual</h6>
                                         </div>
-                                        <div class="" style="height: 400px;">
+                                        <div style="height: 400px;">
                                             <canvas id="chart"></canvas>
                                         </div>
                                     </div>
+
                                 </div>
 
-                                <div class="col-lg-4" id="card-others">
-                                    <div class="card card-custom p-3">
+                                <!-- ================== COLUNA DIREITA: FATURAS + CLIENTES ================== -->
+                                <div class="col-lg-4 col-12" id="card-others">
+
+                                    <div class="card card-custom top-cards p-3 mb-4">
                                         <div class="d-flex justify-content-between mb-3">
                                             <h6 class="h-title"><i class="bi bi-file-earmark-text"></i> Últimas Faturas</h6>
                                             <a href="list_invoices.php" class="small text-primary">Ver todas <i class="bi bi-chevron-right"></i></a>
@@ -431,7 +502,6 @@ require_once '../app/views/layout_creation.php';
                                 </div>
 
                             </div>
-
                         </div>
 
 
@@ -439,69 +509,132 @@ require_once '../app/views/layout_creation.php';
                         <div class="col-12 tag-content" data-tag-content="rh">
                             <!-- CARDS -->
                             <div class="row g-3 mb-4">
+
+                                <!-- CARD 1: Funcionários Ativos -->
                                 <div class="col-12 col-md-3">
-                                    <div class="card card-custom p-3">
-                                        <div class="d-flex justify-content-between">
+                                    <div class="card card-custom p-3 h-100">
+
+                                        <!-- Cabeçalho: ícone -->
+                                        <div class="d-flex justify-content-between align-items-start">
                                             <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
                                                 <i class="bi bi-people"></i>
                                             </div>
                                         </div>
 
-                                        <h4 class="fw-bold mt-3" id="rh_total_employees">0</h4>
-                                        <div style="height:32px;margin:6px 0"><canvas id="spark5"></canvas></div>
+                                        <!-- Valor principal -->
+                                        <h5 class="mt-3 mb-0 fw-semibold" id="rh_total_employees" aria-live="polite">0</h5>
+                                        <span class="small-text text-muted">Total funcionários activos</span>
 
+                                        <hr class="my-3 opacity-25">
+
+                                        <!-- Rodapé: variação + sparkline -->
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Total funcionários activos</small>
-                                            <!-- <span id="rh_total_employees_dif" class="small fw-semibold d-none"></span> -->
+                                            <span id="rh_total_employees_dif"
+                                                class="badge rounded-pill small fw-semibold"
+                                                aria-live="polite">
+                                            </span>
+
+                                            <div style="width:80px;height:32px">
+                                                <canvas id="spark5"></canvas>
+                                            </div>
                                         </div>
+
                                     </div>
                                 </div>
 
+                                <!-- CARD 2: Custo Salarial Mensal -->
                                 <div class="col-12 col-md-3">
-                                    <div class="card card-custom p-3">
-                                        <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-cash-stack"></i>
+                                    <div class="card card-custom p-3 h-100">
+
+                                        <!-- Cabeçalho: ícone -->
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-cash-stack"></i>
+                                            </div>
                                         </div>
 
-                                        <h4 class="fw-bold mt-3" id="rh_total_salary">AOA 0</h4>
-                                        <div style="height:32px;margin:6px 0"><canvas id="spark6"></canvas></div>
+                                        <!-- Valor principal -->
+                                        <h5 class="mt-3 mb-0 fw-semibold" id="rh_total_salary" aria-live="polite">AOA 0</h5>
+                                        <span class="small-text text-muted">Custo salárial mensal</span>
 
+                                        <hr class="my-3 opacity-25">
+
+                                        <!-- Rodapé: variação + sparkline -->
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Custo salárial mensal</small>
-                                            <span id="rh_total_salary_dif" class="small fw-semibold"></span>
+                                            <span id="rh_total_salary_dif"
+                                                class="badge rounded-pill small fw-semibold"
+                                                aria-live="polite">
+                                            </span>
+
+                                            <div style="width:80px;height:32px">
+                                                <canvas id="spark6"></canvas>
+                                            </div>
                                         </div>
+
                                     </div>
                                 </div>
 
+                                <!-- CARD 3: Férias este Mês -->
                                 <div class="col-12 col-md-3">
-                                    <div class="card card-custom p-3">
-                                        <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-file-earmark-text"></i>
+                                    <div class="card card-custom p-3 h-100">
+
+                                        <!-- Cabeçalho: ícone -->
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-file-earmark-text"></i>
+                                            </div>
                                         </div>
 
-                                        <h4 class="fw-bold mt-3" id="rh_pending_vacations">0</h4>
-                                        <div style="height:32px;margin:6px 0"><canvas id="spark7"></canvas></div>
+                                        <!-- Valor principal -->
+                                        <h5 class="mt-3 mb-0 fw-semibold" id="rh_pending_vacations" aria-live="polite">0</h5>
+                                        <span class="small-text text-muted">Férias este Mês</span>
 
+                                        <hr class="my-3 opacity-25">
+
+                                        <!-- Rodapé: variação + sparkline -->
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Férias este Mês</small>
-                                            <span id="rh_pending_vacations_dif" class="small fw-semibold"></span>
+                                            <span id="rh_pending_vacations_dif"
+                                                class="badge rounded-pill small fw-semibold"
+                                                aria-live="polite">
+                                            </span>
+
+                                            <div style="width:80px;height:32px">
+                                                <canvas id="spark7"></canvas>
+                                            </div>
                                         </div>
+
                                     </div>
                                 </div>
 
+                                <!-- CARD 4: Faltas no Mês -->
                                 <div class="col-12 col-md-3">
-                                    <div class="card card-custom p-3">
-                                        <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
-                                            <i class="bi bi-person-x"></i>
+                                    <div class="card card-custom p-3 h-100">
+
+                                        <!-- Cabeçalho: ícone -->
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="icon-box rounded-3 d-flex align-items-center justify-content-center">
+                                                <i class="bi bi-person-x"></i>
+                                            </div>
                                         </div>
 
-                                        <h4 class="fw-bold mt-3" id="rh_absences">0</h4>
-                                        <div style="height:32px;margin:6px 0"><canvas id="spark8"></canvas></div>
+                                        <!-- Valor principal -->
+                                        <h5 class="mt-3 mb-0 fw-semibold" id="rh_absences" aria-live="polite">0</h5>
+                                        <span class="small-text text-muted">Faltas no mês</span>
 
+                                        <hr class="my-3 opacity-25">
+
+                                        <!-- Rodapé: variação + sparkline -->
                                         <div class="d-flex justify-content-between align-items-center">
-                                            <small class="text-muted">Faltas no mês</small>
-                                            <span id="rh_absences_month_dif" class="small fw-semibold"></span>
+                                            <span id="rh_absences_month_dif"
+                                                class="badge rounded-pill small fw-semibold"
+                                                aria-live="polite">
+                                            </span>
+
+                                            <div style="width:80px;height:32px">
+                                                <canvas id="spark8"></canvas>
+                                            </div>
                                         </div>
+
                                     </div>
                                 </div>
 

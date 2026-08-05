@@ -165,35 +165,49 @@ $(document).ready(function () {
       });
   });
 
-  $("#update-profile").click(function (e) {
+  // Adiciona apenas os campos do formulário de perfil (evita pegar selects de menus/nav)
+  const form = document.getElementById("profileForm");
+
+  form.addEventListener("submit", (e) => {
     e.preventDefault();
 
-    let formData = new FormData();
+    // formData precisa ser recriado a cada submit, senão acumula dados de envios anteriores
+    const formData = {};
 
-    // Adiciona apenas os campos do formulário de perfil (evita pegar selects de menus/nav)
-    $("#profileForm")
-      .find("input:not([disabled]), select")
-      .each(function () {
-        if ($(this).attr("name")) {
-          formData.append($(this).attr("name"), $(this).val());
-        }
-      });
-    // Obtém o src da imagem
-    let imageSrc = $("#profileImage").attr("src");
+    const imageSrc = $("#profileImage").attr("src");
+    const imageName = imageSrc ? imageSrc.split("/").pop() : "";
 
-    // Extrai apenas o nome do arquivo removendo o caminho
-    let imageName = imageSrc.split("/").pop();
+    formData["image"] = imageName;
 
-    // Adiciona o nome da imagem ao formData
-    formData.append("image", imageName);
+    // form.elements pode não ter .forEach garantido em todos os browsers/contextos;
+    // Array.from() converte para array de verdade
+    Array.from(form.elements).forEach((field) => {
+      // Ignora campos sem "name" (ex.: botões sem name) e botões de submit/reset
+      if (
+        !field ||
+        !field.name ||
+        field.type === "submit" ||
+        field.type === "reset"
+      ) {
+        return;
+      }
+
+      // Trata checkbox/radio corretamente (value sempre existe, mas só deve ir se marcado)
+      if (
+        (field.type === "checkbox" || field.type === "radio") &&
+        !field.checked
+      ) {
+        return;
+      }
+
+      formData[field.name] = field.value.trim();
+    });
 
     $.ajax({
-      url: "perfil/ajax/update_profile.php", // Arquivo PHP para processar a atualização
+      url: "perfil/ajax/update_profile.php",
       type: "POST",
-      data: formData,
-      processData: false,
-      contentType: false,
-      dataType: "json", // Define o tipo de resposta esperada como JSON
+      data: formData, // objeto simples: deixa o jQuery serializar (não use processData:false/contentType:false aqui)
+      dataType: "json",
       success: function (response) {
         if (response.status === "success") {
           Swal.fire({
@@ -203,7 +217,7 @@ $(document).ready(function () {
             timer: 2000,
             showConfirmButton: false,
           }).then(() => {
-            location.reload(); // Recarrega a página para exibir os novos dados
+            location.reload();
           });
         } else {
           Swal.fire({
@@ -215,6 +229,7 @@ $(document).ready(function () {
         }
       },
       error: function () {
+        console.log("ERRO BRUTO:", xhr.responseText); // <-- útil se o JSON vier quebrado (ex: erro PHP misturado no output)
         Swal.fire({
           icon: "error",
           title: "Erro!",

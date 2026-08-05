@@ -313,4 +313,4 @@
     </div>
 </div>
 
-<script src="../public/assets/js/modal_item.js?v=1.6"></script>
+<script src="../public/assets/js/modal_item.js?v=1.7"></script>
