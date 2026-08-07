@@ -663,7 +663,7 @@ require_once '../app/views/layout_creation.php';
 
 
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="contacts/contacts.js?v=0.4"></script>
+    <script src="contacts/contacts.js?v=0.5"></script>
     <script>
         lucide.createIcons();
     </script>

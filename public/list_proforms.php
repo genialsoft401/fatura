@@ -26,6 +26,11 @@ require_once '../app/views/layout_creation.php';
         padding: 12px 16px;
     }
 
+    #invoicesTable thead th[data-key] {
+        cursor: pointer;
+        user-select: none;
+    }
+
     /* ROW */
     #invoicesTable tbody tr {
         background: #fff !important;
@@ -33,6 +38,7 @@ require_once '../app/views/layout_creation.php';
         transition: all 0.25s ease;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
         text-align: left !important;
+        cursor: pointer;
     }
 
     /* HOVER PRO */
@@ -56,6 +62,8 @@ require_once '../app/views/layout_creation.php';
         border-top-left-radius: 14px;
         border-bottom-left-radius: 14px;
         background: #fff !important;
+        font-weight: 600;
+        color: #111;
     }
 
     #invoicesTable tbody th {
@@ -67,12 +75,6 @@ require_once '../app/views/layout_creation.php';
         border-bottom-right-radius: 14px;
         text-align: right;
         padding-right: 24px;
-    }
-
-    /* ===== NOME (PRINCIPAL) ===== */
-    #invoicesTable tbody td:first-child {
-        font-weight: 600;
-        color: #111;
     }
 
     /* SUBINFO */
@@ -141,49 +143,27 @@ require_once '../app/views/layout_creation.php';
         background: #e5e7eb;
     }
 
-    #dt-length-0 {
-        background: #fff !important;
-        border-radius: 8px;
-        padding: 5px;
-        border: 0.5px solid #e5e7eb;
-    }
-
-    .dt-search {
-        position: relative;
-        margin-bottom: 15px;
-    }
-
-    .dt-search label {
-        display: none !important;
-    }
-
-    /* ÍCONE */
-    .dt-search-0 .search-icon {
-        position: absolute;
-        top: 50%;
-        left: 12px;
-        transform: translateY(-50%);
-        color: #9ca3af;
-        pointer-events: none;
-    }
-
-    /* INPUT */
-    #dt-search-0 {
-        padding-left: 15px !important;
-        border-radius: 12px !important;
-        border: 2px solid #ddd !important;
-    }
-
-    /* FOCUS */
-    #dt-search-0:focus {
-        border-color: #16a34a !important;
-        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15) !important;
-    }
-
     .modal-dialog {
         display: flex;
         align-items: center;
         min-height: 100vh;
+    }
+
+    #filterClient,
+    #filterStatus,
+    #filterStartDate,
+    #filterEndDate {
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        min-height: 44px;
+    }
+
+    #filterClient:focus,
+    #filterStatus:focus,
+    #filterStartDate:focus,
+    #filterEndDate:focus {
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, .12);
     }
 </style>
 
@@ -231,7 +211,7 @@ require_once '../app/views/layout_creation.php';
                         id="exportDropdown"
                         data-bs-toggle="dropdown"
                         aria-expanded="false">
-                        Exportar Faturas
+                        Exportar Proformas
                     </button>
 
                     <ul class="dropdown-menu" aria-labelledby="exportDropdown">
@@ -250,30 +230,86 @@ require_once '../app/views/layout_creation.php';
 
             </div>
 
+            <!-- FILTROS -->
+            <div class="card border-0 mb-4" style="background: none !important;">
+                <div class="card-body">
+                    <div class="row g-3 align-items-end">
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Cliente</label>
+                            <input type="text" id="filterClient" class="form-control" placeholder="Pesquisar cliente...">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Status</label>
+                            <select id="filterStatus" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="pendente">Pendente</option>
+                                <option value="parcial">Parcial</option>
+                                <option value="pago">Pago</option>
+                                <option value="rascunho">Rascunho</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Data Inicial</label>
+                            <input type="date" id="filterStartDate" class="form-control">
+                        </div>
+
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Data Final</label>
+                            <input type="date" id="filterEndDate" class="form-control">
+                        </div>
+
+                        <div class="col-md-2">
+                            <button id="btnClearFilters" class="btn btn-secondary w-100">Limpar</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table id="invoicesTable" class="table-bx-standard table nowrap w-100">
                     <thead style="background: none !important;">
                         <tr>
                             <th><input type="checkbox" id="selectAll"> <?= t('Status') ?></th>
-                            <th><?= t('Fatura') ?></th>
-                            <th><?= t('Cliente') ?></th>
-                            <th><?= t('Emissão') ?></th>
-                            <th><?= t('Vencimento') ?></th>
+                            <th data-key="codigo"><?= t('Proforma') ?> <i class="sort-icon bi bi-arrow-down text-muted ms-1"></i></th>
+                            <th data-key="cliente"><?= t('Cliente') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th data-key="issue_date"><?= t('Emissão') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th data-key="due_date"><?= t('Vencimento') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
                             <th><?= t('Moeda') ?></th>
-                            <th><?= t('Valor Final') ?></th>
-                            <th><?= t('Ações') ?></th>
+                            <th data-key="final_total"><?= t('Valor Final') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th class="text-end"><?= t('Ações') ?></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Dados gerados via PHP -->
+                        <!-- Dados gerados via JS -->
                     </tbody>
                 </table>
             </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small">Mostrar</span>
+                    <select id="pageSizeSelect" class="form-select form-select-sm" style="width:auto;">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="text-muted small" id="tableInfo"></span>
+                </div>
+
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="tablePagination"></ul>
+                </nav>
+            </div>
         </div>
-        <div id="fatura-container" class="d-none"></div>
+        <div id="proforma-container" class="d-none"></div>
     </main>
 
-    <script src="proform/list_invoices.js"></script>
+    <script src="proform/list_proforms.js?v=0.1"></script>
 
     <?php require_once '../app/views/footer.php'; ?>
 </body>

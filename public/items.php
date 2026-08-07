@@ -1,23 +1,15 @@
 <?php
 require_once '../app/views/layout_creation.php';
 ?>
-<!-- DataTables CSS com Bootstrap 5 -->
-<link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.min.css">
-<link rel="stylesheet" href="https://cdn.datatables.net/responsive/3.0.2/css/responsive.bootstrap5.min.css">
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <style>
-    /* Estilos para transformar a tabela em cards no mobile */
-
-    /* ===== TABELA ESTILO ===== */
     #itemsTable {
         border-collapse: separate;
         border-spacing: 0 12px;
         width: 100%;
-        overflow-x: scroll;
     }
 
-    /* HEADER */
     #itemsTable thead th {
         border: none;
         font-size: 12px;
@@ -30,6 +22,11 @@ require_once '../app/views/layout_creation.php';
         border-right: 1px solid #e5e7eb57;
     }
 
+    #itemsTable thead th[data-key] {
+        cursor: pointer;
+        user-select: none;
+    }
+
     #itemsTable thead th:last-child {
         border-right: none;
     }
@@ -38,7 +35,6 @@ require_once '../app/views/layout_creation.php';
         border-right: 1px solid #e5e7eb57;
     }
 
-    /* ROW */
     #itemsTable tbody tr {
         background: #fff !important;
         border-radius: 14px;
@@ -47,14 +43,11 @@ require_once '../app/views/layout_creation.php';
         text-align: left !important;
     }
 
-
-    /* HOVER PRO */
     #itemsTable tbody tr:hover {
         transform: translateY(-4px) scale(1.01);
         box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
     }
 
-    /* CELLS */
     #itemsTable tbody td {
         border: none;
         padding: 18px 16px;
@@ -64,21 +57,12 @@ require_once '../app/views/layout_creation.php';
         text-align: left !important;
     }
 
-    #itemsTable thead td {
-        background: #111 !important;
-        display: none;
-        max-width: 80px !important;
-    }
-
-    /* BORDAS ARREDONDADAS */
     #itemsTable tbody td:first-child {
         border-top-left-radius: 14px;
         border-bottom-left-radius: 14px;
         background: #fff !important;
-    }
-
-    #itemsTable tbody th {
-        text-align: left !important;
+        font-weight: 600;
+        color: #111;
     }
 
     #itemsTable tbody td:last-child {
@@ -88,54 +72,17 @@ require_once '../app/views/layout_creation.php';
         padding-right: 24px;
     }
 
-    /* ===== NOME (PRINCIPAL) ===== */
-    #itemsTable tbody td:first-child {
-        font-weight: 600;
-        color: #111;
-    }
-
-    /* SUBINFO */
     #itemsTable tbody td small {
         display: block;
         color: #6b7280;
     }
 
-    /* ===== ÍCONES ===== */
-    .table-icon {
-        font-size: 1.2rem;
-        color: #9ca3af;
-        transition: all 0.2s;
-    }
-
-    .table-icon:hover {
-        color: #111;
-        transform: scale(1.1);
-    }
-
-    /* ===== AÇÕES ===== */
-    .edit-contact i,
-    .delete-contact i {
-        transition: all 0.2s ease;
-    }
-
-    .edit-contact:hover i {
-        color: #2563eb;
-        transform: scale(1.2);
-    }
-
-    .delete-contact:hover i {
-        color: #dc2626;
-        transform: scale(1.2);
-    }
-
-    /* ===== MODAL MAIS PREMIUM ===== */
     .modal-content {
         border-radius: 16px;
         border: none;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
     }
 
-    /* ===== CARDS DO MODAL ===== */
     .card-header.bg-primary,
     .card-header.bg-info,
     .card-header.bg-secondary,
@@ -145,60 +92,6 @@ require_once '../app/views/layout_creation.php';
         font-size: 0.95rem;
     }
 
-    /* ===== PHONE CARDS ===== */
-    .phone-card {
-        display: inline-flex;
-        align-items: center;
-        background: #f3f4f6;
-        border-radius: 999px;
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        transition: all 0.2s;
-    }
-
-    .phone-card:hover {
-        background: #e5e7eb;
-    }
-
-    #dt-length-0 {
-        background: #fff !important;
-        border-radius: 8px;
-        padding: 5px;
-        border: 0.5px solid #e5e7eb;
-    }
-
-    .dt-search {
-        position: relative;
-        margin-bottom: 15px;
-    }
-
-    .dt-search label {
-        display: none !important;
-    }
-
-    /* ÍCONE */
-    .dt-search-0 .search-icon {
-        position: absolute;
-        top: 50%;
-        left: 12px;
-        transform: translateY(-50%);
-        color: #9ca3af;
-        pointer-events: none;
-    }
-
-    /* INPUT */
-    #dt-search-0 {
-        padding-left: 15px !important;
-        border-radius: 12px !important;
-        border: 2px solid #ddd !important;
-    }
-
-    /* FOCUS */
-    #dt-search-0:focus {
-        border-color: #16a34a !important;
-        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15) !important;
-    }
-
     .text-truncate-custom {
         max-width: 280px !important;
         white-space: nowrap;
@@ -206,10 +99,7 @@ require_once '../app/views/layout_creation.php';
         text-overflow: ellipsis;
     }
 
-
     @media (max-width: 768px) {
-
-
         #itemsTable tbody td:last-child {
             border-bottom: none;
             flex-direction: row;
@@ -246,15 +136,10 @@ require_once '../app/views/layout_creation.php';
         margin-top: 10px;
     }
 
-    #downloadCSV {
+    #downloadCSV,
+    #downloadExcel {
         border-radius: 999px;
         font-weight: 500;
-    }
-
-    #downloadCSV:hover,
-    #downloadExcel:hover,
-    #downloadPDF:hover {
-        transform: translateY(-1px);
     }
 
     #downloadCSV:hover {
@@ -271,21 +156,11 @@ require_once '../app/views/layout_creation.php';
         background: #dc2626;
         color: #fff;
     }
-
-    #downloadExcel {
-        border-radius: 999px;
-        font-weight: 500;
-    }
-
-    #dt-search-0 {
-        display: none !important;
-    }
 </style>
 
 <body>
     <main>
         <div class="container-fluid px-lg-5 px-2 mt-5">
-            <!-- <br><br> -->
             <div class="d-flex justify-content-between">
                 <h2 class="mb-4">Lista de Produtos/Serviços</h2>
                 <div class="d-flex flex-wrap gap-2">
@@ -297,29 +172,18 @@ require_once '../app/views/layout_creation.php';
             </div>
 
             <div class="row g-2 mb-3 align-items-center">
-
-                <!-- FILTRO -->
                 <div class="col-md-8">
                     <div class="pt-4 rounded-3 d-flex justify-content-between align-items-center">
-                        <div>
-                            <button id="deleteSelected" class="btn btn-danger rounded-pill d-flex align-items-center gap-2"><i class="bi bi-trash align-middle fs-6"></i>Eliminar selecionados</button>
-                        </div>
-                        <!-- <i class="bi bi-box-seam fs-3 text-primary"></i> -->
+                        <button id="deleteSelected" class="btn btn-danger rounded-pill d-flex align-items-center gap-2"><i class="bi bi-trash align-middle fs-6"></i>Eliminar selecionados</button>
                     </div>
                 </div>
 
-                <!-- SEARCH -->
                 <div class="col-md-4">
                     <div class="position-relative">
                         <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                        <input
-                            type="text"
-                            id="searchInput"
-                            class="form-control ps-5"
-                            placeholder="Pesquisar produtos ou serviços...">
+                        <input type="text" id="searchInput" class="form-control ps-5" placeholder="Pesquisar produtos ou serviços...">
                     </div>
                 </div>
-
             </div>
 
             <div class="table-responsive">
@@ -329,34 +193,45 @@ require_once '../app/views/layout_creation.php';
                             <th style="width:40px;">
                                 <input type="checkbox" id="selectAll">
                             </th>
-                            <th>#</th>
-                            <th>Código</th>
-                            <th>Nome</th>
-                            <th>Descrição</th>
-                            <th class="text-end">Preço Unitário</th>
-                            <th class="text-center">Taxa/IVA</th>
-                            <th class="text-end">PVP</th>
+                            <th style="width:40px;"></th>
+                            <th data-key="code">Código <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th data-key="name">Nome <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th data-key="description">Descrição <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th class="text-end" data-key="unit_price">Preço Unitário <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th class="text-center" data-key="tax">Taxa/IVA <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th class="text-end" data-key="pvp">PVP <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
                             <th class="text-center" style="width:120px;">Ações</th>
                         </tr>
                     </thead>
-
-                    <tbody id="tableBody">
-                        <!-- Os dados serão inseridos via JavaScript -->
-                    </tbody>
+                    <tbody id="tableBody"></tbody>
                 </table>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small">Mostrar</span>
+                    <select id="pageSizeSelect" class="form-select form-select-sm" style="width:auto;">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="text-muted small" id="tableInfo"></span>
+                </div>
+
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="tablePagination"></ul>
+                </nav>
             </div>
         </div>
 
         <?php require_once '../app/models/modal_editItem.php'; ?>
     </main>
 
-    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.bootstrap5.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/3.0.2/js/dataTables.responsive.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/3.0.2/js/responsive.bootstrap5.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="items/items.js?v=0.4"></script>
+    <script src="items/items.js?v=0.5"></script>
 
     <?php require_once '../app/views/footer.php'; ?>
 </body>

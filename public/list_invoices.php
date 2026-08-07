@@ -6,16 +6,13 @@ require_once '../app/views/layout_creation.php';
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 
-
 <style>
-    /* ===== TABELA ESTILO ===== */
     #invoicesTable {
         border-collapse: separate;
         border-spacing: 0 12px;
         width: 100%;
     }
 
-    /* HEADER */
     #invoicesTable thead th {
         border: none;
         font-size: 12px;
@@ -26,22 +23,25 @@ require_once '../app/views/layout_creation.php';
         padding: 12px 16px;
     }
 
-    /* ROW */
+    #invoicesTable thead th[data-key] {
+        cursor: pointer;
+        user-select: none;
+    }
+
     #invoicesTable tbody tr {
         background: #fff !important;
         border-radius: 14px;
         transition: all 0.25s ease;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
         text-align: left !important;
+        cursor: pointer;
     }
 
-    /* HOVER PRO */
     #invoicesTable tbody tr:hover {
         transform: translateY(-4px) scale(1.01);
         box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
     }
 
-    /* CELLS */
     #invoicesTable tbody td {
         border: none;
         padding: 18px 16px;
@@ -51,15 +51,12 @@ require_once '../app/views/layout_creation.php';
         text-align: left;
     }
 
-    /* BORDAS ARREDONDADAS */
     #invoicesTable tbody td:first-child {
         border-top-left-radius: 14px;
         border-bottom-left-radius: 14px;
         background: #fff !important;
-    }
-
-    #invoicesTable tbody th {
-        text-align: left !important;
+        font-weight: 600;
+        color: #111;
     }
 
     #invoicesTable tbody td:last-child {
@@ -69,19 +66,6 @@ require_once '../app/views/layout_creation.php';
         padding-right: 24px;
     }
 
-    /* ===== NOME (PRINCIPAL) ===== */
-    #invoicesTable tbody td:first-child {
-        font-weight: 600;
-        color: #111;
-    }
-
-    /* SUBINFO */
-    #invoicesTable tbody td small {
-        display: block;
-        color: #6b7280;
-    }
-
-    /* ===== ÍCONES ===== */
     .table-icon {
         font-size: 1.2rem;
         color: #9ca3af;
@@ -93,92 +77,10 @@ require_once '../app/views/layout_creation.php';
         transform: scale(1.1);
     }
 
-    /* ===== AÇÕES ===== */
-    .edit-contact i,
-    .delete-contact i {
-        transition: all 0.2s ease;
-    }
-
-    .edit-contact:hover i {
-        color: #2563eb;
-        transform: scale(1.2);
-    }
-
-    .delete-contact:hover i {
-        color: #dc2626;
-        transform: scale(1.2);
-    }
-
-    /* ===== MODAL MAIS PREMIUM ===== */
     .modal-content {
         border-radius: 16px;
         border: none;
         box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
-    }
-
-    /* ===== CARDS DO MODAL ===== */
-    .card-header.bg-primary,
-    .card-header.bg-info,
-    .card-header.bg-secondary,
-    .card-header.bg-success,
-    .card-header.bg-warning {
-        border-radius: 12px 12px 0 0;
-        font-size: 0.95rem;
-    }
-
-    /* ===== PHONE CARDS ===== */
-    .phone-card {
-        display: inline-flex;
-        align-items: center;
-        background: #f3f4f6;
-        border-radius: 999px;
-        padding: 6px 12px;
-        font-size: 0.85rem;
-        transition: all 0.2s;
-    }
-
-    .phone-card:hover {
-        background: #e5e7eb;
-    }
-
-    #dt-length-0 {
-        background: #fff !important;
-        border-radius: 8px;
-        padding: 5px;
-        border: 0.5px solid #e5e7eb;
-    }
-
-    .dt-search {
-        position: relative;
-        margin-bottom: 15px;
-        display: none !important;
-    }
-
-    .dt-search label {
-        display: none !important;
-    }
-
-    /* ÍCONE */
-    .dt-search-0 .search-icon {
-        position: absolute;
-        top: 50%;
-        left: 12px;
-        transform: translateY(-50%);
-        color: #9ca3af;
-        pointer-events: none;
-    }
-
-    /* INPUT */
-    #dt-search-0 {
-        padding-left: 15px !important;
-        border-radius: 12px !important;
-        border: 2px solid #ddd !important;
-    }
-
-    /* FOCUS */
-    #dt-search-0:focus {
-        border-color: #16a34a !important;
-        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15) !important;
     }
 
     .modal-dialog {
@@ -229,7 +131,6 @@ require_once '../app/views/layout_creation.php';
         </div>
     </div>
 
-
     <div id="preloader" style="display: none; position: fixed; bottom: 20px; right: 20px; width: 200px; padding: 10px; background: #fff; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
         <p style="margin: 0; font-size: 14px;">Gerando arquivo...</p>
         <div style="height: 5px; width: 100%; background: #ddd; border-radius: 3px; overflow: hidden; margin-top: 5px;">
@@ -265,32 +166,20 @@ require_once '../app/views/layout_creation.php';
                         </li>
                     </ul>
                 </div>
-
             </div>
 
             <!-- FILTROS -->
             <div class="card border-0 mb-4" style="background: none !important;">
                 <div class="card-body">
-
                     <div class="row g-3 align-items-end">
 
                         <div class="col-md-4">
-                            <label class="form-label fw-semibold">
-                                Cliente
-                            </label>
-
-                            <input
-                                type="text"
-                                id="filterClient"
-                                class="form-control"
-                                placeholder="Pesquisar cliente...">
+                            <label class="form-label fw-semibold">Cliente</label>
+                            <input type="text" id="filterClient" class="form-control" placeholder="Pesquisar cliente...">
                         </div>
 
                         <div class="col-md-2">
-                            <label class="form-label fw-semibold">
-                                Status
-                            </label>
-
+                            <label class="form-label fw-semibold">Status</label>
                             <select id="filterStatus" class="form-select">
                                 <option value="">Todos</option>
                                 <option value="pendente">Pendente</option>
@@ -301,37 +190,20 @@ require_once '../app/views/layout_creation.php';
                         </div>
 
                         <div class="col-md-2">
-                            <label class="form-label fw-semibold">
-                                Data Inicial
-                            </label>
-
-                            <input
-                                type="date"
-                                id="filterStartDate"
-                                class="form-control">
+                            <label class="form-label fw-semibold">Data Inicial</label>
+                            <input type="date" id="filterStartDate" class="form-control">
                         </div>
 
                         <div class="col-md-2">
-                            <label class="form-label fw-semibold">
-                                Data Final
-                            </label>
-
-                            <input
-                                type="date"
-                                id="filterEndDate"
-                                class="form-control">
+                            <label class="form-label fw-semibold">Data Final</label>
+                            <input type="date" id="filterEndDate" class="form-control">
                         </div>
 
                         <div class="col-md-2">
-                            <button
-                                id="btnClearFilters"
-                                class="btn btn-secondary w-100">
-                                Limpar
-                            </button>
+                            <button id="btnClearFilters" class="btn btn-secondary w-100">Limpar</button>
                         </div>
 
                     </div>
-
                 </div>
             </div>
 
@@ -340,21 +212,39 @@ require_once '../app/views/layout_creation.php';
                     <thead style="background: none !important;">
                         <tr>
                             <th><input type="checkbox" id="selectAll"> <?= t('Status') ?></th>
-                            <th><?= t('Fatura') ?></th>
-                            <th><?= t('Cliente') ?></th>
-                            <th><?= t('Emissão') ?></th>
-                            <th><?= t('Vencimento') ?></th>
+                            <th data-key="codigo"><?= t('Fatura') ?> <i class="sort-icon bi bi-arrow-down text-muted ms-1"></i></th>
+                            <th data-key="cliente"><?= t('Cliente') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th data-key="issue_date"><?= t('Emissão') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th data-key="due_date"><?= t('Vencimento') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
                             <th><?= t('Moeda') ?></th>
-                            <th><?= t('Valor Final') ?></th>
-                            <th><?= t('Ações') ?></th>
+                            <th data-key="final_total"><?= t('Valor Final') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+                            <th class="text-end"><?= t('Ações') ?></th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Dados gerados via PHP -->
+                        <!-- Dados gerados via JS -->
                     </tbody>
                 </table>
             </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted small">Mostrar</span>
+                    <select id="pageSizeSelect" class="form-select form-select-sm" style="width:auto;">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                    <span class="text-muted small" id="tableInfo"></span>
+                </div>
+
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="tablePagination"></ul>
+                </nav>
+            </div>
         </div>
+
         <div id="fatura-container" class="d-none"></div>
     </main>
 

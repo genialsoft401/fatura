@@ -100,7 +100,7 @@ $(document).ready(function () {
                   icon: "success",
                   title: "Sucesso!",
                   text:
-                    status === 1
+                    status === 0
                       ? "Contato arquivado com sucesso."
                       : "Contato reativado com sucesso.",
                   timer: 2000,
@@ -140,6 +140,8 @@ $(document).ready(function () {
           data-id="${id}"
           data-bs-toggle="tooltip"
           title="Restaurar"
+          onclick="changeStatus(${id}, 0)"
+
         >
           <i class="bi bi-arrow-counterclockwise text-success"></i>
         </button>

@@ -1,58 +1,195 @@
 $(document).ready(function () {
-  // Configuração do DataTable
+  let invoices = []; // todos os dados vindos do servidor
+  let filteredInvoices = []; // após filtros/ordenação
+  let currentPage = 1;
+  let pageSize = 25;
+  let sortKey = "codigo";
+  let sortDir = "desc";
 
-  const table = $("#invoicesTable").DataTable({
-    ajax: {
+  loadInvoices();
+
+  function loadInvoices() {
+    $.ajax({
       url: "invoices/ajax/fetch_invoices.php",
       type: "GET",
       dataType: "json",
 
-      dataSrc: function (json) {
-        if (Array.isArray(json)) return json;
-
-        if (json?.data && Array.isArray(json.data)) {
-          return json.data;
+      success: function (json) {
+        if (Array.isArray(json)) {
+          invoices = json;
+        } else if (json?.data && Array.isArray(json.data)) {
+          invoices = json.data;
+        } else if (json?.invoices && Array.isArray(json.invoices)) {
+          invoices = json.invoices;
+        } else {
+          console.error("Formato inválido:", json);
+          invoices = [];
         }
 
-        if (json?.invoices && Array.isArray(json.invoices)) {
-          return json.invoices;
+        currentPage = 1;
+        renderTable();
+      },
+
+      error: function () {
+        console.error("Erro ao carregar faturas.");
+      },
+    });
+  }
+
+  // ==================================================
+  // FILTROS + ORDENAÇÃO
+  // ==================================================
+  function applyFilterAndSort() {
+    const clienteFiltro = ($("#filterClient").val() || "").toLowerCase().trim();
+    const statusFiltro = ($("#filterStatus").val() || "").toLowerCase().trim();
+    const start = $("#filterStartDate").val();
+    const end = $("#filterEndDate").val();
+
+    filteredInvoices = invoices.filter((row) => {
+      const cliente = (row.cliente || "").toLowerCase();
+      const status = (row.status_invoice || "").toLowerCase();
+
+      if (clienteFiltro && !cliente.includes(clienteFiltro)) return false;
+      if (statusFiltro && status !== statusFiltro) return false;
+
+      if (row.issue_date) {
+        const current = new Date(row.issue_date);
+
+        if (start) {
+          const startDate = new Date(start);
+          if (current < startDate) return false;
         }
 
-        console.error("Formato inválido:", json);
-        return [];
-      },
-    },
+        if (end) {
+          const endDate = new Date(end);
+          endDate.setHours(23, 59, 59, 999);
+          if (current > endDate) return false;
+        }
+      }
 
-    language: {
-      lengthMenu: "Mostrar _MENU_ registos",
-      search: "",
-      searchPlaceholder: "Pesquisar faturas...",
-      info: "Mostrando _START_ a _END_ de _TOTAL_",
-      infoEmpty: "Nenhum registo encontrado",
-      emptyTable: "Nenhuma fatura encontrada",
-      zeroRecords: "Nenhum resultado encontrado",
-      paginate: {
-        first: "Primeira",
-        last: "Última",
-        next: "›",
-        previous: "‹",
-      },
-    },
-    order: [[3, "desc"]], // coluna da data
+      return true;
+    });
 
-    columns: [
-      {
-        data: null,
-        orderable: true,
-        searchable: false,
-        width: "90px",
+    if (sortKey) {
+      filteredInvoices.sort((a, b) => {
+        let va = a[sortKey] ?? "";
+        let vb = b[sortKey] ?? "";
 
-        render: function (data, type, row) {
-          const status = row.status_invoice || "?";
+        // datas
+        if (sortKey === "issue_date" || sortKey === "due_date") {
+          va = va ? new Date(va).getTime() : 0;
+          vb = vb ? new Date(vb).getTime() : 0;
+        } else if (sortKey === "final_total") {
+          va = Number(va) || 0;
+          vb = Number(vb) || 0;
+        } else {
+          va = String(va).toLowerCase();
+          vb = String(vb).toLowerCase();
+        }
 
-          return `
+        if (va < vb) return sortDir === "asc" ? -1 : 1;
+        if (va > vb) return sortDir === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+  }
+
+  // ==================================================
+  // RENDER TABELA
+  // ==================================================
+  function renderTable() {
+    applyFilterAndSort();
+
+    const $tbody = $("#invoicesTable tbody");
+    $tbody.empty();
+
+    if (!filteredInvoices.length) {
+      $tbody.append(`
+        <tr>
+          <td colspan="8" class="text-center text-muted py-4">
+            Nenhuma fatura encontrada
+          </td>
+        </tr>
+      `);
+      $("#tableInfo").text("Sem dados");
+      renderPagination(0);
+      updateSortIcons();
+      return;
+    }
+
+    const totalItems = filteredInvoices.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    const start = (currentPage - 1) * pageSize;
+    const end = Math.min(start + pageSize, totalItems);
+    const pageData = filteredInvoices.slice(start, end);
+
+    let rowsHtml = "";
+
+    pageData.forEach((row) => {
+      const status = row.status_invoice || "?";
+
+      const invoiceUrl =
+        `invoice.php?id=` +
+        `${String(row.issue_date || "").replaceAll("-", "")}` +
+        `/${row.company_id}/${row.id}`;
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const due = row.due_date ? new Date(row.due_date) : null;
+      if (due) due.setHours(0, 0, 0, 0);
+      const isOverdue = due && due < today;
+
+      let actionsHtml = `
+        <button
+          class="btn btn-action text-primary"
+          title="Ver"
+          onclick="event.stopPropagation();window.location.href='${invoiceUrl}'"
+        >
+          <i class="bi bi-card-list"></i>
+        </button>
+      `;
+
+      if ((status || "").toLowerCase() === "rascunho") {
+        actionsHtml += `
+          <button
+            class="btn btn-sm text-warning ms-1"
+            title="Editar"
+            onclick="event.stopPropagation(); window.location.href='create_invoices.php?edit_id=${row.id}'"
+          >
+            <i class="bi bi-pencil"></i>
+          </button>
+
+          <button
+            class="btn btn-sm text-danger ms-1"
+            title="Eliminar"
+            onclick="event.stopPropagation(); deleteInvoice(${row.id}, ${row.company_id})"
+          >
+            <i class="bi bi-trash"></i>
+          </button>
+        `;
+      } else {
+        actionsHtml += `
+          <button
+            class="btn btn-sm text-success ms-1"
+            title="PDF"
+            onclick="event.stopPropagation(); downloadPDF(${row.id})"
+          >
+            <i class="bi bi-file-earmark-pdf"></i>
+          </button>
+        `;
+      }
+
+      rowsHtml += `
+        <tr class="invoice-row"
+            data-id="${row.id}"
+            data-cliente="${row.cliente || ""}"
+            data-status="${row.status_invoice || ""}"
+            data-issue-date="${row.issue_date || ""}">
+
+          <td>
             <div class="d-flex align-items-center gap-3">
-
               <input
                 type="checkbox"
                 class="invoice-check"
@@ -63,275 +200,155 @@ $(document).ready(function () {
               <div
                 class="icon-statusFatura p-2 py-1"
                 data-status="${status}"
-                style="
-                  background:${row.color || "#000"};
-                  color:${row.text_color || "#fff"};
-                "
+                style="background:${row.color || "#000"}; color:${row.text_color || "#fff"};"
                 data-bs-toggle="tooltip"
                 data-bs-title="${status}"
               >
                 ${status.charAt(0).toUpperCase()}
               </div>
-
             </div>
-          `;
-        },
-      },
+          </td>
 
-      {
-        data: "codigo",
-        defaultContent: "-",
-      },
+          <td>${row.codigo || "-"}</td>
+          <td>${row.cliente || "-"}</td>
+          <td>${row.issue_date ? new Date(row.issue_date).toLocaleDateString("pt-BR") : "-"}</td>
 
-      {
-        data: "cliente",
-        defaultContent: "-",
-      },
+          <td>
+            <span class="${isOverdue ? "text-danger" : ""}">
+              ${row.due_date ? new Date(row.due_date).toLocaleDateString("pt-BR") : "-"}
+            </span>
+          </td>
 
-      {
-        data: "issue_date",
-        render: function (data, type) {
-          if (!data) return "-";
+          <td>${row.currency || "-"}</td>
 
-          if (type === "sort") {
-            return data;
-          }
+          <td>${formatCurrency(Number(row.final_total || 0), row.symbol || "", row.position || "left")}</td>
 
-          return new Date(data).toLocaleDateString("pt-BR");
-        },
-      },
+          <td>
+            <div class="d-flex justify-content-end gap-2">
+              ${actionsHtml}
+            </div>
+          </td>
+        </tr>
+      `;
+    });
 
-      {
-        data: "due_date",
-        render: function (data, type) {
-          if (!data) return "-";
+    $tbody.html(rowsHtml);
 
-          if (type === "sort") {
-            return data;
-          }
+    $("#tableInfo").text(`${start + 1}–${end} de ${totalItems}`);
+    renderPagination(totalPages);
+    updateSortIcons();
 
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
+      bootstrap.Tooltip.getOrCreateInstance(el);
+    });
 
-          const due = new Date(data);
-          due.setHours(0, 0, 0, 0);
+    // reset "selecionar todos" ao re-renderizar
+    $("#selectAll").prop("checked", false);
+  }
 
-          return `
-          <span class="${due < today ? "text-danger" : ""}">
-            ${due.toLocaleDateString("pt-BR")}
-          </span>
-        `;
-        },
-      },
+  // ==================================================
+  // PAGINAÇÃO
+  // ==================================================
+  function renderPagination(totalPages) {
+    const $pagination = $("#tablePagination");
+    $pagination.empty();
 
-      {
-        data: "currency",
-        defaultContent: "-",
-      },
+    if (totalPages <= 1) return;
 
-      {
-        data: null,
-        render: function (data, type, row) {
-          return formatCurrency(
-            Number(row.final_total || 0),
-            row.symbol || "",
-            row.position || "left",
-          );
-        },
-      },
+    const addItem = (label, page, disabled = false, active = false) => {
+      $pagination.append(`
+        <li class="page-item ${disabled ? "disabled" : ""} ${active ? "active" : ""}">
+          <a href="#" class="page-link" data-page="${page}">${label}</a>
+        </li>
+      `);
+    };
 
-      {
-        data: null,
-        orderable: false,
-        searchable: false,
+    addItem("«", currentPage - 1, currentPage === 1);
 
-        render: function (data, type, row) {
-          const id = row.id;
-          const company = row.company_id;
+    const maxButtons = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+    let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+    startPage = Math.max(1, endPage - maxButtons + 1);
 
-          const invoiceUrl =
-            `invoice.php?id=` +
-            `${String(row.issue_date || "").replaceAll("-", "")}` +
-            `/${company}/${id}`;
+    for (let p = startPage; p <= endPage; p++) {
+      addItem(p, p, false, p === currentPage);
+    }
 
-          let html = `
-          <button
-            class="btn btn-action text-primary"
-            title="Ver"
-            onclick="event.stopPropagation();window.location.href='${invoiceUrl}'"
-          >
-            <i class="bi bi-card-list"></i>
-          </button>
-        `;
+    addItem("»", currentPage + 1, currentPage === totalPages);
+  }
 
-          if ((row.status_invoice || "").toLowerCase() === "rascunho") {
-            html += `
-            <button
-              class="btn btn-sm text-warning ms-1"
-              title="Editar"
-              onclick="event.stopPropagation(); window.location.href='create_invoices.php?edit_id=${id}'"
-            >
-              <i class="bi bi-pencil"></i>
-            </button>
-
-            <button
-              class="btn btn-sm text-danger ms-1"
-              title="Eliminar"
-              onclick="event.stopPropagation(); deleteInvoice(${id}, ${company})"
-            >
-              <i class="bi bi-trash"></i>
-            </button>
-
-          `;
-          } else {
-            html += `
-            <button
-              class="btn btn-sm text-success ms-1"
-              title="PDF"
-              onclick="event.stopPropagation(); downloadPDF(${id})"
-            >
-              <i class="bi bi-file-earmark-pdf"></i>
-            </button>
-          `;
-          }
-
-          return `
-          <div class="d-flex justify-content-end gap-2">
-            ${html}
-          </div>
-        `;
-        },
-      },
-    ],
-
-    paging: true,
-    searching: true,
-    ordering: true,
-    responsive: true,
-    destroy: true,
-
-    pageLength: 25,
-
-    order: [[1, "desc"]],
-
-    createdRow: function (row, data) {
-      $(row)
-        .addClass("invoice-row")
-        .attr("data-id", data.id)
-        .attr("data-cliente", data.cliente || "")
-        .attr("data-status", data.status_invoice || "")
-        .attr("data-issue-date", data.issue_date || "");
-    },
-
-    rowCallback: function (row, data) {
-      $(row)
-        .off("click")
-        .on("click", function (e) {
-          if (
-            $(e.target).closest("button").length ||
-            $(e.target).closest("input").length
-          ) {
-            return;
-          }
-
-          const url =
-            `invoice.php?id=` +
-            `${String(data.issue_date || "").replaceAll("-", "")}` +
-            `/${data.company_id}/${data.id}`;
-
-          window.location.href = url;
-        });
-    },
-
-    drawCallback: function () {
-      document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach((el) => {
-        bootstrap.Tooltip.getOrCreateInstance(el);
-      });
-    },
+  $(document).on("click", "#tablePagination .page-link", function (e) {
+    e.preventDefault();
+    const page = parseInt($(this).data("page"), 10);
+    const $li = $(this).closest("li");
+    if (!page || $li.hasClass("disabled") || $li.hasClass("active")) return;
+    currentPage = page;
+    renderTable();
   });
 
-  $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
-    if (settings.nTable.id !== "invoicesTable") {
-      return true;
-    }
-
-    const row = table.row(dataIndex).node();
-
-    if (!row) {
-      return true;
-    }
-
-    const cliente = ($(row).attr("data-cliente") || "").toLowerCase();
-
-    const status = ($(row).attr("data-status") || "").toLowerCase();
-
-    const issueDate = $(row).attr("data-issue-date");
-
-    // =====================
-    // CLIENTE
-    // =====================
-
-    const clienteFiltro = ($("#filterClient").val() || "").toLowerCase().trim();
-
-    if (clienteFiltro && !cliente.includes(clienteFiltro)) {
-      return false;
-    }
-
-    // =====================
-    // STATUS
-    // =====================
-
-    const statusFiltro = ($("#filterStatus").val() || "").toLowerCase().trim();
-
-    if (statusFiltro && status !== statusFiltro) {
-      return false;
-    }
-
-    // =====================
-    // DATA
-    // =====================
-
-    if (issueDate) {
-      const current = new Date(issueDate);
-
-      const start = $("#filterStartDate").val();
-      const end = $("#filterEndDate").val();
-
-      if (start) {
-        const startDate = new Date(start);
-
-        if (current < startDate) {
-          return false;
-        }
-      }
-
-      if (end) {
-        const endDate = new Date(end);
-        endDate.setHours(23, 59, 59, 999);
-
-        if (current > endDate) {
-          return false;
-        }
-      }
-    }
-
-    return true;
+  $(document).on("change", "#pageSizeSelect", function () {
+    pageSize = parseInt($(this).val(), 10) || 25;
+    currentPage = 1;
+    renderTable();
   });
 
+  // ==================================================
+  // ORDENAÇÃO POR COLUNA
+  // ==================================================
+  $(document).on("click", "#invoicesTable thead th[data-key]", function () {
+    const key = $(this).data("key");
+
+    if (sortKey === key) {
+      sortDir = sortDir === "asc" ? "desc" : "asc";
+    } else {
+      sortKey = key;
+      sortDir = "asc";
+    }
+
+    currentPage = 1;
+    renderTable();
+  });
+
+  function updateSortIcons() {
+    $("#invoicesTable thead th[data-key]").each(function () {
+      const key = $(this).data("key");
+      const $icon = $(this).find(".sort-icon");
+      if (!$icon.length) return;
+
+      if (key !== sortKey) {
+        $icon.attr("class", "sort-icon bi bi-arrow-down-up text-muted ms-1");
+      } else {
+        $icon.attr(
+          "class",
+          sortDir === "asc"
+            ? "sort-icon bi bi-arrow-up ms-1"
+            : "sort-icon bi bi-arrow-down ms-1",
+        );
+      }
+    });
+  }
+
+  // ==================================================
+  // FILTROS (eventos)
+  // ==================================================
   $("#filterClient").on("input", function () {
-    table.draw();
+    currentPage = 1;
+    renderTable();
   });
 
   $("#filterStatus").on("change", function () {
-    table.draw();
+    currentPage = 1;
+    renderTable();
   });
 
   $("#filterStartDate").on("change", function () {
-    table.draw();
+    currentPage = 1;
+    renderTable();
   });
 
   $("#filterEndDate").on("change", function () {
-    table.draw();
+    currentPage = 1;
+    renderTable();
   });
 
   $("#btnClearFilters").on("click", function () {
@@ -339,23 +356,22 @@ $(document).ready(function () {
     $("#filterStatus").val("");
     $("#filterStartDate").val("");
     $("#filterEndDate").val("");
-
-    table.search("");
-    table.columns().search("");
-
-    table.draw();
+    currentPage = 1;
+    renderTable();
   });
 
-  // Evento único para toda a tabela
-  $("#invoicesTable tbody").on("click", "tr", function (e) {
+  // ==================================================
+  // CLIQUE NA LINHA (navegar para a fatura)
+  // ==================================================
+  $("#invoicesTable tbody").on("click", "tr.invoice-row", function (e) {
     const $target = $(e.target);
 
     if ($target.closest("button").length || $target.closest("input").length) {
       return;
     }
 
-    const row = table.row(this).data();
-
+    const id = $(this).data("id");
+    const row = filteredInvoices.find((r) => String(r.id) === String(id));
     if (!row) return;
 
     const url =
@@ -366,11 +382,32 @@ $(document).ready(function () {
     window.location.href = url;
   });
 
-  $("#exportCsv").on("click", function () {
-    window.location.href = "export_csv.php";
+  // ==================================================
+  // SELECIONAR TODOS (apenas a página atual)
+  // ==================================================
+  $(document).on("click", "#selectAll", function () {
+    const isChecked = $(this).is(":checked");
+    $('#invoicesTable tbody input[type="checkbox"]').prop("checked", isChecked);
+  });
+
+  $("#invoicesTable tbody").on("change", 'input[type="checkbox"]', function () {
+    const totalCheckboxes = $(
+      '#invoicesTable tbody input[type="checkbox"]',
+    ).length;
+    const checkedCheckboxes = $(
+      '#invoicesTable tbody input[type="checkbox"]:checked',
+    ).length;
+
+    $("#selectAll").prop(
+      "checked",
+      totalCheckboxes > 0 && totalCheckboxes === checkedCheckboxes,
+    );
   });
 });
 
+// ==================================================
+// DOWNLOAD PDF DA FATURA
+// ==================================================
 function downloadPDF(invoiceId) {
   $.ajax({
     url: "invoices/ajax/get_invoice.php",
@@ -386,14 +423,12 @@ function downloadPDF(invoiceId) {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      // Adicionar logo com proporção ajustada
       if (response.logo_url) {
         const img = new Image();
         img.src = `assets/img/companies/${response.logo_url}`;
-        doc.addImage(img, "PNG", 10, 10, 50, 15); // Largura e altura ajustada
+        doc.addImage(img, "PNG", 10, 10, 50, 15);
       }
 
-      // Informações da Empresa
       let currentY = 10;
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
@@ -409,7 +444,6 @@ function downloadPDF(invoiceId) {
       currentY += 5;
       doc.text(`Contribuinte: ${response.registration_number}`, 70, currentY);
 
-      // Função para gerar uma hash aleatória
       function generateRandomHash(length = 70) {
         const characters =
           "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -421,10 +455,10 @@ function downloadPDF(invoiceId) {
         }
         return hash;
       }
-      // QR Code posicionado sem sobrepor texto
-      const qrSize = 40; // Tamanho do QR Code
-      const qrX = 150; // Posição no lado direito
-      const qrY = Math.max(currentY - 15, 35); // Alinha o QR Code abaixo do texto
+
+      const qrSize = 40;
+      const qrX = 150;
+      const qrY = Math.max(currentY - 15, 35);
       const qrBase64 = generateQRCode(
         "../public/invoice_public.php?id=" +
           generateRandomHash() +
@@ -435,8 +469,7 @@ function downloadPDF(invoiceId) {
       );
       doc.addImage(qrBase64, "PNG", qrX, qrY, qrSize, qrSize);
 
-      // Informações do Cliente
-      currentY = Math.max(currentY + 10, qrY - 50); // Garante que o texto fique abaixo do QR Code
+      currentY = Math.max(currentY + 10, qrY - 50);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(12);
       doc.text(`Exmo.(s) Sr.(s):`, 10, currentY);
@@ -447,7 +480,7 @@ function downloadPDF(invoiceId) {
       doc.text(response.client_address.replace(/\n/g, " "), 10, currentY);
       currentY += 5;
       doc.text(`Contribuinte: ${response.client_contributor}`, 10, currentY);
-      // Função para formatar a data no formato 'DD Mês YYYY'
+
       const formatDate = (date) => {
         return new Intl.DateTimeFormat("pt-BR", {
           day: "2-digit",
@@ -455,20 +488,18 @@ function downloadPDF(invoiceId) {
           year: "numeric",
         })
           .format(date)
-          .replace(/ de /g, " ") // Remove os "de"
-          .replace(/\.$/, "") // Remove o ponto no final do mês
-          .replace(/\b[a-z]/, (char) => char.toUpperCase()); // Deixa a primeira letra do mês maiúscula
+          .replace(/ de /g, " ")
+          .replace(/\.$/, "")
+          .replace(/\b[a-z]/, (char) => char.toUpperCase());
       };
-      // Converte as datas para objetos Date e calcula a data de vencimento
+
       const issueDate = new Date(response.issue_date);
       const dueDateObj = new Date(issueDate);
       dueDateObj.setDate(issueDate.getDate() + response.due_date);
 
-      // Formata as datas no formato 'DD Mês YYYY'
       const issueDateFormatted = formatDate(issueDate);
       const dueDateFormatted = formatDate(dueDateObj);
 
-      // Detalhes da Fatura
       currentY += 10;
       doc.setFont("helvetica", "bold");
       doc.text(`Fatura n.º ${response.codigo}`, 10, currentY);
@@ -484,11 +515,9 @@ function downloadPDF(invoiceId) {
         currentY,
       );
 
-      // Linha divisória
       doc.setDrawColor(400, 200, 200);
       doc.line(10, currentY + 5, 200, currentY + 5);
 
-      // Tabela de Itens
       doc.autoTable({
         startY: currentY + 10,
         margin: { left: 10 },
@@ -526,13 +555,10 @@ function downloadPDF(invoiceId) {
         headStyles: { fillColor: [100, 100, 255], textColor: 255 },
         alternateRowStyles: { fillColor: [240, 240, 240] },
         didDrawPage: function (data) {
-          currentY = data.cursor.y; // Atualiza a posição Y após o final da tabela
+          currentY = data.cursor.y;
         },
       });
 
-      // Resumo
-
-      // Tabela de Taxas com Retenção
       const taxDetails = response.tax_details.map((tax) => [
         `${tax.tax_rate}%`,
         formatCurrency(
@@ -547,7 +573,6 @@ function downloadPDF(invoiceId) {
         ),
       ]);
 
-      // Adiciona a retenção como última linha, caso exista
       if (response.tax_details[0]?.retention_rate) {
         taxDetails.push([
           `Retenção (${response.tax_details[0].retention_rate}%)`,
@@ -575,7 +600,6 @@ function downloadPDF(invoiceId) {
         headStyles: { fillColor: [100, 100, 255], textColor: 255 },
       });
 
-      // Ajustar Resumo para incluir Retenção, caso exista
       const resumoBody = [
         [
           "Total líquido",
@@ -611,8 +635,6 @@ function downloadPDF(invoiceId) {
         ],
       ];
 
-      // Adiciona retenção ao resumo, se existir
-
       resumoBody.push([
         "Retenção",
         formatCurrency(
@@ -622,7 +644,6 @@ function downloadPDF(invoiceId) {
         ),
       ]);
 
-      // Adiciona o Total Geral ao final do resumo
       resumoBody.push([
         "Total Geral:",
         formatCurrency(
@@ -650,19 +671,16 @@ function downloadPDF(invoiceId) {
         headStyles: { fillColor: [100, 100, 255], textColor: 255 },
       });
 
-      // Verifica o espaço após a tabela para adicionar Observações
       if (currentY + 30 > doc.internal.pageSize.height) {
         doc.addPage();
-        currentY = 20; // Reinicia o Y na nova página
+        currentY = 20;
       }
 
-      // Observações com verificação de espaço na página
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.text("Observações:", 10, doc.lastAutoTable.finalY + 20);
 
-      // Verifica se há espaço suficiente na página atual
-      const pageHeight = doc.internal.pageSize.height; // Altura da página
+      const pageHeight = doc.internal.pageSize.height;
       currentY = doc.lastAutoTable.finalY + 25;
       const textHeight =
         doc.splitTextToSize(
@@ -671,13 +689,12 @@ function downloadPDF(invoiceId) {
         ).length * 10;
 
       if (currentY + textHeight > pageHeight) {
-        doc.addPage(); // Adiciona uma nova página
-        currentY = 20; // Reinicia o Y na nova página
+        doc.addPage();
+        currentY = 20;
         doc.text("Observações (continuação):", 10, currentY);
         currentY += 5;
       }
 
-      // Adiciona o texto das observações
       doc.setFont("helvetica", "normal");
       doc.text(
         doc.splitTextToSize(
@@ -688,12 +705,7 @@ function downloadPDF(invoiceId) {
         currentY,
       );
 
-      // Salvar PDF
       doc.save(`Fatura_${response.company_name}_${response.codigo}.pdf`);
-      // Renderizar o PDF na tela
-      // const pdfData = doc.output("datauristring");
-      // const iframe = `<iframe width="100%" height="600px" src="${pdfData}"></iframe>`;
-      // document.body.innerHTML = iframe;
     },
     error: function () {
       alert("Erro ao carregar os dados da fatura.");
@@ -710,6 +722,9 @@ function downloadPDF(invoiceId) {
   }
 }
 
+// ==================================================
+// ELIMINAR FATURA
+// ==================================================
 let invoiceToDelete = null;
 let invoice_companyId = null;
 
@@ -721,7 +736,6 @@ const deleteInvoice = (id, companyId) => {
   modal.show();
 };
 
-// Confirma Delete
 $("#confirmDelete")
   .off("click")
   .on("click", function () {
@@ -744,7 +758,9 @@ $("#confirmDelete")
             timer: 1500,
             showConfirmButton: false,
           });
-          $("#invoicesTable").DataTable().ajax.reload();
+
+          // recarrega os dados sem DataTables
+          $(document).trigger("reload-invoices");
         } else {
           Swal.fire({
             icon: "error",
@@ -761,7 +777,7 @@ $("#confirmDelete")
     });
   });
 
-// HTML Invoice
+// HTML Invoice (mantido, caso usado noutro ponto)
 function renderInvoiceHTML(data) {
   const html = `
     <div>
@@ -806,31 +822,16 @@ function renderInvoiceHTML(data) {
   $("#fatura-container").html(html);
 }
 
-$("#selectAll").on("click", function () {
-  const isChecked = $(this).is(":checked");
-  $('#invoicesTable tbody input[type="checkbox"]').prop("checked", isChecked);
-});
-
-$("#invoicesTable tbody").on("change", 'input[type="checkbox"]', function () {
-  const totalCheckboxes = $(
-    '#invoicesTable tbody input[type="checkbox"]',
-  ).length;
-  const checkedCheckboxes = $(
-    '#invoicesTable tbody input[type="checkbox"]:checked',
-  ).length;
-
-  $("#selectAll").prop("checked", totalCheckboxes === checkedCheckboxes);
-});
-
+// ==================================================
+// EXPORTAÇÃO (Excel/CSV) COM PROGRESSO
+// ==================================================
 function exportFile(format) {
   const preloader = document.getElementById("preloader");
   const progressBar = document.getElementById("progressBar");
 
-  // Exibe o preloader
   preloader.style.display = "block";
   progressBar.style.width = "0%";
 
-  // Inicia o monitoramento do progresso
   let checkProgress = setInterval(() => {
     fetch(`invoices/ajax/faturas_export.php?status=1`)
       .then((res) => res.json())
@@ -846,7 +847,6 @@ function exportFile(format) {
       });
   }, 1000);
 
-  // Aguarda um pequeno tempo para garantir que o progresso começou
   setTimeout(() => {
     window.location.href = `invoices/ajax/faturas_export.php?formato=${format}`;
   }, 2000);
