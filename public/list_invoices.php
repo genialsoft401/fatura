@@ -106,40 +106,105 @@ require_once '../app/views/layout_creation.php';
         box-shadow: 0 0 0 3px rgba(22, 163, 74, .12);
     }
 
-    /* Submenu do botão Exportar */
-    .dropdown-submenu {
+    /* ===================================================
+       MENU "EXPORTAR" — 100% CSS/JS nativo (sem Bootstrap)
+    =================================================== */
+    .custom-dropdown {
         position: relative;
+        display: inline-block;
     }
 
-    .dropdown-submenu>.dropdown-menu {
-        top: 0;
-        left: 100%;
-        margin-top: -6px;
-        margin-left: 2px;
+    .custom-dropdown-btn {
+        background: #16a34a;
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 20px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .custom-dropdown-btn:hover {
+        background: #15803d;
+    }
+
+    .custom-dropdown-menu {
         display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 8px;
+        min-width: 230px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, .14);
+        padding: 6px;
+        z-index: 1000;
     }
 
-    .dropdown-submenu:hover>.dropdown-menu,
-    .dropdown-submenu.show>.dropdown-menu {
+    .custom-dropdown-menu.is-open {
         display: block;
     }
 
-    .dropdown-submenu>.dropdown-item.dropdown-toggle::after {
-        content: "";
-        border-top: 0.3em solid transparent;
-        border-bottom: 0.3em solid transparent;
-        border-left: 0.3em solid;
-        float: right;
-        margin-top: 7px;
+    .custom-dropdown-item {
+        padding: 9px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: .95rem;
+        color: #111;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        white-space: nowrap;
+    }
+
+    .custom-dropdown-item:hover {
+        background: #f3f4f6;
+    }
+
+    .custom-dropdown-divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 6px 4px;
+    }
+
+    .has-submenu {
+        position: relative;
+    }
+
+    .has-submenu::after {
+        content: "\25B6";
+        /* ▶ */
+        font-size: 9px;
+        color: #9ca3af;
+        margin-left: 12px;
+    }
+
+    .custom-submenu {
+        display: none;
+        position: absolute;
+        top: -6px;
+        left: 100%;
+        margin-left: 4px;
+        min-width: 140px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, .14);
+        padding: 6px;
+        z-index: 1001;
+    }
+
+    .has-submenu.is-open>.custom-submenu {
+        display: block;
     }
 
     @media (max-width: 767px) {
-        .dropdown-submenu>.dropdown-menu {
+        .custom-submenu {
             position: static;
-            left: 0;
             box-shadow: none;
-            border: none;
-            padding-left: 12px;
+            margin-left: 0;
+            margin-top: 4px;
+            padding-left: 14px;
         }
     }
 </style>
@@ -180,68 +245,35 @@ require_once '../app/views/layout_creation.php';
             <h2 class="mb-4"><?= t('Minhas Faturas') ?></h2>
 
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="dropdown">
-                    <button
-                        class="btn btn-success rounded-pill dropdown-toggle"
-                        type="button"
-                        id="exportDropdown"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false">
+                <div class="custom-dropdown" id="exportMenu">
+                    <button type="button" class="custom-dropdown-btn" id="exportMenuBtn">
                         Exportar
                     </button>
 
-                    <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                    <div class="custom-dropdown-menu" id="exportMenuList">
 
-                        <!-- Fatura (com sub-submenu de formatos) -->
-                        <li class="dropdown-submenu">
-                            <a class="dropdown-item dropdown-toggle" href="javascript:void(0)">Fatura</a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('invoices', 'excel')">Excel</a></li>
-                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('invoices', 'pdf')">PDF</a></li>
-                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('invoices', 'csv')">CSV</a></li>
-                            </ul>
-                        </li>
+                        <div class="custom-dropdown-item has-submenu" id="exportInvoiceToggle">
+                            <span>Fatura</span>
+                            <div class="custom-submenu">
+                                <div class="custom-dropdown-item" data-export="invoices" data-format="excel">Excel</div>
+                                <div class="custom-dropdown-item" data-export="invoices" data-format="pdf">PDF</div>
+                                <div class="custom-dropdown-item" data-export="invoices" data-format="csv">CSV</div>
+                            </div>
+                        </div>
 
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
+                        <div class="custom-dropdown-divider"></div>
 
-                        <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('credit_notes')">
-                                Nota de Crédito
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('receipts')">
-                                Recibos
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('debit_notes')">
-                                Nota de Débito
-                            </a>
-                        </li>
+                        <div class="custom-dropdown-item" data-export="credit_notes">Nota de Crédito</div>
+                        <div class="custom-dropdown-item" data-export="receipts">Recibos</div>
+                        <div class="custom-dropdown-item" data-export="debit_notes">Nota de Débito</div>
 
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
+                        <div class="custom-dropdown-divider"></div>
 
-                        <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('sales_report')">
-                                Relatório de Vendas
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('invoices_paid')">
-                                Faturas Pagas
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('invoices_pending')">
-                                Faturas Pendentes
-                            </a>
-                        </li>
-                    </ul>
+                        <div class="custom-dropdown-item" data-export="sales_report">Relatório de Vendas</div>
+                        <div class="custom-dropdown-item" data-export="invoices_paid">Faturas Pagas</div>
+                        <div class="custom-dropdown-item" data-export="invoices_pending">Faturas Pendentes</div>
+
+                    </div>
                 </div>
             </div>
 
@@ -326,21 +358,73 @@ require_once '../app/views/layout_creation.php';
     </main>
 
     <script>
-        // Mantém o submenu aberto ao clicar (útil em ecrãs sem hover / mobile)
-        document.querySelectorAll('.dropdown-submenu > .dropdown-toggle').forEach(function(el) {
-            el.addEventListener('click', function(e) {
-                e.preventDefault();
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuRoot = document.getElementById('exportMenu');
+            const btn = document.getElementById('exportMenuBtn');
+            const menu = document.getElementById('exportMenuList');
+
+            // Abre/fecha o menu principal
+            btn.addEventListener('click', function(e) {
                 e.stopPropagation();
-                const parentLi = this.closest('.dropdown-submenu');
-                document.querySelectorAll('.dropdown-submenu.show').forEach(function(openLi) {
-                    if (openLi !== parentLi) openLi.classList.remove('show');
-                });
-                parentLi.classList.toggle('show');
+                menu.classList.toggle('is-open');
+
+                // ao reabrir, garante que nenhum submenu fica preso aberto
+                if (!menu.classList.contains('is-open')) {
+                    closeAllSubmenus();
+                }
             });
+
+            // Abre/fecha o submenu "Fatura" (não fecha o menu principal)
+            document.querySelectorAll('.has-submenu').forEach(function(submenuParent) {
+                submenuParent.addEventListener('click', function(e) {
+                    // só reage ao clique no próprio item "Fatura", não nos filhos dele
+                    if (e.target.closest('.custom-submenu')) return;
+
+                    e.stopPropagation();
+
+                    const isOpen = submenuParent.classList.contains('is-open');
+                    closeAllSubmenus();
+                    if (!isOpen) submenuParent.classList.add('is-open');
+                });
+            });
+
+            // Itens finais de exportação
+            document.querySelectorAll('[data-export]').forEach(function(item) {
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const docType = this.dataset.export;
+                    const format = this.dataset.format || undefined;
+                    exportFile(docType, format);
+                    closeMenu();
+                });
+            });
+
+            // Fecha tudo ao clicar fora do menu
+            document.addEventListener('click', function(e) {
+                if (!menuRoot.contains(e.target)) {
+                    closeMenu();
+                }
+            });
+
+            // Fecha tudo com a tecla Esc
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeMenu();
+            });
+
+            function closeAllSubmenus() {
+                document.querySelectorAll('.has-submenu.is-open').forEach(function(el) {
+                    el.classList.remove('is-open');
+                });
+            }
+
+            function closeMenu() {
+                menu.classList.remove('is-open');
+                closeAllSubmenus();
+            }
         });
     </script>
 
-    <script src="invoices/list_invoices.js?v=1.e"></script>
+    <script src="invoices/list_invoices.js?v=1.4"></script>
 
     <?php require_once '../app/views/footer.php'; ?>
 </body>
