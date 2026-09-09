@@ -173,7 +173,7 @@ require_once '../app/views/layout_creation.php';
         <form id="formFatura" class="mt-5">
 
             <input type="hidden" value="<?= $_SESSION['user']['company_id'] ?>" id="id_company" name="id_company">
-            <input type="hidden" id="edit_invoice_id" name="edit_invoice_id">
+            <input type="hidden" id="edit_invoice_id" name="edit_invoice_id" value="0">
 
             <!-- STEPPER -->
             <div class="stepper">
@@ -694,6 +694,6 @@ require_once '../app/views/layout_creation.php';
 </script>
 
 
-<script src="create_invoices/create_invoices.js?v=0.3"></script>
+<script src="create_invoices/create_invoices.js?v=0.8"></script>
 
 <?php require_once '../app/views/footer.php'; ?>

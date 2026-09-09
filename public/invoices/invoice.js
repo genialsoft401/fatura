@@ -444,9 +444,9 @@ $(function () {
       });
   });
 
-  /*============================================================================================= 
-                                    FUNÇÃO GERAR PDF DA FACTURA
-  ============================================================================================= */
+  /*=============================================================================================
+                                  FUNÇÃO GERAR PDF DA FACTURA
+============================================================================================= */
 
   /**
    * gerarPdfFatura.js
@@ -503,14 +503,24 @@ $(function () {
   const BLACK = [0, 0, 0];
 
   // colunas da tabela de itens
+  // 🔧 Reformuladas com folgas seguras entre colunas — antes "Descrição" (até x=385)
+  // ficava a poucos pontos de "Preço Uni." (right-align x=390), e valores grandes
+  // (ex: "3.916.666,67 Kz") invadiam o espaço da descrição e sobrepunham o texto.
   const COL_CODE_X = MARGIN_LEFT; // 40
-  const COL_DESC_X = 125;
-  const COL_DESC_WIDTH = 260;
-  const COL_PRECO_RIGHT_X = 390; // valor termina aqui (right-align)
-  const COL_QTD_CENTER_X = 415;
-  const COL_TAXA_CENTER_X = 460;
-  const COL_DESCPCT_CENTER_X = 500;
+  const COL_CODE_MAX_WIDTH = 60; // largura máx. antes de encolher a fonte
+
+  const COL_DESC_X = 105;
+  const COL_DESC_WIDTH = 130; // termina em x=235 (antes: 385)
+
+  const COL_PRECO_RIGHT_X = 335; // valor termina aqui (right-align)
+  const COL_PRECO_MAX_WIDTH = 85; // início mín. em x=250 → folga de 15pt da Descrição
+
+  const COL_QTD_CENTER_X = 365;
+  const COL_TAXA_CENTER_X = 405;
+  const COL_DESCPCT_CENTER_X = 440;
+
   const COL_TOTAL_RIGHT_X = CONTENT_RIGHT; // 555.28
+  const COL_TOTAL_MAX_WIDTH = 95; // início mín. em x=460 → folga de 17pt da coluna Desc.
 
   // ---------------------------------------------------------------------------
   // Utils
@@ -602,6 +612,50 @@ $(function () {
     if (!match) return "PNG";
     const ext = match[1].toUpperCase();
     return ext === "JPG" ? "JPEG" : ext;
+  }
+
+  /**
+   * 🔧 Remove tags HTML e decodifica entidades comuns (&nbsp;, &amp;, etc.)
+   * Corrige itens vindos com HTML bruto, ex: "<p>venda de telemoveis</p>"
+   * ou "Contabilidade&nbsp; - Avença Mensal&nbsp;".
+   */
+  function stripHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/<[^>]*>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#39;/gi, "'")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  /**
+   * 🔧 Desenha texto respeitando uma largura máxima: se o texto (ex: um valor
+   * monetário grande) for mais largo que o espaço disponível na coluna, a
+   * fonte é reduzida progressivamente até caber — evita qualquer sobreposição
+   * com as colunas vizinhas, independentemente da magnitude do valor.
+   */
+  function drawFittedText(
+    doc,
+    text,
+    x,
+    y,
+    maxWidth,
+    align = "left",
+    baseSize = 8,
+  ) {
+    let size = baseSize;
+    doc.setFontSize(size);
+    while (doc.getTextWidth(text) > maxWidth && size > 6) {
+      size -= 0.5;
+      doc.setFontSize(size);
+    }
+    doc.text(text, x, y, { align });
+    doc.setFontSize(baseSize);
   }
 
   // ---------------------------------------------------------------------------
@@ -739,14 +793,14 @@ $(function () {
       imgBottom = MARGIN_TOP + h;
     }
 
-    return Math.max(y, imgBottom) + 28; // espaço antes do "Original"
+    return Math.max(y, imgBottom) + 28; // espaço antes do rótulo de via
   }
 
   // ---------------------------------------------------------------------------
-  // Desenho — meta (Original / Título / Cliente / Datas)
+  // Desenho — meta (Via / Título / Cliente / Datas)
   // ---------------------------------------------------------------------------
 
-  function drawMeta(doc, invoiceData, y) {
+  function drawMeta(doc, invoiceData, y, viaLabel = "Original") {
     const {
       document_type,
       reference,
@@ -759,7 +813,8 @@ $(function () {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
     doc.setTextColor(...BLACK);
-    doc.text("Original", MARGIN_LEFT, y);
+    // 🔧 antes era fixo "Original" — agora reflete a via atual (Original/Duplicado)
+    doc.text(viaLabel, MARGIN_LEFT, y);
     y += 17;
 
     doc.setFont("helvetica", "bold");
@@ -838,7 +893,7 @@ $(function () {
 
   function drawTopBorder(doc, y) {
     doc.setDrawColor(...GRAY);
-    doc.setLineWidth(1.3);
+    doc.setLineWidth(1.6);
     doc.line(MARGIN_LEFT, y, CONTENT_RIGHT, y);
   }
 
@@ -852,10 +907,11 @@ $(function () {
     y += 5;
 
     items.forEach((it) => {
-      const descLinhas = doc.splitTextToSize(
-        it.name || it.description || "",
-        COL_DESC_WIDTH,
-      );
+      // 🔧 limpa HTML/entidades antes de calcular a quebra de linha
+      const nomeLimpo = stripHtml(it.name || it.description || "");
+      const codigoLimpo = stripHtml(it.code || "");
+
+      const descLinhas = doc.splitTextToSize(nomeLimpo, COL_DESC_WIDTH);
       const rowHeight = Math.max(14, descLinhas.length * 10 + 4);
 
       if (y + rowHeight > bottomLimit) {
@@ -876,24 +932,39 @@ $(function () {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(...BLACK);
-      doc.text(it.code || "", COL_CODE_X, y);
+
+      // 🔧 código e valores monetários usam drawFittedText: encolhem a fonte
+      // automaticamente se não couberem na largura da coluna, em vez de
+      // sobrepor a coluna vizinha (era o bug visto nos preços grandes)
+      drawFittedText(
+        doc,
+        codigoLimpo,
+        COL_CODE_X,
+        y,
+        COL_CODE_MAX_WIDTH,
+        "left",
+      );
       doc.text(descLinhas, COL_DESC_X, y);
-      doc.text(
+      drawFittedText(
+        doc,
         formatCurrency(it.unit_price, moneySymbol, moneyPos),
         COL_PRECO_RIGHT_X,
         y,
-        { align: "right" },
+        COL_PRECO_MAX_WIDTH,
+        "right",
       );
       doc.text(String(it.quantity), COL_QTD_CENTER_X, y, { align: "center" });
       doc.text(`${it.tax || 0}%`, COL_TAXA_CENTER_X, y, { align: "center" });
       doc.text(`${it.discount || 0}%`, COL_DESCPCT_CENTER_X, y, {
         align: "center",
       });
-      doc.text(
+      drawFittedText(
+        doc,
         formatCurrency(total, moneySymbol, moneyPos),
         COL_TOTAL_RIGHT_X,
         y,
-        { align: "right" },
+        COL_TOTAL_MAX_WIDTH,
+        "right",
       );
 
       y += rowHeight;
@@ -1040,6 +1111,12 @@ $(function () {
   // Desenho — rodapé (aplicado em todas as páginas, no final)
   // ---------------------------------------------------------------------------
 
+  /**
+   * 🔧 Corrigido: antes, o número da página só era desenhado quando NÃO havia
+   * QR code (o QR "escondia" a numeração). Agora ambos aparecem sempre,
+   * em posições que não se sobrepõem. `page`/`totalPages` passados aqui já
+   * são relativos à VIA atual (ver gerarPdfFatura), não ao documento inteiro.
+   */
   function drawFooter(doc, qrImg, qrDataUrl, page, totalPages) {
     const y = PAGE_HEIGHT - 32;
 
@@ -1047,6 +1124,11 @@ $(function () {
     doc.setFontSize(7);
     doc.setTextColor(...GRAY_FOOTER);
     doc.text("Powered By BXpert", MARGIN_LEFT, y);
+
+    // número de página sempre visível, centralizado
+    doc.text(`Página ${page} / ${totalPages}`, PAGE_WIDTH / 2, y, {
+      align: "center",
+    });
 
     if (qrImg) {
       const size = 58;
@@ -1059,8 +1141,6 @@ $(function () {
         size,
         size,
       );
-    } else {
-      doc.text(`${page} / ${totalPages}`, CONTENT_RIGHT, y, { align: "right" });
     }
     doc.setTextColor(...BLACK);
   }
@@ -1069,9 +1149,9 @@ $(function () {
   // Uma via completa da fatura
   // ---------------------------------------------------------------------------
 
-  function drawInvoicePage(doc, invoiceData, assets) {
+  function drawInvoicePage(doc, invoiceData, assets, viaLabel = "Original") {
     let y = drawCompanyHeader(doc, invoiceData.company, assets.logoImg);
-    y = drawMeta(doc, invoiceData, y);
+    y = drawMeta(doc, invoiceData, y, viaLabel);
     y = drawItemsTable(doc, invoiceData, y);
     drawTotalsSection(doc, invoiceData, y);
   }
@@ -1080,63 +1160,111 @@ $(function () {
   // Função principal
   // ---------------------------------------------------------------------------
 
-  /**
-   * Gera o PDF da fatura direto dos dados, usando jsPDF puro (sem DOM).
-   * @param {Object} invoiceData
-   * @param {String} filename
-   * @param {Number} copies  nº de vias (default = 2)
-   */
   async function gerarPdfFatura(
     invoiceData,
     filename = "fatura.pdf",
     copies = 2,
   ) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    try {
+      // Garante que copies seja enviado para o backend
+      const payload = {
+        ...invoiceData,
+        copies: Number(copies) || 1,
+      };
 
-    const assets = { logoImg: null };
-    if (invoiceData.company?.logoImage) {
-      try {
-        assets.logoImg = await loadImage(invoiceData.company.logoImage);
-      } catch (e) {
-        console.warn("Falha ao carregar logo:", e);
+      const response = await fetch(
+        "https://www.api-sandibox.bxpert.co.ao/invoices/pdf",
+        // "http://localhost:5301/invoices/pdf",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/pdf",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+
+      // Se o backend retornar erro, tentar ler a mensagem JSON
+      if (!response.ok) {
+        let errorMessage = `Erro HTTP ${response.status}`;
+
+        try {
+          const errorData = await response.json();
+
+          if (errorData?.message) {
+            errorMessage = errorData.message;
+          }
+
+          if (errorData?.error) {
+            errorMessage += `: ${errorData.error}`;
+          }
+        } catch (_) {
+          // A resposta não era JSON
+        }
+
+        throw new Error(errorMessage);
       }
-    }
 
-    let qrImg = null;
-    if (invoiceData.qrImage) {
-      try {
-        qrImg = await loadImage(invoiceData.qrImage);
-      } catch (e) {
-        console.warn("Falha ao carregar QR:", e);
+      // Recebe o PDF binário
+      const blob = await response.blob();
+
+      if (!blob || blob.size === 0) {
+        throw new Error("O servidor devolveu um PDF vazio.");
       }
-    }
 
-    for (let i = 0; i < copies; i++) {
-      if (i > 0) doc.addPage();
-      drawInvoicePage(doc, invoiceData, assets);
-    }
+      // Cria URL temporária para o PDF
+      const url = window.URL.createObjectURL(blob);
 
-    const totalPages = doc.internal.getNumberOfPages();
-    for (let p = 1; p <= totalPages; p++) {
-      doc.setPage(p);
-      drawFooter(doc, qrImg, invoiceData.qrImage, p, totalPages);
-    }
+      // Cria link temporário
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
 
-    doc.save(filename);
+      document.body.appendChild(link);
+      link.click();
+
+      // Limpeza
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      return true;
+    } catch (error) {
+      console.error("Erro ao gerar PDF da factura:", error);
+
+      alert("Não foi possível gerar o PDF da factura.\n\n" + error.message);
+
+      return false;
+    }
   }
 
   // ---------------------------------------------------------------------------
   // Exemplo de uso (substitui o antigo #btnPdf / #generatePdf)
   // ---------------------------------------------------------------------------
   //
-  $("#btnPdf, #generatePdf").on("click", async function () {
-    const invoiceData = await prepareInvoiceData(currentInvoice, {
-      logoBaseUrl: "https://SEU-DOMINIO/sistema/assets/img/companies/",
-      qrBaseUrl: "https://bxpert.co.ao/sistema/invoice_public.php?id=",
-    });
 
-    await gerarPdfFatura(invoiceData, `${currentInvoice.reference}.pdf`, 2);
+  $("#btnPdf, #generatePdf").on("click", async function () {
+    try {
+      // Monta os dados da factura
+      const invoiceData = await prepareInvoiceData(currentInvoice, {
+        logoBaseUrl: "https://SEU-DOMINIO/sistema/assets/img/companies/",
+
+        qrBaseUrl: "https://app.bxpert.co.ao/sistema/invoice_public.php?id=",
+      });
+
+      // Número de cópias
+      const copies = Number(currentInvoice.copies) || 2;
+
+      // Nome do arquivo
+      const filename = `${currentInvoice.reference || "fatura"}.pdf`;
+
+      // Envia para o Node.js
+      await gerarPdfFatura(invoiceData, filename, copies);
+    } catch (error) {
+      console.error("Erro ao preparar factura para PDF:", error);
+
+      alert("Erro ao preparar a factura:\n\n" + error.message);
+    }
   });
 
   // ---------- Nota de Crédito ----------

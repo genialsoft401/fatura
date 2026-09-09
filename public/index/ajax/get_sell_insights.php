@@ -169,45 +169,53 @@ try {
 
         return (float) $stmt->fetchColumn();
     }
-    function getRecebimentosMesAtual($pdo, $company_id)
+    function getRecebimentosMesAtual($pdo, $company_id, $monthStart, $monthEnd)
     {
         $sql = "
         SELECT COALESCE(SUM(final_total), 0)
         FROM invoices
         WHERE company_id = :company_id
           AND status IN (3,4)
-          AND YEAR(issue_date) = YEAR(CURDATE())
-          AND MONTH(issue_date) = MONTH(CURDATE())
+          AND DATE(issue_date) BETWEEN :start AND :end
     ";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            'company_id' => $company_id
+            'company_id' => $company_id,
+            'start' => $monthStart,
+            'end' => $monthEnd
         ]);
 
         return (float)$stmt->fetchColumn();
     }
 
-    $volumeLiquidMensal = getRecebimentosMesAtual($pdo, $company_id);
+    // CORRIGIDO: antes usava sempre CURDATE(), ignorando o ?year=
+    // escolhido pelo utilizador. Agora usa $monthStart/$monthEnd,
+    // que já respeitam o ano selecionado.
+    $volumeLiquidMensal = getRecebimentosMesAtual($pdo, $company_id, $monthStart, $monthEnd);
 
 
     // recebimentos mensais crescimento
-    function getVariacaoRecebimentosMes($pdo, $company_id)
-    {
+    function getVariacaoRecebimentosMes(
+        $pdo,
+        $company_id,
+        $monthStart,
+        $monthEnd,
+        $previousMonthStart,
+        $previousMonthEnd
+    ) {
         $sql = "
         SELECT
             COALESCE(SUM(
                 CASE
-                    WHEN YEAR(issue_date) = YEAR(CURDATE())
-                     AND MONTH(issue_date) = MONTH(CURDATE())
+                    WHEN DATE(issue_date) BETWEEN :monthStart AND :monthEnd
                     THEN final_total
                 END
             ), 0) AS mes_atual,
 
             COALESCE(SUM(
                 CASE
-                    WHEN YEAR(issue_date) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
-                     AND MONTH(issue_date) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH))
+                    WHEN DATE(issue_date) BETWEEN :prevStart AND :prevEnd
                     THEN final_total
                 END
             ), 0) AS mes_anterior
@@ -219,7 +227,11 @@ try {
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute([
-            'company_id' => $company_id
+            'company_id' => $company_id,
+            'monthStart' => $monthStart,
+            'monthEnd' => $monthEnd,
+            'prevStart' => $previousMonthStart,
+            'prevEnd' => $previousMonthEnd
         ]);
 
         $dados = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -244,7 +256,16 @@ try {
         ];
     }
 
-    $volumeLiquidMensalCrescimento = getVariacaoRecebimentosMes($pdo, $company_id);
+    // CORRIGIDO: mesma correção do KPI anterior - passa a respeitar
+    // o ?year= selecionado, em vez de assumir sempre o mês atual real.
+    $volumeLiquidMensalCrescimento = getVariacaoRecebimentosMes(
+        $pdo,
+        $company_id,
+        $monthStart,
+        $monthEnd,
+        $previousMonthStart,
+        $previousMonthEnd
+    );
 
 
     // =====================================================
@@ -626,7 +647,7 @@ try {
 
     WHERE i.company_id = :company_id
       AND i.issue_date >= :start
-      AND i.issue_date < DATE_ADD(:end, INTERVAL 30 DAY)
+      AND i.issue_date < DATE_ADD(:end, INTERVAL 1 DAY)
 ");
 
     $documentosStmt->execute([
@@ -635,7 +656,10 @@ try {
         ':end'        => $monthEnd
     ]);
 
-    $documentos = (int)$documentosStmt->fetchColumn();
+    // CORRIGIDO: fetchColumn() sem argumento devolve a 1ª coluna
+    // da query (total_i = só faturas). O valor pretendido é a
+    // 4ª coluna (índice 3), que soma invoices + receipts + credit_notes.
+    $documentos = (int)$documentosStmt->fetchColumn(3);
 
     // =====================================================
     // NOVOS CLIENTES

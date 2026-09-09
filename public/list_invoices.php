@@ -105,6 +105,43 @@ require_once '../app/views/layout_creation.php';
         border-color: #16a34a;
         box-shadow: 0 0 0 3px rgba(22, 163, 74, .12);
     }
+
+    /* Submenu do botão Exportar */
+    .dropdown-submenu {
+        position: relative;
+    }
+
+    .dropdown-submenu>.dropdown-menu {
+        top: 0;
+        left: 100%;
+        margin-top: -6px;
+        margin-left: 2px;
+        display: none;
+    }
+
+    .dropdown-submenu:hover>.dropdown-menu,
+    .dropdown-submenu.show>.dropdown-menu {
+        display: block;
+    }
+
+    .dropdown-submenu>.dropdown-item.dropdown-toggle::after {
+        content: "";
+        border-top: 0.3em solid transparent;
+        border-bottom: 0.3em solid transparent;
+        border-left: 0.3em solid;
+        float: right;
+        margin-top: 7px;
+    }
+
+    @media (max-width: 767px) {
+        .dropdown-submenu>.dropdown-menu {
+            position: static;
+            left: 0;
+            box-shadow: none;
+            border: none;
+            padding-left: 12px;
+        }
+    }
 </style>
 
 <body>
@@ -150,18 +187,58 @@ require_once '../app/views/layout_creation.php';
                         id="exportDropdown"
                         data-bs-toggle="dropdown"
                         aria-expanded="false">
-                        Exportar Faturas
+                        Exportar
                     </button>
 
                     <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+
+                        <!-- Fatura (com sub-submenu de formatos) -->
+                        <li class="dropdown-submenu">
+                            <a class="dropdown-item dropdown-toggle" href="javascript:void(0)">Fatura</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('invoices', 'excel')">Excel</a></li>
+                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('invoices', 'pdf')">PDF</a></li>
+                                <li><a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('invoices', 'csv')">CSV</a></li>
+                            </ul>
+                        </li>
+
                         <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('excel')">
-                                Exportar para Excel
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('credit_notes')">
+                                Nota de Crédito
                             </a>
                         </li>
                         <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('csv')">
-                                Exportar para CSV
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('receipts')">
+                                Recibos
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('debit_notes')">
+                                Nota de Débito
+                            </a>
+                        </li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('sales_report')">
+                                Relatório de Vendas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('invoices_paid')">
+                                Faturas Pagas
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('invoices_pending')">
+                                Faturas Pendentes
                             </a>
                         </li>
                     </ul>
@@ -173,12 +250,21 @@ require_once '../app/views/layout_creation.php';
                 <div class="card-body">
                     <div class="row g-3 align-items-end">
 
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Cliente</label>
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">Tipo de Documento</label>
+                            <select id="filterDocType" class="form-select">
+                                <option value="invoices">Faturas</option>
+                                <option value="receipts">Recibos</option>
+                                <option value="credit_notes">Notas de Crédito</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold" id="filterClientLabel">Cliente</label>
                             <input type="text" id="filterClient" class="form-control" placeholder="Pesquisar cliente...">
                         </div>
 
-                        <div class="col-md-2">
+                        <div class="col-md-2" id="filterStatusWrapper">
                             <label class="form-label fw-semibold">Status</label>
                             <select id="filterStatus" class="form-select">
                                 <option value="">Todos</option>
@@ -209,17 +295,8 @@ require_once '../app/views/layout_creation.php';
 
             <div class="table-responsive">
                 <table id="invoicesTable" class="table-bx-standard table nowrap w-100">
-                    <thead style="background: none !important;">
-                        <tr>
-                            <th><input type="checkbox" id="selectAll"> <?= t('Status') ?></th>
-                            <th data-key="codigo"><?= t('Fatura') ?> <i class="sort-icon bi bi-arrow-down text-muted ms-1"></i></th>
-                            <th data-key="cliente"><?= t('Cliente') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
-                            <th data-key="issue_date"><?= t('Emissão') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
-                            <th data-key="due_date"><?= t('Vencimento') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
-                            <th><?= t('Moeda') ?></th>
-                            <th data-key="final_total"><?= t('Valor Final') ?> <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
-                            <th class="text-end"><?= t('Ações') ?></th>
-                        </tr>
+                    <thead id="invoicesTableHead" style="background: none !important;">
+                        <!-- Cabeçalho é gerado dinamicamente via JS conforme o Tipo de Documento selecionado -->
                     </thead>
                     <tbody>
                         <!-- Dados gerados via JS -->
@@ -248,7 +325,22 @@ require_once '../app/views/layout_creation.php';
         <div id="fatura-container" class="d-none"></div>
     </main>
 
-    <script src="invoices/list_invoices.js"></script>
+    <script>
+        // Mantém o submenu aberto ao clicar (útil em ecrãs sem hover / mobile)
+        document.querySelectorAll('.dropdown-submenu > .dropdown-toggle').forEach(function(el) {
+            el.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const parentLi = this.closest('.dropdown-submenu');
+                document.querySelectorAll('.dropdown-submenu.show').forEach(function(openLi) {
+                    if (openLi !== parentLi) openLi.classList.remove('show');
+                });
+                parentLi.classList.toggle('show');
+            });
+        });
+    </script>
+
+    <script src="invoices/list_invoices.js?v=1.e"></script>
 
     <?php require_once '../app/views/footer.php'; ?>
 </body>

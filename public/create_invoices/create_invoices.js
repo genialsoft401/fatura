@@ -1,5 +1,7 @@
 $(document).ready(function () {
   const vat_regime = JSON.parse(localStorage.getItem("vat_regime"));
+  const company_id = document.querySelector("input[id=company_id]").value;
+
   let countryMap = {};
   let invoiceId = null;
 
@@ -1106,12 +1108,16 @@ $(document).ready(function () {
     // AJAX
     // =========================
     $.ajax({
-      url: "create_invoices/ajax/save_invoices.php",
+      url:
+        invoiceId != null
+          ? "create_invoices/ajax/update_invoice.php"
+          : "create_invoices/ajax/save_invoices.php",
       method: "POST",
       dataType: "json",
       data: {
         invoice: invoiceData,
         items: items,
+        company_id: company_id,
       },
       success: function (response) {
         if (!response.success) {
@@ -1121,6 +1127,8 @@ $(document).ready(function () {
             text: response.message || "Erro ao salvar a fatura.",
           });
         }
+
+        console.log("✅ Fatura salva com sucesso:", response);
 
         Swal.fire({
           icon: "success",

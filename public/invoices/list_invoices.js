@@ -1,12 +1,99 @@
 $(document).ready(function () {
   let invoices = []; // todos os dados vindos do servidor
+  let receipts = []; // todos os dados vindos do servidor
+  let credit_notes = []; // todos os dados vindos do servidor
   let filteredInvoices = []; // após filtros/ordenação
   let currentPage = 1;
   let pageSize = 25;
-  let sortKey = "codigo";
-  let sortDir = "desc";
+  let docType = "invoices"; // invoices | receipts | credit_notes
+
+  // ==================================================
+  // CONFIGURAÇÃO POR TIPO DE DOCUMENTO
+  // Cada tipo define: cabeçalho da tabela, campos usados
+  // pelos filtros (cliente/status/datas) e como desenhar
+  // cada linha.
+  // ==================================================
+  const DOC_TYPES = {
+    invoices: {
+      colspan: 8,
+      emptyLabel: "Nenhuma fatura encontrada",
+      defaultSort: { key: "codigo", dir: "desc" },
+      hasStatusFilter: true,
+      clientLabel: "Cliente",
+      clientField: "cliente",
+      statusField: "status_invoice",
+      dateField: "issue_date",
+      headerHtml: `
+        <tr>
+          <th><input type="checkbox" id="selectAll"> Status</th>
+          <th data-key="codigo">Fatura <i class="sort-icon bi bi-arrow-down text-muted ms-1"></i></th>
+          <th data-key="cliente">Cliente <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th data-key="issue_date">Emissão <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th data-key="due_date">Vencimento <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th>Moeda</th>
+          <th data-key="final_total">Valor Final <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th class="text-end">Ações</th>
+        </tr>
+      `,
+      renderRow: renderInvoiceRow,
+    },
+
+    receipts: {
+      colspan: 7,
+      emptyLabel: "Nenhum recibo encontrado",
+      defaultSort: { key: "issue_date", dir: "desc" },
+      hasStatusFilter: false,
+      clientLabel: "Referência",
+      clientField: "reference",
+      statusField: null,
+      dateField: "issue_date",
+      headerHtml: `
+        <tr>
+          <th data-key="number">Recibo <i class="sort-icon bi bi-arrow-down text-muted ms-1"></i></th>
+          <th data-key="reference">Referência <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th data-key="issue_date">Emissão <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th>Método</th>
+          <th data-key="amount_paid">Valor Pago <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th data-key="pending_amount">Pendente <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th class="text-end">Ações</th>
+        </tr>
+      `,
+      renderRow: renderReceiptRow,
+    },
+
+    credit_notes: {
+      colspan: 6,
+      emptyLabel: "Nenhuma nota de crédito encontrada",
+      defaultSort: { key: "issue_date", dir: "desc" },
+      hasStatusFilter: false,
+      clientLabel: "Fatura (ref.)",
+      clientField: "invoice_id",
+      statusField: null,
+      dateField: "issue_date",
+      headerHtml: `
+        <tr>
+          <th data-key="id">Nota <i class="sort-icon bi bi-arrow-down text-muted ms-1"></i></th>
+          <th data-key="invoice_id">Fatura <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th data-key="issue_date">Emissão <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th>Moeda</th>
+          <th data-key="final_total">Total <i class="sort-icon bi bi-arrow-down-up text-muted ms-1"></i></th>
+          <th class="text-end">Motivo</th>
+        </tr>
+      `,
+      renderRow: renderCreditNoteRow,
+    },
+  };
+
+  let sortKey = DOC_TYPES[docType].defaultSort.key;
+  let sortDir = DOC_TYPES[docType].defaultSort.dir;
+
+  // cabeçalho inicial (Faturas)
+  $("#invoicesTableHead").html(DOC_TYPES[docType].headerHtml);
+  $("#filterDocType").val(docType);
 
   loadInvoices();
+  loadReceipts();
+  loadCreditNotes();
 
   function loadInvoices() {
     $.ajax({
@@ -26,8 +113,10 @@ $(document).ready(function () {
           invoices = [];
         }
 
-        currentPage = 1;
-        renderTable();
+        if (docType === "invoices") {
+          currentPage = 1;
+          renderTable();
+        }
       },
 
       error: function () {
@@ -36,24 +125,123 @@ $(document).ready(function () {
     });
   }
 
+  // Listar recibos
+  function loadReceipts() {
+    $.ajax({
+      url: "invoices/ajax/fetch_receipts.php",
+      type: "GET",
+      dataType: "json",
+
+      success: function (json) {
+        if (Array.isArray(json)) {
+          receipts = json;
+        } else if (json?.data && Array.isArray(json.data)) {
+          receipts = json.data;
+        } else if (json?.receipts && Array.isArray(json.receipts)) {
+          receipts = json.receipts;
+        } else {
+          console.error("Formato inválido:", json);
+          receipts = [];
+        }
+
+        if (docType === "receipts") {
+          currentPage = 1;
+          renderTable();
+        }
+      },
+
+      error: function () {
+        console.error("Erro ao carregar recibos.");
+      },
+    });
+  }
+
+  // Listar notas de crédito
+  function loadCreditNotes() {
+    $.ajax({
+      url: "invoices/ajax/fetch_credit_notes.php",
+      type: "GET",
+      dataType: "json",
+
+      success: function (json) {
+        if (Array.isArray(json)) {
+          credit_notes = json;
+        } else if (json?.data && Array.isArray(json.data)) {
+          credit_notes = json.data;
+        } else {
+          console.error("Formato inválido:", json);
+          credit_notes = [];
+        }
+
+        if (docType === "credit_notes") {
+          currentPage = 1;
+          renderTable();
+        }
+      },
+
+      error: function () {
+        console.error("Erro ao carregar notas de crédito.");
+      },
+    });
+  }
+
+  function currentDataset() {
+    if (docType === "receipts") return receipts;
+    if (docType === "credit_notes") return credit_notes;
+    return invoices;
+  }
+
+  // ==================================================
+  // TROCA DE TIPO DE DOCUMENTO
+  // ==================================================
+  $("#filterDocType").on("change", function () {
+    docType = $(this).val();
+    const config = DOC_TYPES[docType];
+
+    sortKey = config.defaultSort.key;
+    sortDir = config.defaultSort.dir;
+    currentPage = 1;
+
+    // cabeçalho da tabela
+    $("#invoicesTableHead").html(config.headerHtml);
+
+    // label do campo "cliente/referência"
+    $("#filterClientLabel").text(config.clientLabel);
+    $("#filterClient")
+      .val("")
+      .attr("placeholder", `Pesquisar ${config.clientLabel.toLowerCase()}...`);
+
+    // filtro de status só faz sentido para Faturas
+    $("#filterStatusWrapper").toggle(config.hasStatusFilter);
+    if (!config.hasStatusFilter) $("#filterStatus").val("");
+
+    renderTable();
+  });
+
   // ==================================================
   // FILTROS + ORDENAÇÃO
   // ==================================================
   function applyFilterAndSort() {
+    const config = DOC_TYPES[docType];
     const clienteFiltro = ($("#filterClient").val() || "").toLowerCase().trim();
     const statusFiltro = ($("#filterStatus").val() || "").toLowerCase().trim();
     const start = $("#filterStartDate").val();
     const end = $("#filterEndDate").val();
+    const dataset = currentDataset();
 
-    filteredInvoices = invoices.filter((row) => {
-      const cliente = (row.cliente || "").toLowerCase();
-      const status = (row.status_invoice || "").toLowerCase();
+    filteredInvoices = dataset.filter((row) => {
+      const clienteValor = String(row[config.clientField] ?? "").toLowerCase();
 
-      if (clienteFiltro && !cliente.includes(clienteFiltro)) return false;
-      if (statusFiltro && status !== statusFiltro) return false;
+      if (clienteFiltro && !clienteValor.includes(clienteFiltro)) return false;
 
-      if (row.issue_date) {
-        const current = new Date(row.issue_date);
+      if (config.hasStatusFilter && config.statusField) {
+        const status = String(row[config.statusField] ?? "").toLowerCase();
+        if (statusFiltro && status !== statusFiltro) return false;
+      }
+
+      const dateValue = row[config.dateField];
+      if (dateValue) {
+        const current = new Date(dateValue);
 
         if (start) {
           const startDate = new Date(start);
@@ -79,7 +267,15 @@ $(document).ready(function () {
         if (sortKey === "issue_date" || sortKey === "due_date") {
           va = va ? new Date(va).getTime() : 0;
           vb = vb ? new Date(vb).getTime() : 0;
-        } else if (sortKey === "final_total") {
+        } else if (
+          [
+            "final_total",
+            "amount_paid",
+            "pending_amount",
+            "id",
+            "invoice_id",
+          ].includes(sortKey)
+        ) {
           va = Number(va) || 0;
           vb = Number(vb) || 0;
         } else {
@@ -95,19 +291,165 @@ $(document).ready(function () {
   }
 
   // ==================================================
+  // RENDER DE LINHA POR TIPO DE DOCUMENTO
+  // ==================================================
+  function renderInvoiceRow(row) {
+    const status = row.status_invoice || "?";
+
+    const invoiceUrl =
+      `invoice.php?id=` +
+      `${String(row.issue_date || "").replaceAll("-", "")}` +
+      `/${row.company_id}/${row.id}`;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = row.due_date ? new Date(row.due_date) : null;
+    if (due) due.setHours(0, 0, 0, 0);
+    const isOverdue = due && due < today;
+
+    let actionsHtml = `
+      <button
+        class="btn btn-action text-primary"
+        title="Ver"
+        onclick="event.stopPropagation();window.location.href='${invoiceUrl}'"
+      >
+        <i class="bi bi-card-list"></i>
+      </button>
+    `;
+
+    if ((status || "").toLowerCase() === "rascunho") {
+      actionsHtml += `
+        <button
+          class="btn btn-sm text-warning ms-1"
+          title="Editar"
+          onclick="event.stopPropagation(); window.location.href='create_invoices.php?edit_id=${row.id}'"
+        >
+          <i class="bi bi-pencil"></i>
+        </button>
+
+        <button
+          class="btn btn-sm text-danger ms-1"
+          title="Eliminar"
+          onclick="event.stopPropagation(); deleteInvoice(${row.id}, ${row.company_id})"
+        >
+          <i class="bi bi-trash"></i>
+        </button>
+      `;
+    } else {
+      actionsHtml += `
+        <button
+          class="btn btn-sm text-success ms-1"
+          title="PDF"
+          onclick="event.stopPropagation(); downloadPDF(${row.id})"
+        >
+          <i class="bi bi-file-earmark-pdf"></i>
+        </button>
+      `;
+    }
+
+    return `
+      <tr class="invoice-row"
+          data-id="${row.id}"
+          data-cliente="${row.cliente || ""}"
+          data-status="${row.status_invoice || ""}"
+          data-issue-date="${row.issue_date || ""}">
+
+        <td>
+          <div class="d-flex align-items-center gap-3">
+            <input
+              type="checkbox"
+              class="invoice-check"
+              data-id="${row.id}"
+              value="${row.id}"
+            >
+
+            <div
+              class="icon-statusFatura p-2 py-1"
+              data-status="${status}"
+              style="background:${row.color || "#000"}; color:${row.text_color || "#fff"};"
+              data-bs-toggle="tooltip"
+              data-bs-title="${status}"
+            >
+              ${status.charAt(0).toUpperCase()}
+            </div>
+          </div>
+        </td>
+
+        <td>${row.codigo || "-"}</td>
+        <td>${row.cliente || "-"}</td>
+        <td>${row.issue_date ? new Date(row.issue_date).toLocaleDateString("pt-BR") : "-"}</td>
+
+        <td>
+          <span class="${isOverdue ? "text-danger" : ""}">
+            ${row.due_date ? new Date(row.due_date).toLocaleDateString("pt-BR") : "-"}
+          </span>
+        </td>
+
+        <td>${row.currency || "-"}</td>
+
+        <td>${formatCurrency(Number(row.final_total || 0), row.symbol || "", row.position || "left")}</td>
+
+        <td>
+          <div class="d-flex justify-content-end gap-2">
+            ${actionsHtml}
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderReceiptRow(row) {
+    return `
+      <tr class="invoice-row" data-id="${row.id}">
+        <td>${row.serie ? `${row.serie} ${row.number || ""}` : row.number || "-"}</td>
+        <td>${row.reference || "-"}</td>
+        <td>${row.issue_date ? new Date(row.issue_date).toLocaleDateString("pt-BR") : "-"}</td>
+        <td>${row.payment_method || "-"}</td>
+        <td>${formatCurrency(Number(row.amount_paid || 0), "", "left")}</td>
+        <td>${formatCurrency(Number(row.pending_amount || 0), "", "left")}</td>
+        <td>
+          <div class="d-flex justify-content-end gap-2">
+            <button
+              class="btn btn-action text-primary"
+              title="Ver fatura"
+              onclick="event.stopPropagation(); window.location.href='invoice.php?id=${String(row.issue_date || "").replaceAll("-", "")}/${row.company_id || ""}/${row.invoice_id}'"
+            >
+              <i class="bi bi-card-list"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }
+
+  function renderCreditNoteRow(row) {
+    return `
+      <tr class="invoice-row" data-id="${row.id}">
+        <td>${row.id || "-"}</td>
+        <td>${row.invoice_id || "-"}</td>
+        <td>${row.issue_date ? new Date(row.issue_date).toLocaleDateString("pt-BR") : "-"}</td>
+        <td>${row.currency || "-"}</td>
+        <td>${formatCurrency(Number(row.final_total || 0), "", "left")}</td>
+        <td class="text-end">${row.reason || "-"}</td>
+      </tr>
+    `;
+  }
+
+  // ==================================================
   // RENDER TABELA
   // ==================================================
   function renderTable() {
     applyFilterAndSort();
 
+    const config = DOC_TYPES[docType];
     const $tbody = $("#invoicesTable tbody");
     $tbody.empty();
 
     if (!filteredInvoices.length) {
       $tbody.append(`
         <tr>
-          <td colspan="8" class="text-center text-muted py-4">
-            Nenhuma fatura encontrada
+          <td colspan="${config.colspan}" class="text-center text-muted py-4">
+            ${config.emptyLabel}
           </td>
         </tr>
       `);
@@ -125,112 +467,7 @@ $(document).ready(function () {
     const end = Math.min(start + pageSize, totalItems);
     const pageData = filteredInvoices.slice(start, end);
 
-    let rowsHtml = "";
-
-    pageData.forEach((row) => {
-      const status = row.status_invoice || "?";
-
-      const invoiceUrl =
-        `invoice.php?id=` +
-        `${String(row.issue_date || "").replaceAll("-", "")}` +
-        `/${row.company_id}/${row.id}`;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const due = row.due_date ? new Date(row.due_date) : null;
-      if (due) due.setHours(0, 0, 0, 0);
-      const isOverdue = due && due < today;
-
-      let actionsHtml = `
-        <button
-          class="btn btn-action text-primary"
-          title="Ver"
-          onclick="event.stopPropagation();window.location.href='${invoiceUrl}'"
-        >
-          <i class="bi bi-card-list"></i>
-        </button>
-      `;
-
-      if ((status || "").toLowerCase() === "rascunho") {
-        actionsHtml += `
-          <button
-            class="btn btn-sm text-warning ms-1"
-            title="Editar"
-            onclick="event.stopPropagation(); window.location.href='create_invoices.php?edit_id=${row.id}'"
-          >
-            <i class="bi bi-pencil"></i>
-          </button>
-
-          <button
-            class="btn btn-sm text-danger ms-1"
-            title="Eliminar"
-            onclick="event.stopPropagation(); deleteInvoice(${row.id}, ${row.company_id})"
-          >
-            <i class="bi bi-trash"></i>
-          </button>
-        `;
-      } else {
-        actionsHtml += `
-          <button
-            class="btn btn-sm text-success ms-1"
-            title="PDF"
-            onclick="event.stopPropagation(); downloadPDF(${row.id})"
-          >
-            <i class="bi bi-file-earmark-pdf"></i>
-          </button>
-        `;
-      }
-
-      rowsHtml += `
-        <tr class="invoice-row"
-            data-id="${row.id}"
-            data-cliente="${row.cliente || ""}"
-            data-status="${row.status_invoice || ""}"
-            data-issue-date="${row.issue_date || ""}">
-
-          <td>
-            <div class="d-flex align-items-center gap-3">
-              <input
-                type="checkbox"
-                class="invoice-check"
-                data-id="${row.id}"
-                value="${row.id}"
-              >
-
-              <div
-                class="icon-statusFatura p-2 py-1"
-                data-status="${status}"
-                style="background:${row.color || "#000"}; color:${row.text_color || "#fff"};"
-                data-bs-toggle="tooltip"
-                data-bs-title="${status}"
-              >
-                ${status.charAt(0).toUpperCase()}
-              </div>
-            </div>
-          </td>
-
-          <td>${row.codigo || "-"}</td>
-          <td>${row.cliente || "-"}</td>
-          <td>${row.issue_date ? new Date(row.issue_date).toLocaleDateString("pt-BR") : "-"}</td>
-
-          <td>
-            <span class="${isOverdue ? "text-danger" : ""}">
-              ${row.due_date ? new Date(row.due_date).toLocaleDateString("pt-BR") : "-"}
-            </span>
-          </td>
-
-          <td>${row.currency || "-"}</td>
-
-          <td>${formatCurrency(Number(row.final_total || 0), row.symbol || "", row.position || "left")}</td>
-
-          <td>
-            <div class="d-flex justify-content-end gap-2">
-              ${actionsHtml}
-            </div>
-          </td>
-        </tr>
-      `;
-    });
+    const rowsHtml = pageData.map((row) => config.renderRow(row)).join("");
 
     $tbody.html(rowsHtml);
 
@@ -364,6 +601,8 @@ $(document).ready(function () {
   // CLIQUE NA LINHA (navegar para a fatura)
   // ==================================================
   $("#invoicesTable tbody").on("click", "tr.invoice-row", function (e) {
+    if (docType !== "invoices") return; // recibos/notas usam apenas o botão de ação
+
     const $target = $(e.target);
 
     if ($target.closest("button").length || $target.closest("input").length) {
@@ -823,9 +1062,87 @@ function renderInvoiceHTML(data) {
 }
 
 // ==================================================
-// EXPORTAÇÃO (Excel/CSV) COM PROGRESSO
+// EXPORTAÇÃO (Excel/PDF/CSV) COM PROGRESSO
 // ==================================================
-function exportFile(format) {
+//
+// Mapa: cada tipo de documento do menu "Exportar" -> endpoint
+// PHP responsável por gerar o ficheiro, e (quando aplicável)
+// o endpoint que reporta o progresso da geração.
+//
+// "direct: true" = o próprio endpoint já faz o download completo
+// numa única chamada (ex.: relatório de vendas), pelo que não
+// faz sentido mostrar a barra de progresso a "fingir" 0% a 100%.
+//
+const EXPORT_CONFIG = {
+  invoices: {
+    url: "invoices/ajax/faturas_export.php",
+    progressUrl: "invoices/ajax/faturas_export.php?status=1",
+    buildParams: (format) => ({ formato: format || "excel" }),
+  },
+  invoices_paid: {
+    url: "invoices/ajax/faturas_export.php",
+    progressUrl: "invoices/ajax/faturas_export.php?status=1",
+    buildParams: (format) => ({ formato: format || "excel", status: "pago" }),
+  },
+  invoices_pending: {
+    url: "invoices/ajax/faturas_export.php",
+    progressUrl: "invoices/ajax/faturas_export.php?status=1",
+    buildParams: (format) => ({
+      formato: format || "excel",
+      status: "pendente",
+    }),
+  },
+  credit_notes: {
+    url: "invoices/ajax/export_credit_notes.php",
+    buildParams: (format) => ({ formato: format || "excel" }),
+    direct: true,
+  },
+  receipts: {
+    url: "invoices/ajax/export_receipts.php",
+    buildParams: (format) => ({ formato: format || "excel" }),
+    direct: true,
+  },
+  debit_notes: {
+    url: "invoices/ajax/export_debit_notes.php",
+    buildParams: (format) => ({ formato: format || "excel" }),
+    direct: true,
+  },
+  sales_report: {
+    url: "invoices/ajax/export_sales_report.php",
+    buildParams: () => ({}),
+    direct: true,
+  },
+};
+
+/**
+ * @param {string} docType - chave em EXPORT_CONFIG (ex.: "invoices", "credit_notes", "sales_report"...)
+ * @param {string} [format] - "excel" | "pdf" | "csv" (só é usado pelos tipos que suportam formato)
+ */
+function exportFile(docType, format) {
+  const config = EXPORT_CONFIG[docType];
+
+  if (!config) {
+    console.error("Tipo de exportação desconhecido:", docType);
+    Swal?.fire?.({
+      icon: "error",
+      title: "Exportação indisponível",
+      text: "Este tipo de exportação ainda não foi configurado.",
+      timer: 2000,
+      showConfirmButton: false,
+    });
+    return;
+  }
+
+  const query = new URLSearchParams(config.buildParams(format)).toString();
+  const finalUrl = query ? `${config.url}?${query}` : config.url;
+
+  // Download direto, sem barra de progresso (ex.: relatório de vendas,
+  // ou tipos cujo endpoint ainda não tem geração assíncrona)
+  if (config.direct || !config.progressUrl) {
+    window.location.href = finalUrl;
+    return;
+  }
+
   const preloader = document.getElementById("preloader");
   const progressBar = document.getElementById("progressBar");
 
@@ -833,7 +1150,7 @@ function exportFile(format) {
   progressBar.style.width = "0%";
 
   let checkProgress = setInterval(() => {
-    fetch(`invoices/ajax/faturas_export.php?status=1`)
+    fetch(config.progressUrl)
       .then((res) => res.json())
       .then((data) => {
         progressBar.style.width = data.progress + "%";
@@ -844,10 +1161,14 @@ function exportFile(format) {
             preloader.style.display = "none";
           }, 500);
         }
+      })
+      .catch(() => {
+        clearInterval(checkProgress);
+        preloader.style.display = "none";
       });
   }, 1000);
 
   setTimeout(() => {
-    window.location.href = `invoices/ajax/faturas_export.php?formato=${format}`;
+    window.location.href = finalUrl;
   }, 2000);
 }

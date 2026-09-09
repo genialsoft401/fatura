@@ -147,15 +147,15 @@ $company_id = $_GET['company_id'];
                                 <div class="row g-3">
                                     <div class="col-12 col-md-6">
                                         <label class="form-label">Nome</label>
-                                        <input type="text" class="form-control" name="name" readonly>
+                                        <input type="text" class="form-control" name="name" required>
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <label class="form-label">Email</label>
-                                        <input type="email" class="form-control" name="email" readonly>
+                                        <input type="email" class="form-control" name="email" readonly required>
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <label class="form-label">Username</label>
-                                        <input type="text" class="form-control" name="username" readonly>
+                                        <input type="text" class="form-control" name="username" placeholder="Opcional (se vazio, geramos automaticamente)">
                                     </div>
                                     <div class="col-12 col-md-6">
                                         <label class="form-label">Perfil (hierarquia)</label>
@@ -165,6 +165,16 @@ $company_id = $_GET['company_id'];
                                             <option value="admin">Administrador</option>
                                         </select>
                                     </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label">Status</label>
+                                        <select class="form-select" name="is_active" required>
+                                            <option value="1" selected>Ativo</option>
+                                            <option value="0">Inativo</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="form-text mt-2">
+                                    Um email será enviado ao colaborador com um link para definir a própria senha de acesso.
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -203,11 +213,6 @@ $company_id = $_GET['company_id'];
                                         <input type="text" class="form-control" name="username" placeholder="Opcional (se vazio, geramos automaticamente)">
                                     </div>
                                     <div class="col-12 col-md-6">
-                                        <label class="form-label">Senha</label>
-                                        <input type="text" class="form-control" name="password" placeholder="Opcional (se vazio, geramos uma senha)" autocomplete="off">
-                                        <div class="form-text">Se deixar vazio, será gerada uma senha temporária e enviada por email.</div>
-                                    </div>
-                                    <div class="col-12 col-md-6">
                                         <label class="form-label">Perfil (hierarquia)</label>
                                         <select class="form-select" name="role" required>
                                             <option value="employee">Funcionário</option>
@@ -222,6 +227,9 @@ $company_id = $_GET['company_id'];
                                             <option value="0">Inativo</option>
                                         </select>
                                     </div>
+                                </div>
+                                <div class="form-text mt-2">
+                                    Um email será enviado ao colaborador com um link para definir a própria senha de acesso.
                                 </div>
                             </div>
                             <div class="modal-footer">
@@ -392,7 +400,7 @@ $company_id = $_GET['company_id'];
         });
     </script>
 
-    <script src="manage_users/manage_users.js"></script>
+    <script src="manage_users/manage_users.js?v=0.1"></script>
 
     <?php require_once '../app/views/footer.php'; ?>
 </body>

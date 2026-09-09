@@ -25,18 +25,18 @@ try {
 
     // Consulta para buscar as faturas
     $sql = "SELECT 
-                i.id AS invoice_id,
-                concat(YEAR(i.issue_date), '/', i.id) as codigo,
-                i.issue_date,
-                i.due_date,
-                i.final_total,
-                i.total_tax,
-                i.subtotal_without_tax,
+                p.id AS proforma_id,
+                concat(YEAR(p.issue_date), '/', p.id) as codigo,
+                p.issue_date,
+                p.due_date,
+                p.final_total,
+                p.total_tax,
+                p.subtotal_without_tax,
                 c.name as client_name,
                 comp.name as company_name
-            FROM invoices i
-            JOIN companies comp ON comp.id = i.company_id
-            JOIN contact c ON c.id = i.contact_id";
+            FROM proformas p
+            JOIN companies comp ON comp.id = p.company_id
+            JOIN contact c ON c.id = p.contact_id";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
@@ -68,12 +68,12 @@ try {
                             ii.quantity,
                             ii.unit_price,
                             ii.tax
-                        FROM invoice_items ii
+                        FROM proforma_items ii
                         JOIN items it ON it.id = ii.item_id
-                        WHERE ii.invoice_id = :invoiceId";
+                        WHERE ii.proforma_id = :proformaId";
 
             $stmtItems = $pdo->prepare($sqlItems);
-            $stmtItems->bindParam(':invoiceId', $invoice['invoice_id'], PDO::PARAM_INT);
+            $stmtItems->bindParam(':proformaId', $invoice['proforma_id'], PDO::PARAM_INT);
             $stmtItems->execute();
             $items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
 
@@ -120,7 +120,7 @@ try {
 
             // Buscar itens da fatura
             $stmtItems = $pdo->prepare($sqlItems);
-            $stmtItems->bindParam(':invoiceId', $invoice['invoice_id'], PDO::PARAM_INT);
+            $stmtItems->bindParam(':proformaId', $invoice['proforma_id'], PDO::PARAM_INT);
             $stmtItems->execute();
             $items = $stmtItems->fetchAll(PDO::FETCH_ASSOC);
 

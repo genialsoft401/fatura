@@ -19,24 +19,17 @@ foreach ($invoiceData as $field) {
     $fatura[$field['name']] = $field['value'];
 }
 
-// Detecta edição
-$editInvoiceId = !empty($fatura['edit_invoice_id']) ? (int)$fatura['edit_invoice_id'] : 0;
-unset($fatura['edit_invoice_id']);
-
 try {
     $pdo->beginTransaction();
 
     // 🔐 Validação sessão
-    $companyIdSession = (int)($_SESSION['user']['company_id'] ?? 0);
+    $companyIdSession = (int)($_POST['company_id'] ?? 0);
     if (!$companyIdSession) {
         throw new Exception("Sessão inválida.");
     }
 
     subscription_assert_active($pdo, $companyIdSession);
-
-    if ($editInvoiceId <= 0) {
-        subscription_check_limit($pdo, $companyIdSession, 'invoice');
-    }
+    subscription_check_limit($pdo, $companyIdSession, 'invoice');
 
     // =========================
     // 📌 CONTACTO
@@ -108,39 +101,16 @@ try {
     ];
 
     // =========================
-    // 🧾 INSERT / UPDATE
+    // 🧾 INSERT
     // =========================
-    if ($editInvoiceId > 0) {
+    $stmt = $pdo->prepare("
+        INSERT INTO invoices (" . implode(",", array_keys($invoiceDbFields)) . ")
+        VALUES (" . implode(",", array_fill(0, count($invoiceDbFields), "?")) . ")
+    ");
 
-        $set = [];
-        $values = [];
+    $stmt->execute(array_values($invoiceDbFields));
 
-        foreach ($invoiceDbFields as $k => $v) {
-            if ($k === 'status') continue;
-            $set[] = "$k = ?";
-            $values[] = $v;
-        }
-
-        $values[] = $editInvoiceId;
-
-        $stmt = $pdo->prepare("UPDATE invoices SET " . implode(",", $set) . " WHERE id = ?");
-        $stmt->execute($values);
-
-        $invoiceId = $editInvoiceId;
-
-        $pdo->prepare("DELETE FROM invoice_items WHERE invoice_id = ?")
-            ->execute([$invoiceId]);
-    } else {
-
-        $stmt = $pdo->prepare("
-            INSERT INTO invoices (" . implode(",", array_keys($invoiceDbFields)) . ")
-            VALUES (" . implode(",", array_fill(0, count($invoiceDbFields), "?")) . ")
-        ");
-
-        $stmt->execute(array_values($invoiceDbFields));
-
-        $invoiceId = $pdo->lastInsertId();
-    }
+    $invoiceId = $pdo->lastInsertId();
 
     // =========================
     // 📦 ITENS

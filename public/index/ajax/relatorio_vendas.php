@@ -7,7 +7,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 // 🔹 FILTRO (podes adaptar via GET)
-$ano = 2026;
+$ano = isset($_GET['ano']) ? (int) $_GET['ano'] : (int) date('Y');
 
 // 📘 CRIAR EXCEL
 $spreadsheet = new Spreadsheet();
@@ -19,6 +19,8 @@ $spreadsheet = new Spreadsheet();
 $sheetResumo = $spreadsheet->getActiveSheet();
 $sheetResumo->setTitle('Resumo');
 
+// NOTA: parênteses adicionados — sem eles, "OR ... AND YEAR(...) = $ano"
+// só aplicava o filtro de ano ao status = 3, devido à precedência do AND sobre o OR.
 $resumo = $pdo->query("
     SELECT 
         SUM(total_sum) AS bruto,
@@ -26,7 +28,7 @@ $resumo = $pdo->query("
         SUM(total_tax) AS imposto,
         SUM(final_total) AS liquido
     FROM invoices
-    WHERE status = 5 OR status = 4 OR status = 3 AND YEAR(issue_date) = $ano
+    WHERE (status = 5 OR status = 4 OR status = 3) AND YEAR(issue_date) = $ano
 ")->fetch(PDO::FETCH_ASSOC);
 
 $creditos = $pdo->query("

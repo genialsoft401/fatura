@@ -59,7 +59,7 @@ try {
             i.final_total,
             i.issue_date
 
-        ORDER BY i.issue_date DESC
+        ORDER BY i.issue_date DESC          
 
         LIMIT 10
     ";
