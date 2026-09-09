@@ -356,7 +356,7 @@ require_once '../app/views/layout_creation.php';
 
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css">
     <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"></script>
-    <script src="edit_company/edit_company.js"></script>
+    <script src="edit_company/edit_company.js?v=1.0"></script>
 
     <script>
         $(document).ready(function() {

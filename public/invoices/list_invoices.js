@@ -1075,24 +1075,21 @@ function renderInvoiceHTML(data) {
 //
 const EXPORT_CONFIG = {
   invoices: {
-    url: "index/ajax/export_invoices.php",
-    progressUrl: "index/ajax/export_invoices.php?status=1",
+    url: "invoices/ajax/faturas_export.php",
+    progressUrl: "invoices/ajax/faturas_export.php?status=1",
     buildParams: (format) => ({ formato: format || "excel" }),
   },
   invoices_paid: {
-    url: "index/ajax/export_invoices.php",
-    progressUrl: "index/ajax/export_invoices.php?status=1",
+    url: "invoices/ajax/faturas_export.php",
+    progressUrl: "invoices/ajax/faturas_export.php?status=1",
     // "situacao" (não "status") para não colidir com o "status=1" usado
     // internamente pelo faturas_export.php para reportar o progresso.
     buildParams: (format) => ({ formato: format || "excel", situacao: "pago" }),
   },
   invoices_pending: {
-    url: "index/ajax/export_invoices.php",
-    progressUrl: "index/ajax/export_invoices.php?status=1",
-    buildParams: (format) => ({
-      formato: format || "excel",
-      situacao: "pendente",
-    }),
+    url: "invoices/ajax/faturas_export.php",
+    progressUrl: "invoices/ajax/faturas_export.php?status=1",
+    buildParams: (format) => ({ formato: format || "excel", situacao: "pendente" }),
   },
   credit_notes: {
     url: "index/ajax/export_credit_notes.php",

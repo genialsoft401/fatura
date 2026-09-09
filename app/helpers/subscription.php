@@ -5,7 +5,7 @@ function subscription_plans(): array {
     return [
         'BXPERT_BAZA' => [
             'name' => 'BXPERT BAZA',
-            'price_quarter' => 15900,
+            'price' => 15900,
             'invoice_limit_month' => 15,
             'user_limit' => 2,
             'rh_employee_limit' => 0,
@@ -17,7 +17,7 @@ function subscription_plans(): array {
         ],
         'BXPERT_BASE' => [
             'name' => 'BXPERT BASE',
-            'price_quarter' => 17900,
+            'price' => 17900,
             'invoice_limit_month' => 30,
             'user_limit' => 3,
             'rh_employee_limit' => 5,
@@ -29,7 +29,7 @@ function subscription_plans(): array {
         ],
         'XPERT' => [
             'name' => 'XPERT',
-            'price_quarter' => 23600,
+            'price' => 23600,
             'invoice_limit_month' => 70,
             'user_limit' => 4,
             'rh_employee_limit' => 15,
@@ -41,7 +41,7 @@ function subscription_plans(): array {
         ],
         'ENTERPRISE' => [
             'name' => 'ENTERPRISE',
-            'price_quarter' => 28000,
+            'price' => 28000,
             'invoice_limit_month' => null, // ilimitado
             'user_limit' => 10,
             'rh_employee_limit' => 70,

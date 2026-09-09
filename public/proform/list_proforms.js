@@ -825,9 +825,60 @@ function renderInvoiceHTML(data) {
 }
 
 // ==================================================
-// EXPORTAÇÃO (Excel/CSV) COM PROGRESSO
+// EXPORTAÇÃO (Excel/PDF/CSV) COM PROGRESSO
 // ==================================================
-function exportFile(format) {
+//
+// Mapa: cada tipo de documento do menu "Exportar" -> endpoint
+// PHP responsável por gerar o ficheiro, e (quando aplicável)
+// o endpoint que reporta o progresso da geração.
+//
+// "direct: true" = o próprio endpoint já faz o download completo
+// numa única chamada (ex.: relatório de vendas), pelo que não
+// faz sentido mostrar a barra de progresso a "fingir" 0% a 100%.
+//
+const EXPORT_CONFIG = {
+  invoices: {
+    url: "proform/ajax/proformas_export.php",
+    progressUrl: "proform/ajax/proformas_export.php?status=1",
+    buildParams: (format) => ({ formato: format || "excel" }),
+  },
+
+  sales_report: {
+    url: "proform/ajax/export_sales_report.php",
+    buildParams: () => ({}),
+    direct: true,
+  },
+};
+
+/**
+ * @param {string} docType - chave em EXPORT_CONFIG (ex.: "invoices", "credit_notes", "sales_report"...)
+ * @param {string} [format] - "excel" | "pdf" | "csv" (só é usado pelos tipos que suportam formato)
+ */
+function exportFile(docType, format) {
+  const config = EXPORT_CONFIG[docType];
+
+  if (!config) {
+    console.error("Tipo de exportação desconhecido:", docType);
+    Swal?.fire?.({
+      icon: "error",
+      title: "Exportação indisponível",
+      text: "Este tipo de exportação ainda não foi configurado.",
+      timer: 2000,
+      showConfirmButton: false,
+    });
+    return;
+  }
+
+  const query = new URLSearchParams(config.buildParams(format)).toString();
+  const finalUrl = query ? `${config.url}?${query}` : config.url;
+
+  // Download direto, sem barra de progresso (ex.: relatório de vendas,
+  // ou tipos cujo endpoint ainda não tem geração assíncrona)
+  if (config.direct || !config.progressUrl) {
+    window.location.href = finalUrl;
+    return;
+  }
+
   const preloader = document.getElementById("preloader");
   const progressBar = document.getElementById("progressBar");
 
@@ -835,7 +886,7 @@ function exportFile(format) {
   progressBar.style.width = "0%";
 
   let checkProgress = setInterval(() => {
-    fetch(`proform/ajax/proformas_export.php?status=1`)
+    fetch(config.progressUrl)
       .then((res) => res.json())
       .then((data) => {
         progressBar.style.width = data.progress + "%";
@@ -854,6 +905,6 @@ function exportFile(format) {
   }, 1000);
 
   setTimeout(() => {
-    window.location.href = `proform/ajax/proformas_export.php?formato=${format}`;
+    window.location.href = finalUrl;
   }, 2000);
 }

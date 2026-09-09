@@ -28,6 +28,7 @@ $planCode = $c['plan_code'] ?? 'BXPERT_BAZA';
 $plan = $plans[$planCode] ?? $plans['BXPERT_BAZA'];
 $usage = subscription_usage($pdo, $company_id);
 $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
+
 ?>
 
 <style>
@@ -254,7 +255,7 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
         $limInv = $plan['invoice_limit_month'] === null ? $inf : (int)$plan['invoice_limit_month'];
         $limUsers = $plan['user_limit'] === null ? $inf : (int)$plan['user_limit'];
         $limRh = $plan['rh_employee_limit'] === null ? $inf : (int)$plan['rh_employee_limit'];
-        $limStock = $plan['stock_item_limit'] === null ? $inf : (int)$plan['stock_item_limit'];
+        // $limStock = $plan['stock_item_limit'] === null ? $inf : (int)$plan['stock_item_limit'];
         ?>
 
         <!-- HEADER INFO PLAN -->
@@ -310,11 +311,6 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
               $rhPct = ($limRh === '∞' || empty($limRh))
                 ? 0
                 : min(100, (($usage['employee_count'] ?? 0) / $limRh) * 100);
-
-              $stockPct = ($limStock === '∞' || empty($limStock))
-                ? 0
-                : min(100, (($usage['stock_item_count'] ?? 0) / $limStock) * 100);
-
               ?>
 
               <div class="d-flex col-md-12 justify-content-between">
@@ -350,17 +346,6 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
                   </div>
                   <div class="progress mt-1">
                     <div class="progress-bar" style="width: <?= $rhPct ?>%"></div>
-                  </div>
-                </div>
-
-                <!-- Stock -->
-                <div class="mb-0 col-md-6 p-2">
-                  <div class="d-flex justify-content-between">
-                    <span>Stock</span>
-                    <strong><?= (int)$usage['stock_item_count'] ?> / <?= $limStock ?></strong>
-                  </div>
-                  <div class="progress mt-1">
-                    <div class="progress-bar" style="width: <?= $stockPct ?>%"></div>
                   </div>
                 </div>
               </div>
@@ -425,6 +410,79 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
       </div>
   </div>
   </div>
+
+  <!-- MODAL: Alterar plano -->
+  <div class="modal fade" id="modalPlans" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Escolha um plano</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <?php foreach ($plans as $code => $p): ?>
+              <div class="col-md-4">
+                <div class="border rounded-4 p-3 h-100 d-flex flex-column <?= $code === $planCode ? 'border-primary border-2' : '' ?>">
+                  <h6 class="fw-bold"><?= htmlspecialchars($p['name']) ?></h6>
+                  <div class="fs-5 fw-bold mb-2"><?= $p['price'] ?> Kz</div>
+                  <ul class="small text-muted flex-grow-1 ps-3 mb-3">
+                    <li>Faturas/mês: <?= $p['invoice_limit_month'] ?? '∞' ?></li>
+                    <li>Utilizadores: <?= $p['user_limit'] ?? '∞' ?></li>
+                    <li>RH: <?= $p['rh_employee_limit'] ?? '∞' ?></li>
+                    <!-- <li>Stock: <?= $p['stock_item_limit'] ?? '∞' ?></li> -->
+                  </ul>
+                  <?php if ($code === $planCode): ?>
+                    <button class="btn btn-outline-secondary btn-sm" disabled>Plano atual</button>
+                  <?php else: ?>
+                    <button class="btn btn-primary btn-sm btnChoosePlan" data-code="<?= $code ?>">
+                      Selecionar
+                    </button>
+                  <?php endif; ?>
+                </div>
+              </div>
+            <?php endforeach; ?>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Método de pagamento -->
+  <div class="modal fade" id="modalPayMethod" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Pagamento</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p class="mb-3">
+            Plano: <strong id="payPlanLabel"><?= htmlspecialchars($plan['name']) ?></strong>
+            — <strong id="payAmountLabel"><?= number_format($plan['price'], 2, ',', '.') ?> Kz</strong>
+          </p>
+
+          <label class="form-label">Método de pagamento</label>
+          <select class="form-select mb-3" id="payMethod">
+            <option value="REF">Referência Multicaixa (ATM / Internet Banking)</option>
+            <option value="GPO">Multicaixa Express</option>
+          </select>
+
+          <div id="boxPhone">
+            <label class="form-label">Nº de telefone Multicaixa Express</label>
+            <input type="tel" class="form-control" id="payPhone" placeholder="923456789">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-link text-muted" id="btnMarkPaid">Já paguei / confirmar manualmente</button>
+          <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-success" id="btnConfirmPay">Gerar cobrança</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
 </main>
 
 
@@ -435,12 +493,12 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
   // Se veio de um módulo bloqueado, mostra aviso de upgrade
   const params = new URLSearchParams(window.location.search);
   const up = params.get('upgrade');
-  if (up) {
-    const label = (up === 'stock') ? 'Stock' : 'RH';
-    setTimeout(() => {
-      Swal.fire('Upgrade necessário', `Seu plano atual não inclui ${label}. Selecione um plano superior e realize o pagamento para liberar o acesso.`, 'info');
-    }, 400);
-  }
+  // if (up) {
+  //   const label = (up === 'stock') ? 'Stock' : 'RH';
+  //   setTimeout(() => {
+  //     Swal.fire('Upgrade necessário', `Seu plano atual não inclui ${label}. Selecione um plano superior e realize o pagamento para liberar o acesso.`, 'info');
+  //   }, 400);
+  // }
 
   function formatDt(x) {
     if (!x) return '-';
@@ -774,14 +832,17 @@ $daysLeft = subscription_days_left($c['plan_expires_at'] ?? null);
 
   $(document).on('click', '.btnChoosePlan', function() {
     const code = $(this).data('code');
-    SELECTED_PLAN_CODE = code;
+    const name = $(this).closest('.col-md-4').find('h6').text();
+    const price = $(this).closest('.col-md-4').find('.fs-5').text();
 
-    // Fecha modal de planos e abre modal de pagamento (REF/GPO)
+    SELECTED_PLAN_CODE = code;
+    $('#payPlanLabel').text(name);
+    $('#payAmountLabel').text(price);
+
     const plansEl = document.getElementById('modalPlans');
     const plansInst = plansEl ? bootstrap.Modal.getInstance(plansEl) : null;
     if (plansInst) plansInst.hide();
 
-    // prepara modal pagamento
     $('#payMethod').val('REF').trigger('change');
     $('#payPhone').val('');
 

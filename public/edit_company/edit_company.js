@@ -1,10 +1,35 @@
 $(document).ready(function () {
   $(".select2").select2();
 
+  // --- Config ---
+  const GEONAMES_USERNAME = "israelsouza"; // centralizado (antes estava duplicado/hardcoded em 2 lugares)
+
+  // Mapa país -> geonameId (escopado ao módulo, antes era global implícito)
+  let countryMap = {};
+
+  // Controle de corrida entre requisições (evita resposta antiga sobrescrever a mais recente)
+  let countryRequestId = 0;
+  let cityRequestId = 0;
+
   // --- Cropper (Logo da empresa) ---
   let logoCropper = null;
   let logoCropModal = null;
   let croppedLogoBlob = null;
+  let currentLogoObjectUrl = null; // para revogar blobs antigos e evitar memory leak
+
+  function escapeHtml(str) {
+    return String(str ?? "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  }
 
   function ensureLogoModal() {
     if (!logoCropModal) {
@@ -31,7 +56,17 @@ $(document).ready(function () {
     reader.onload = function (e) {
       imgEl.src = e.target.result;
 
-      ensureLogoModal().show();
+      try {
+        ensureLogoModal().show();
+      } catch (err) {
+        console.error(err);
+        Swal.fire(
+          "Erro",
+          "Não foi possível abrir o editor de imagem.",
+          "error",
+        );
+        return;
+      }
 
       imgEl.onload = function () {
         logoCropper = new Cropper(imgEl, {
@@ -50,6 +85,9 @@ $(document).ready(function () {
           minContainerHeight: 320,
         });
       };
+    };
+    reader.onerror = function () {
+      Swal.fire("Erro", "Não foi possível ler o arquivo selecionado.", "error");
     };
     reader.readAsDataURL(file);
   }
@@ -78,9 +116,24 @@ $(document).ready(function () {
       setLogoLoading(false);
     };
 
-    // cache-bust pra evitar quebrar/flash de imagem antiga
-    const bust = (src.includes("?") ? "&" : "?") + "t=" + Date.now();
-    img.src = src + bust;
+    const isBlobUrl = src.startsWith("blob:");
+
+    // revoga o object URL anterior (se houver) para não vazar memória
+    if (currentLogoObjectUrl && currentLogoObjectUrl !== src) {
+      URL.revokeObjectURL(currentLogoObjectUrl);
+      currentLogoObjectUrl = null;
+    }
+    if (isBlobUrl) {
+      currentLogoObjectUrl = src;
+    }
+
+    // cache-bust só faz sentido (e só funciona) para URLs http(s), não para blob:
+    if (isBlobUrl) {
+      img.src = src;
+    } else {
+      const bust = (src.includes("?") ? "&" : "?") + "t=" + Date.now();
+      img.src = src + bust;
+    }
   }
 
   $("#logo").on("change", function () {
@@ -97,7 +150,7 @@ $(document).ready(function () {
     }
 
     const canvas = logoCropper.getCroppedCanvas({
-      // tamanho final “seguro” para logo (mantém boa qualidade sem exagerar)
+      // tamanho final "seguro" para logo (mantém boa qualidade sem exagerar)
       maxWidth: 1200,
       maxHeight: 1200,
       imageSmoothingQuality: "high",
@@ -122,7 +175,7 @@ $(document).ready(function () {
         ensureLogoModal().hide();
         Swal.fire(
           "Ok",
-          "Logo ajustada. Agora é só clicar em “Salvar Alterações”.",
+          "Logo ajustada. Agora é só clicar em \u201cSalvar Alterações\u201d.",
           "success",
         );
       },
@@ -160,8 +213,6 @@ $(document).ready(function () {
 
         const data = response.data || {};
 
-        console.log(data);
-
         const selectedCountry = data.country || "";
         const selectedCity = data.city || "";
         const ddi = data.phone_ddi || "";
@@ -180,6 +231,10 @@ $(document).ready(function () {
       |--------------------------------------------------------------------------
       */
         $.each(data, function (key, value) {
+          // país e cidade são preenchidos depois, quando as opções existirem
+          // (evita tentar aplicar .val() em um <select> ainda vazio)
+          if (key === "country" || key === "city") return;
+
           const field = $("#" + key);
 
           if (!field.length) return;
@@ -224,10 +279,10 @@ $(document).ready(function () {
       | País + Cidade
       |--------------------------------------------------------------------------
       */
-
-        setTimeout(() => {
-          selectCountry(selectedCountry, selectedCity);
-        }, 200);
+        // chamada direta: selectCountry já é assíncrona e só popula o select
+        // quando a lista de países chega, então o setTimeout(200ms) anterior
+        // era um "chute" desnecessário e ainda podia falhar em conexões lentas.
+        selectCountry(selectedCountry, selectedCity);
 
         /*
       |--------------------------------------------------------------------------
@@ -260,6 +315,9 @@ $(document).ready(function () {
       formData.append("logo", croppedLogoBlob, "logo.png");
     }
 
+    const $submitBtn = $(this).find('[type="submit"]');
+    $submitBtn.prop("disabled", true);
+
     $.ajax({
       url: "edit_company/ajax/update_company.php",
       type: "POST",
@@ -279,135 +337,155 @@ $(document).ready(function () {
         }
       },
       error: function (xhr) {
-        console.log("SERVER ERROR:", xhr.responseText);
+        console.error("SERVER ERROR:", xhr.responseText);
         Swal.fire("Erro", "Erro ao atualizar empresa", "error");
+      },
+      complete: function () {
+        $submitBtn.prop("disabled", false);
       },
     });
   });
-});
 
-function selectCountry(selectedCountry = "", selectedCity = "") {
-  const username = "israelsouza";
-  const countrySelect = $("#country");
-  const citySelect = $("#city");
+  // expõe funções usadas fora do closure (chamadas inline / outros scripts)
+  window.selectCountry = selectCountry;
+  window.loadCities = loadCities;
+  window.loadDDI = loadDDI;
 
-  countrySelect
-    .html('<option value="">Carregando lista de países...</option>')
-    .trigger("change");
-  citySelect
-    .html('<option value="">Selecione um país primeiro</option>')
-    .trigger("change");
+  function selectCountry(selectedCountry = "", selectedCity = "") {
+    const countrySelect = $("#country");
+    const citySelect = $("#city");
+    const myRequestId = ++countryRequestId;
 
-  fetch(`https://secure.geonames.org/countryInfoJSON?username=${username}`)
-    .then((response) => response.json())
-    .then((data) => {
-      if (!data.geonames) throw new Error("API retornou dados inválidos");
-
-      countryMap = {};
-      let options = '<option value="">Selecione um país</option>';
-
-      data.geonames.forEach((country) => {
-        countryMap[country.countryName] = country.geonameId;
-        options += `<option value="${country.countryName}">${country.countryName}</option>`;
-      });
-
-      countrySelect.html(options).trigger("change");
-      countrySelect.select2({
-        width: "100%",
-        placeholder: "Selecione um país",
-        allowClear: false,
-        dropdownParent: countrySelect.parent(),
-      });
-
-      if (selectedCountry) {
-        countrySelect.val(selectedCountry).trigger("change");
-        loadCities(selectedCountry, selectedCity);
-      }
-    })
-    .catch((error) => {
-      console.error("❌ Erro ao carregar países:", error);
-      countrySelect
-        .html('<option value="">Erro ao carregar</option>')
-        .trigger("change");
-    });
-}
-
-function loadCities(countryName, selectedCity = "") {
-  const citySelect = $("#city");
-  const countryId = countryMap[countryName];
-
-  if (!countryId) {
+    countrySelect
+      .html('<option value="">Carregando lista de países...</option>')
+      .trigger("change");
     citySelect
       .html('<option value="">Selecione um país primeiro</option>')
       .trigger("change");
-    return;
+
+    fetch(
+      `https://secure.geonames.org/countryInfoJSON?username=${GEONAMES_USERNAME}`,
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        // resposta antiga chegando depois de uma mais nova: ignora
+        if (myRequestId !== countryRequestId) return;
+
+        if (!data.geonames) throw new Error("API retornou dados inválidos");
+
+        countryMap = {};
+        let options = '<option value="">Selecione um país</option>';
+
+        data.geonames.forEach((country) => {
+          countryMap[country.countryName] = country.geonameId;
+          options += `<option value="${escapeHtml(country.countryName)}">${escapeHtml(country.countryName)}</option>`;
+        });
+
+        countrySelect.html(options).trigger("change");
+        countrySelect.select2({
+          width: "100%",
+          placeholder: "Selecione um país",
+          allowClear: false,
+          dropdownParent: countrySelect.parent(),
+        });
+
+        if (selectedCountry) {
+          countrySelect.val(selectedCountry).trigger("change");
+          loadCities(selectedCountry, selectedCity);
+        }
+      })
+      .catch((error) => {
+        if (myRequestId !== countryRequestId) return;
+        console.error("❌ Erro ao carregar países:", error);
+        countrySelect
+          .html('<option value="">Erro ao carregar</option>')
+          .trigger("change");
+      });
   }
 
-  citySelect
-    .html('<option value="">Carregando cidades...</option>')
-    .trigger("change");
+  function loadCities(countryName, selectedCity = "") {
+    const citySelect = $("#city");
+    const countryId = countryMap[countryName];
+    const myRequestId = ++cityRequestId;
 
-  fetch(
-    `https://secure.geonames.org/childrenJSON?geonameId=${countryId}&username=israelsouza`,
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      if (!data.geonames) throw new Error("API retornou dados inválidos");
-
-      let options = '<option value="">Selecione uma cidade</option>';
-      data.geonames.forEach((city) => {
-        let isSelected = city.name === selectedCity ? "selected" : "";
-        options += `<option value="${city.name}" ${isSelected}>${city.name}</option>`;
-      });
-
-      citySelect.html(options).trigger("change");
-      citySelect.select2({
-        width: "100%",
-        placeholder: "Selecione uma cidade",
-        allowClear: false,
-        dropdownParent: citySelect.parent(),
-      });
-
-      if (selectedCity) {
-        citySelect.val(selectedCity).trigger("change");
-      }
-    })
-    .catch((error) => {
-      console.error("❌ Erro ao carregar cidades:", error);
+    if (!countryId) {
       citySelect
-        .html('<option value="">Erro ao carregar</option>')
+        .html('<option value="">Selecione um país primeiro</option>')
         .trigger("change");
-    });
-}
+      return;
+    }
 
-function loadDDI(selectedDDIs = {}) {
-  fetch("assets/ajax/get_countries.php")
-    .then((response) => response.json())
-    .then((data) => {
-      const ddiOptions = data
-        .map((country) => {
-          return `<option value="${country.phone}">${country.name} (+${country.phone})</option>`;
-        })
-        .join("");
+    citySelect
+      .html('<option value="">Carregando cidades...</option>')
+      .trigger("change");
 
-      const ddiFields = ["phone_ddi"];
-      ddiFields.forEach((fieldId) => {
-        const field = $(`#${fieldId}`);
-        field.html(`<option value="">Selecione um País</option>` + ddiOptions);
+    fetch(
+      `https://secure.geonames.org/childrenJSON?geonameId=${countryId}&username=${GEONAMES_USERNAME}`,
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (myRequestId !== cityRequestId) return;
 
-        if (selectedDDIs[fieldId]) {
-          field.val(selectedDDIs[fieldId]).trigger("change");
-        }
+        if (!data.geonames) throw new Error("API retornou dados inválidos");
 
-        field.select2({
-          width: "auto",
-          placeholder: "Selecione um País",
-          allowClear: false,
-          dropdownParent: field.parent(),
+        let options = '<option value="">Selecione uma cidade</option>';
+        data.geonames.forEach((city) => {
+          const isSelected = city.name === selectedCity ? "selected" : "";
+          options += `<option value="${escapeHtml(city.name)}" ${isSelected}>${escapeHtml(city.name)}</option>`;
         });
+
+        citySelect.html(options).trigger("change");
+        citySelect.select2({
+          width: "100%",
+          placeholder: "Selecione uma cidade",
+          allowClear: false,
+          dropdownParent: citySelect.parent(),
+        });
+
+        if (selectedCity) {
+          citySelect.val(selectedCity).trigger("change");
+        }
+      })
+      .catch((error) => {
+        if (myRequestId !== cityRequestId) return;
+        console.error("❌ Erro ao carregar cidades:", error);
+        citySelect
+          .html('<option value="">Erro ao carregar</option>')
+          .trigger("change");
       });
-    })
-    .catch((error) => {
-      console.error("Erro ao carregar DDIs:", error);
-    });
-}
+  }
+
+  function loadDDI(selectedDDIs = {}) {
+    fetch("assets/ajax/get_countries.php")
+      .then((response) => response.json())
+      .then((data) => {
+        const ddiOptions = data
+          .map((country) => {
+            return `<option value="${escapeHtml(country.phone)}">${escapeHtml(country.name)} (+${escapeHtml(country.phone)})</option>`;
+          })
+          .join("");
+
+        const ddiFields = ["phone_ddi"];
+        ddiFields.forEach((fieldId) => {
+          const field = $(`#${fieldId}`);
+          field.html(
+            `<option value="">Selecione um País</option>` + ddiOptions,
+          );
+
+          if (selectedDDIs[fieldId]) {
+            field.val(selectedDDIs[fieldId]).trigger("change");
+          }
+
+          field.select2({
+            width: "auto",
+            placeholder: "Selecione um País",
+            allowClear: false,
+            dropdownParent: field.parent(),
+          });
+        });
+      })
+      .catch((error) => {
+        console.error("Erro ao carregar DDIs:", error);
+      });
+  }
+});

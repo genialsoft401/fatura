@@ -424,7 +424,7 @@ require_once '../app/views/layout_creation.php';
         });
     </script>
 
-    <script src="invoices/list_invoices.js?v=1.6"></script>
+    <script src="invoices/list_invoices.js?v=1.8"></script>
 
     <?php require_once '../app/views/footer.php'; ?>
 </body>

@@ -128,7 +128,7 @@
     $currentPage = basename($_SERVER['PHP_SELF']);
 
     if ($currentPage !== 'login.php' && $currentPage !== 'register.php') {
-        echo '<script src="assets/js/script.js?v=0.8"></script>';
+        echo '<script src="assets/js/script.js?v=1.0"></script>';
     }
     ?>
 
@@ -143,6 +143,8 @@
     <!-- PWA (Progressive Web App) -->
     <!-- <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#ffffff"> -->
+
+
 </head>
 <?php
 require_once('../app/models/modal_item.php');

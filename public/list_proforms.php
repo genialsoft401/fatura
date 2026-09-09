@@ -165,6 +165,108 @@ require_once '../app/views/layout_creation.php';
         border-color: #16a34a;
         box-shadow: 0 0 0 3px rgba(22, 163, 74, .12);
     }
+
+    /* ===================================================
+       MENU "EXPORTAR" — 100% CSS/JS nativo (sem Bootstrap)
+    =================================================== */
+    .custom-dropdown {
+        position: relative;
+        display: inline-block;
+    }
+
+    .custom-dropdown-btn {
+        background: #16a34a;
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        padding: 10px 20px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .custom-dropdown-btn:hover {
+        background: #15803d;
+    }
+
+    .custom-dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        margin-top: 8px;
+        min-width: 230px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, .14);
+        padding: 6px;
+        z-index: 1000;
+    }
+
+    .custom-dropdown-menu.is-open {
+        display: block;
+    }
+
+    .custom-dropdown-item {
+        padding: 9px 14px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: .95rem;
+        color: #111;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        white-space: nowrap;
+    }
+
+    .custom-dropdown-item:hover {
+        background: #f3f4f6;
+    }
+
+    .custom-dropdown-divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 6px 4px;
+    }
+
+    .has-submenu {
+        position: relative;
+    }
+
+    .has-submenu::after {
+        content: "\25B6";
+        /* ▶ */
+        font-size: 9px;
+        color: #9ca3af;
+        margin-left: 12px;
+    }
+
+    .custom-submenu {
+        display: none;
+        position: absolute;
+        top: -6px;
+        left: 100%;
+        margin-left: 4px;
+        min-width: 140px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, .14);
+        padding: 6px;
+        z-index: 1001;
+    }
+
+    .has-submenu.is-open>.custom-submenu {
+        display: block;
+    }
+
+    @media (max-width: 767px) {
+        .custom-submenu {
+            position: static;
+            box-shadow: none;
+            margin-left: 0;
+            margin-top: 4px;
+            padding-left: 14px;
+        }
+    }
 </style>
 
 <body>
@@ -204,30 +306,24 @@ require_once '../app/views/layout_creation.php';
             <h2 class="mb-4"><?= t('Minhas Proformas') ?></h2>
 
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="dropdown">
-                    <button
-                        class="btn btn-success rounded-pill dropdown-toggle"
-                        type="button"
-                        id="exportDropdown"
-                        data-bs-toggle="dropdown"
-                        aria-expanded="false">
-                        Exportar Proformas
+                <div class="custom-dropdown" id="exportMenu">
+                    <button type="button" class="custom-dropdown-btn" id="exportMenuBtn">
+                        Exportar
                     </button>
 
-                    <ul class="dropdown-menu" aria-labelledby="exportDropdown">
-                        <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('excel')">
-                                Exportar para Excel
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item" href="javascript:void(0)" onclick="exportFile('csv')">
-                                Exportar para CSV
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+                    <div class="custom-dropdown-menu" id="exportMenuList">
 
+                        <div class="custom-dropdown-item has-submenu" id="exportInvoiceToggle">
+                            <span>Proforma</span>
+                            <div class="custom-submenu">
+                                <div class="custom-dropdown-item" data-export="invoices" data-format="excel">Excel</div>
+                                <div class="custom-dropdown-item" data-export="invoices" data-format="pdf">PDF</div>
+                                <div class="custom-dropdown-item" data-export="invoices" data-format="csv">CSV</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
             </div>
 
             <!-- FILTROS -->
@@ -309,7 +405,74 @@ require_once '../app/views/layout_creation.php';
         <div id="proforma-container" class="d-none"></div>
     </main>
 
-    <script src="proform/list_proforms.js?v=0.1"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuRoot = document.getElementById('exportMenu');
+            const btn = document.getElementById('exportMenuBtn');
+            const menu = document.getElementById('exportMenuList');
+
+            // Abre/fecha o menu principal
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                menu.classList.toggle('is-open');
+
+                // ao reabrir, garante que nenhum submenu fica preso aberto
+                if (!menu.classList.contains('is-open')) {
+                    closeAllSubmenus();
+                }
+            });
+
+            // Abre/fecha o submenu "Fatura" (não fecha o menu principal)
+            document.querySelectorAll('.has-submenu').forEach(function(submenuParent) {
+                submenuParent.addEventListener('click', function(e) {
+                    // só reage ao clique no próprio item "Fatura", não nos filhos dele
+                    if (e.target.closest('.custom-submenu')) return;
+
+                    e.stopPropagation();
+
+                    const isOpen = submenuParent.classList.contains('is-open');
+                    closeAllSubmenus();
+                    if (!isOpen) submenuParent.classList.add('is-open');
+                });
+            });
+
+            // Itens finais de exportação
+            document.querySelectorAll('[data-export]').forEach(function(item) {
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const docType = this.dataset.export;
+                    const format = this.dataset.format || undefined;
+                    exportFile(docType, format);
+                    closeMenu();
+                });
+            });
+
+            // Fecha tudo ao clicar fora do menu
+            document.addEventListener('click', function(e) {
+                if (!menuRoot.contains(e.target)) {
+                    closeMenu();
+                }
+            });
+
+            // Fecha tudo com a tecla Esc
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') closeMenu();
+            });
+
+            function closeAllSubmenus() {
+                document.querySelectorAll('.has-submenu.is-open').forEach(function(el) {
+                    el.classList.remove('is-open');
+                });
+            }
+
+            function closeMenu() {
+                menu.classList.remove('is-open');
+                closeAllSubmenus();
+            }
+        });
+    </script>
+
+    <script src="proform/list_proforms.js?v=2.1"></script>
 
     <?php require_once '../app/views/footer.php'; ?>
 </body>

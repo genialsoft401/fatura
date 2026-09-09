@@ -58,7 +58,7 @@
     }
 
     /* Badge */
-    .notif-badge {
+    .notificationCount {
         position: absolute;
         top: 2px;
         right: 2px;
@@ -67,6 +67,12 @@
         font-size: 10px;
         padding: 2px 6px;
         border-radius: 50px;
+        min-width: 14px;
+        text-align: center;
+    }
+
+    .notificationCount[hidden] {
+        display: none;
     }
 
     /* Itens */
@@ -77,6 +83,13 @@
 
     .dropdown-modern .dropdown-item:hover {
         background: #f5f5f5;
+    }
+
+    .dropdown-modern .dropdown-item.notification-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        cursor: default;
     }
 
     .dropdown-menu-custom {
@@ -104,6 +117,11 @@
         color: #212529;
         text-decoration: none;
         transition: 0.2s;
+        border: none;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
     }
 
     .dropdown-menu-custom .dropdown-item:hover {
@@ -156,7 +174,6 @@
         }
     }
 
-    /* Em telas muito pequenas, encolhe um pouco os espaçamentos do header */
     @media (max-width: 576px) {
         .app-navbar {
             padding-left: 0.5rem !important;
@@ -169,41 +186,58 @@
     }
 </style>
 
+<?php
+// --- Dados de sessão sanitizados uma única vez, aqui, para todo o template ---
+$currentUserId  = (int)($_SESSION['user']['id'] ?? 0);
+$currentCompany = (int)($_SESSION['user']['company_id'] ?? 0);
+
+$nomeFormatado  = formatName($_SESSION['user']['name'] ?? '');
+$userRole       = t($_SESSION['user']['role'] ?? '');
+$nameCompany    = $_SESSION['user']['name_company'] ?? 'Empresa';
+$acronym        = strtoupper($_SESSION['user']['acronym'] ?? 'EMP');
+
+// Evita path traversal / XSS no <img src>: só aceita nome de ficheiro simples
+$profileImage = basename($_SESSION['user']['image'] ?? '');
+if ($profileImage === '' || !preg_match('/^[\w.-]+\.(png|jpe?g|gif|webp)$/i', $profileImage)) {
+    $profileImage = 'default.png';
+}
+
+// Token CSRF simples para as chamadas AJAX que alteram estado (ex.: trocar empresa)
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
+?>
+
 <header class="app-navbar px-3 py-2">
 
     <div class="d-flex align-items-center justify-content-between w-100">
-        <input type="hidden" id="user_id" name="user_id" value="<?= $_SESSION['user']['id'] ?>">
-        <input type="hidden" id="company_id" name="company_id" value="<?= $_SESSION['user']['company_id'] ?>">
+        <input type="hidden" id="user_id" value="<?= $currentUserId ?>">
+        <input type="hidden" id="company_id" value="<?= $currentCompany ?>">
+        <meta name="csrf-token" content="<?= htmlspecialchars($csrfToken, ENT_QUOTES) ?>">
 
         <!-- LEFT -->
         <div class="d-flex align-items-center gap-3">
 
-            <!-- Botão de menu (mobile/tablet) -->
-            <button id="mobileMenuBtn" title="Ocultar/Mostrar menu">
+            <button id="mobileMenuBtn" type="button" title="Ocultar/Mostrar menu" aria-label="Ocultar/Mostrar menu">
                 <i data-lucide="panel-left-close"></i>
             </button>
 
             <!-- Empresa -->
             <div class="dropdown-custom position-relative">
                 <button class="btn nav-pill d-flex align-items-center gap-2"
-                    id="empresaDropdown" onclick="togglePopup('empresaDropdownMenu')">
+                    type="button" id="empresaDropdown" aria-haspopup="true" aria-expanded="false">
 
                     <i data-lucide="building-2"></i>
-                    <span class="d-none d-sm-inline">
-                        <?= $_SESSION['user']['name_company'] ?? 'Empresa' ?>
-                    </span>
-                    
-                    <span class="d-inline d-sm-none text-uppercase">
-                        <?= $_SESSION['user']['acronym'] ?? 'EMP' ?>
-                    </span>
+                    <span class="d-none d-sm-inline"><?= htmlspecialchars($nameCompany, ENT_QUOTES) ?></span>
+                    <span class="d-inline d-sm-none text-uppercase"><?= htmlspecialchars($acronym, ENT_QUOTES) ?></span>
                     <i data-lucide="chevron-down"></i>
                 </button>
 
                 <ul class="popup-menu dropdown-menu-custom text-left" id="empresaDropdownMenu">
-                    <!-- Empresas serão carregadas aqui via AJAX -->
+                    <li><small class="d-block px-3 py-2 text-muted">A carregar…</small></li>
                 </ul>
             </div>
-
         </div>
 
         <!-- RIGHT -->
@@ -211,43 +245,38 @@
 
             <!-- NOTIFICAÇÕES -->
             <div class="position-relative">
-                <button class="btn nav-icon-btn position-relative" onclick="togglePopup('notif-menu')">
+                <button class="btn nav-icon-btn position-relative" type="button" id="notifBtn" aria-haspopup="true" aria-expanded="false" aria-label="Notificações">
                     <i class="bi bi-bell"></i>
-                    <span class="notif-badge">3</span>
+                    <span class="notificationCount" id="notificationCount" hidden>0</span>
                 </button>
 
                 <div class="popup-menu dropdown-modern" id="notif-menu">
-                    <div class="dropdown-header fw-semibold">Notificações</div>
+                    <div class="dropdown-header fw-semibold px-3 pt-2">Notificações</div>
 
-                    <a class="dropdown-item">
-                        <small>Nenhuma notificação</small>
-                    </a>
+                    <div id="notificationList">
+                        <small class="d-block px-3 py-2 text-muted">Nenhuma notificação</small>
+                    </div>
 
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item text-center text-primary">Ver todas</a>
+                    <a class="dropdown-item text-center text-primary" href="notificacoes.php">Ver todas</a>
                 </div>
             </div>
 
-            <?php
-            $nomeFormatado = formatName($_SESSION['user']['name']);
-
-            $plano = $_SESSION['user']['plan'] ?? 'Pro';
-            $expira = $_SESSION['user']['plan_expiration'] ?? '2026-12-31';
-            ?>
-
             <!-- 👤 PERFIL -->
             <div class="perfil-container position-relative">
-                <a href="#" class="d-flex align-items-center gap-2 text-decoration-none" onclick="togglePopup('perfil-menu')">
+                <button type="button" class="d-flex align-items-center gap-2 border-0 bg-transparent text-decoration-none"
+                    id="perfilBtn" aria-haspopup="true" aria-expanded="false">
 
                     <div class="rounded-circle profile-img overflow-hidden">
-                        <img class="w-100" src="assets/img/profiles/<?= $_SESSION['user']['image'] ?>">
+                        <img class="w-100" src="assets/img/profiles/<?= htmlspecialchars($profileImage, ENT_QUOTES) ?>" alt="Foto de perfil">
                     </div>
 
                     <div class="d-none d-sm-flex flex-column align-items-start gap-0">
-                        <strong id="userName" class="mb-0" data-text="<?= htmlspecialchars($nomeFormatado) ?>"></strong>
-                        <small class="text-muted opacity-50" style="margin-top: -5px;"><?= t($_SESSION['user']['role']) ?></small>
+                        <strong class="mb-0"><?= htmlspecialchars($nomeFormatado, ENT_QUOTES) ?></strong>
+                        <small class="text-muted opacity-50" style="margin-top: -5px;"><?= htmlspecialchars($userRole, ENT_QUOTES) ?></small>
                     </div>
-                </a>
+                </button>
+
                 <div class="popup-menu text-left mt-2" id="perfil-menu">
                     <a class="popup-item p-2" href="perfil.php"><i class="bi bi-person"></i> <?= t('Perfil do utilizador') ?></a>
                     <a class="popup-item p-2" href="subscription.php"><i class="bi bi-credit-card-2-back"></i> Meu Plano</a>
@@ -255,108 +284,250 @@
                     <a class="popup-item p-2" href="logout.php"><i class="bi bi-box-arrow-in-left"></i> <?= t('Sair') ?></a>
                 </div>
             </div>
-
         </div>
     </div>
 </header>
 
 <script src="assets/js/lucide.js"></script>
 <script>
-    lucide.createIcons();
+    (function() {
+        'use strict';
 
-    const userNameEl = document.getElementById("userName");
-    if (userNameEl) {
-        const nameAttr = userNameEl.getAttribute("data-text");
-        userNameEl.innerText = nameAttr;
-    }
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        const companyId = document.getElementById('company_id').value;
 
-    function togglePopup(id) {
-        const current = document.getElementById(id);
+        lucide.createIcons();
 
-        document.querySelectorAll('.popup-menu').forEach(menu => {
-            if (menu !== current) menu.classList.remove('show');
+        // ---------- Popups (toggle + fechar ao clicar fora) ----------
+        const triggers = {
+            'empresaDropdown': 'empresaDropdownMenu',
+            'notifBtn': 'notif-menu',
+            'perfilBtn': 'perfil-menu',
+        };
+
+        Object.entries(triggers).forEach(([btnId, menuId]) => {
+            const btn = document.getElementById(btnId);
+            const menu = document.getElementById(menuId);
+            if (!btn || !menu) return;
+
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isOpen = menu.classList.contains('show');
+                document.querySelectorAll('.popup-menu').forEach(m => m.classList.remove('show'));
+                document.querySelectorAll('[aria-expanded]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+                if (!isOpen) {
+                    menu.classList.add('show');
+                    btn.setAttribute('aria-expanded', 'true');
+                }
+            });
         });
 
-        current.classList.toggle('show');
-    }
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.perfil-container, .nav-icon-btn, .dropdown-custom')) {
+                document.querySelectorAll('.popup-menu').forEach(menu => menu.classList.remove('show'));
+                document.querySelectorAll('[aria-expanded]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+            }
+        });
 
-    document.addEventListener("click", function(e) {
-        if (!e.target.closest(".perfil-container, .nav-icon-btn, .dropdown-custom")) {
-            document.querySelectorAll('.popup-menu')
-                .forEach(menu => menu.classList.remove('show'));
+        // ---------- Helper de fetch com tratamento de erro comum ----------
+        async function fetchJSON(url, options = {}) {
+            try {
+                const res = await fetch(url, options);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                return await res.json();
+            } catch (err) {
+                console.error(`Falha ao aceder a ${url}:`, err);
+                return null;
+            }
         }
-    });
 
-    $(document).ready(function() {
+        // ---------- Limites / assinatura ----------
+        fetchJSON(`assets/ajax/get_company_limits.php?company_id=${encodeURIComponent(companyId)}`)
+            .then(resp => {
+                const subInfo = document.getElementById('subInfo');
+                if (!subInfo) return;
+                if (!resp || !resp.success) {
+                    subInfo.textContent = 'Não foi possível carregar os limites.';
+                    return;
+                }
+                const exp = resp.plan_expires_at ?
+                    new Date(resp.plan_expires_at + 'T00:00:00').toLocaleDateString('pt-PT') :
+                    '-';
+                const days = resp.days_left ?? '-';
+                subInfo.textContent = `${resp.plan_name} • vence em ${exp} • ${days} dias restantes`;
 
-        // Assinatura / limites
-        $.getJSON('assets/ajax/get_company_limits.php', {
-            company_id: <?php echo (int)$_SESSION['user']['company_id']; ?>
-        }, function(resp) {
-            if (!resp.success) {
-                $('#subInfo').text('Não foi possível carregar os limites.');
-                return;
-            }
-            const expIso = resp.plan_expires_at || '';
-            const exp = expIso ? new Date(expIso + 'T00:00:00').toLocaleDateString('pt-PT') : '-';
-            const days = (resp.days_left === null) ? '-' : resp.days_left;
-            $('#subInfo').text(`${resp.plan_name} • vence em ${exp} • ${days} dias restantes`);
+                const renewLink = document.getElementById('btnRenewFromIndex');
+                if (renewLink) renewLink.href = `subscription.php?company_id=${encodeURIComponent(resp.company_id)}`;
+            });
 
-            $('#btnRenewFromIndex').attr('href', `subscription.php?company_id=${resp.company_id}`);
-        });
+        // ---------- Dados da empresa (regime de IVA etc.) ----------
+        fetchJSON(`assets/ajax/company_data.php?company_id=${encodeURIComponent(companyId)}`)
+            .then(resp => {
+                if (!resp || !resp.success || !resp.data) return;
+                // sessionStorage é preferível a localStorage aqui: some com o fecho da aba
+                sessionStorage.setItem('vat_regime', JSON.stringify(resp.data.vat_regime));
+            });
 
-        // Dados da empresa (regime de IVA etc.)
-        $.getJSON('assets/ajax/company_data.php', {
-            company_id: <?php echo (int)$_SESSION['user']['company_id']; ?>
-        }, function(resp) {
-            if (!resp.success) {
-                $('#subInfo').text('Não foi possível carregar os dados.');
-                return;
-            }
+        // ---------- Troca de empresa ----------
+        async function trocarEmpresa(empresaId, name, registrationNumber, email) {
+            const body = new URLSearchParams({
+                company_id: empresaId,
+                name_company: name,
+                registration_number: registrationNumber,
+                email_company: email,
+                csrf_token: csrfToken,
+            });
 
-            let data = resp?.data;
-            localStorage.setItem("vat_regime", JSON.stringify(data["vat_regime"]));
-        });
-
-    });
-
-    function trocarEmpresa(empresaId, name, registration, email) {
-        fetch('assets/ajax/change_company.php', {
+            const data = await fetchJSON('assets/ajax/change_company.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: `company_id=${empresaId}&name_company=${encodeURIComponent(name)}&registration_number=${encodeURIComponent(registration)}&email_company=${encodeURIComponent(email)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    document.getElementById("empresaDropdown").innerText = name;
-                    location.reload();
-                } else {
-                    alert('Erro ao trocar de empresa');
-                }
-            })
-            .catch(error => console.error('Erro ao trocar de empresa:', error));
-    }
+                body,
+            });
 
-    function carregarEmpresas() {
-        fetch('assets/ajax/get_companies.php')
-            .then(response => response.json())
-            .then(data => {
-                let dropdown = document.getElementById("empresaDropdownMenu");
-                dropdown.innerHTML = '';
+            if (data && data.success) {
+                location.reload();
+            } else {
+                alert('Erro ao trocar de empresa.');
+            }
+        }
 
-                data.forEach(empresa => {
-                    let li = document.createElement("li");
-                    li.innerHTML = `<a class="dropdown-item" href="#" onclick="trocarEmpresa(${empresa.id}, '${empresa.name}', '${empresa.registration_number}', '${empresa.email}')">
-                            ${empresa.name}
-                        </a>`;
-                    dropdown.appendChild(li);
+        async function carregarEmpresas() {
+            const empresas = await fetchJSON('assets/ajax/get_companies.php');
+            const dropdown = document.getElementById('empresaDropdownMenu');
+            if (!dropdown) return;
+
+            dropdown.innerHTML = '';
+
+            if (!Array.isArray(empresas) || empresas.length === 0) {
+                dropdown.innerHTML = '<li><small class="d-block px-3 py-2 text-muted">Nenhuma empresa encontrada</small></li>';
+                return;
+            }
+
+            empresas.forEach(empresa => {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = '#';
+                a.className = 'dropdown-item';
+                a.textContent = empresa.name; // textContent evita XSS via innerHTML
+
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    trocarEmpresa(empresa.id, empresa.name, empresa.registration_number, empresa.email);
                 });
-            })
-            .catch(error => console.error('Erro ao carregar empresas:', error));
-    }
 
-    carregarEmpresas();
+                li.appendChild(a);
+                dropdown.appendChild(li);
+            });
+        }
+
+        // ---------- Notificações ----------
+        function formatDateTimeToBrazilian(iso) {
+            if (!iso) return '';
+            const d = new Date(iso);
+            if (Number.isNaN(d.getTime())) return iso;
+            return d.toLocaleString('pt-BR');
+        }
+
+        let isLoadingNotifications = false;
+
+        async function ajaxLoadNotifications() {
+            if (isLoadingNotifications) return; // evita corridas por chamadas concorrentes
+            isLoadingNotifications = true;
+
+            const countEl = document.getElementById('notificationCount');
+            const listEl = document.getElementById('notificationList');
+            if (!countEl || !listEl) {
+                isLoadingNotifications = false;
+                return;
+            }
+
+            try {
+                // Dispara as duas verificações em paralelo; uma falhar não deve
+                // impedir a outra nem impedir a leitura das notificações já existentes.
+                const triggers = await Promise.allSettled([
+                    fetch('index/ajax/data_user_notify.php'),
+                    fetch('index/ajax/data_company_notify.php'),
+                ]);
+
+                triggers.forEach((result, i) => {
+                    const endpoint = i === 0 ? 'data_user_notify.php' : 'data_company_notify.php';
+                    if (result.status === 'rejected') {
+                        console.warn(`Falha ao gerar notificações (${endpoint}):`, result.reason);
+                    } else if (!result.value.ok) {
+                        console.warn(`${endpoint} respondeu com status ${result.value.status}`);
+                    }
+                });
+
+                const data = await fetchJSON('index/ajax/get_notifications.php');
+
+                if (data?.success === false) {
+                    listEl.innerHTML = `<small class="d-block px-3 py-2 text-danger">Erro: ${escapeHtml(data.error ?? 'Erro desconhecido')}</small>`;
+                    countEl.hidden = true;
+                    return;
+                }
+
+                const count = Number(data?.count) || 0;
+                const notifications = Array.isArray(data?.notifications) ? data.notifications : [];
+
+                countEl.textContent = count > 99 ? '99+' : String(count);
+                countEl.hidden = count === 0;
+
+                listEl.innerHTML = '';
+
+                if (notifications.length === 0) {
+                    listEl.innerHTML = '<small class="d-block px-3 py-2 text-muted">Nenhuma notificação</small>';
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+
+                notifications.forEach(n => {
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item notification-item';
+
+                    const title = document.createElement('small');
+                    title.className = 'd-block fw-bold';
+                    title.textContent = n.title ?? '';
+                    title.style.textWrap = 'wrap';
+
+                    const message = document.createElement('small');
+                    message.className = 'd-block';
+                    message.textContent = n.message ?? '';
+                    message.style.fontSize = '0.85rem';
+                    message.style.color = '#555';
+                    message.style.textWrap = 'wrap';
+
+                    const date = document.createElement('small');
+                    date.className = 'text-muted';
+                    date.textContent = formatDateTimeToBrazilian(n.created_at);
+
+                    item.append(title, message, date);
+                    fragment.appendChild(item);
+                });
+
+                listEl.appendChild(fragment);
+            } catch (err) {
+                console.error('Erro ao carregar notificações:', err);
+                listEl.innerHTML = '<small class="d-block px-3 py-2 text-danger">Não foi possível carregar as notificações.</small>';
+                countEl.hidden = true;
+            } finally {
+                isLoadingNotifications = false;
+            }
+        }
+
+        // Helper simples para sanitizar texto inserido via innerHTML (mensagens de erro)
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            carregarEmpresas();
+            ajaxLoadNotifications();
+            setInterval(ajaxLoadNotifications, 60000);
+        });
+    })();
 </script>
