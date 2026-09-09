@@ -1247,7 +1247,7 @@ $(function () {
     try {
       // Monta os dados da factura
       const invoiceData = await prepareInvoiceData(currentInvoice, {
-        logoBaseUrl: "https://SEU-DOMINIO/sistema/assets/img/companies/",
+        logoBaseUrl: "https://app.bxpert.co.ao/assets/img/companies/",
 
         qrBaseUrl: "https://app.bxpert.co.ao/sistema/invoice_public.php?id=",
       });

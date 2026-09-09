@@ -1075,40 +1075,42 @@ function renderInvoiceHTML(data) {
 //
 const EXPORT_CONFIG = {
   invoices: {
-    url: "invoices/ajax/faturas_export.php",
-    progressUrl: "invoices/ajax/faturas_export.php?status=1",
+    url: "index/ajax/export_invoices.php",
+    progressUrl: "index/ajax/export_invoices.php?status=1",
     buildParams: (format) => ({ formato: format || "excel" }),
   },
   invoices_paid: {
-    url: "invoices/ajax/faturas_export.php",
-    progressUrl: "invoices/ajax/faturas_export.php?status=1",
-    buildParams: (format) => ({ formato: format || "excel", status: "pago" }),
+    url: "index/ajax/export_invoices.php",
+    progressUrl: "index/ajax/export_invoices.php?status=1",
+    // "situacao" (não "status") para não colidir com o "status=1" usado
+    // internamente pelo faturas_export.php para reportar o progresso.
+    buildParams: (format) => ({ formato: format || "excel", situacao: "pago" }),
   },
   invoices_pending: {
-    url: "invoices/ajax/faturas_export.php",
-    progressUrl: "invoices/ajax/faturas_export.php?status=1",
+    url: "index/ajax/export_invoices.php",
+    progressUrl: "index/ajax/export_invoices.php?status=1",
     buildParams: (format) => ({
       formato: format || "excel",
-      status: "pendente",
+      situacao: "pendente",
     }),
   },
   credit_notes: {
-    url: "invoices/ajax/export_credit_notes.php",
+    url: "index/ajax/export_credit_notes.php",
     buildParams: (format) => ({ formato: format || "excel" }),
     direct: true,
   },
   receipts: {
-    url: "invoices/ajax/export_receipts.php",
+    url: "index/ajax/export_receipts.php",
     buildParams: (format) => ({ formato: format || "excel" }),
     direct: true,
   },
   debit_notes: {
-    url: "invoices/ajax/export_debit_notes.php",
+    url: "index/ajax/export_debit_notes.php",
     buildParams: (format) => ({ formato: format || "excel" }),
     direct: true,
   },
   sales_report: {
-    url: "invoices/ajax/export_sales_report.php",
+    url: "index/ajax/export_sales_report.php",
     buildParams: () => ({}),
     direct: true,
   },
