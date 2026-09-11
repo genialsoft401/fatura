@@ -111,6 +111,40 @@ require_once '../app/views/layout_creation.php';
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
     }
 
+    /* ---- Card do Assistente IA ---- */
+    .ai-insights-card {
+        border: 1px solid #e6def7;
+        background: linear-gradient(135deg, #f8f5ff 0%, #ffffff 55%);
+    }
+
+    .ai-insights-icon {
+        width: 42px;
+        height: 42px;
+        min-width: 42px;
+        border-radius: 12px;
+        background: rgba(111, 66, 193, 0.12);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        color: #6f42c1;
+    }
+
+    .ai-insights-badge {
+        background: #6f42c1;
+        color: #fff;
+        font-size: 11px;
+        vertical-align: middle;
+    }
+
+    .ai-insight-chip {
+        border: 1px solid #eee;
+        border-left: 3px solid #6f42c1;
+        border-radius: 10px;
+        padding: 10px 12px;
+        background: #fff;
+    }
+
     .icon-box {
         width: 40px;
         height: 40px;
@@ -352,6 +386,100 @@ require_once '../app/views/layout_creation.php';
 
                         <!-- Sessao Gestao de Vendas -->
                         <div class="col-12 tag-content active" data-tag-content="sell">
+
+                            <!-- ================== CARD: ASSISTENTE IA (INSIGHTS PROATIVOS) ================== -->
+                            <div class="card card-custom p-3 mb-4 ai-insights-card" id="aiInsightsCard">
+                                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                                    <div class="d-flex align-items-start gap-3">
+                                        <div class="ai-insights-icon">
+                                            <i class="bi bi-robot"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-1 h-title">
+                                                BXPERT Intelligence
+                                                <span class="badge rounded-pill ai-insights-badge ms-1" id="aiInsightsBadge" hidden>0 novos</span>
+                                            </h6>
+                                            <div id="aiInsightsSummary" class="small text-muted">
+                                                A analise os dados da empresa, obtendo insights valiosos para a tomada de decisão.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <a href="insights.php" class="btn btn-sm btn-outline-primary flex-shrink-0">Analisar</a>
+                                </div>
+
+                                <div id="aiInsightsBody" class="mt-3 d-none">
+                                    <div class="row g-2" id="aiInsightsList"></div>
+                                </div>
+                            </div>
+                            <!-- 
+                            <script>
+                                (function() {
+                                    'use strict';
+
+                                    const summaryEl = document.getElementById('aiInsightsSummary');
+                                    const badgeEl = document.getElementById('aiInsightsBadge');
+                                    const bodyEl = document.getElementById('aiInsightsBody');
+                                    const listEl = document.getElementById('aiInsightsList');
+                                    const companyIdEl = document.getElementById('company_id');
+
+                                    if (!summaryEl || !companyIdEl) return;
+
+                                    const companyId = companyIdEl.value;
+
+                                    function escapeHtml(str) {
+                                        const div = document.createElement('div');
+                                        div.textContent = str ?? '';
+                                        return div.innerHTML;
+                                    }
+
+                                    // Endpoint a criar no backend: agrega as sugestões geradas
+                                    // pelo reportService (ex.: relatório mensal, clientes com
+                                    // potencial de parceria) para a empresa atual.
+                                    fetch(`index/ajax/get_ai_insights_dashboard.php?company_id=${encodeURIComponent(companyId)}`)
+                                        .then(res => {
+                                            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                                            return res.json();
+                                        })
+                                        .then(data => {
+                                            if (!data || data.success === false) {
+                                                summaryEl.textContent = 'Sem sugestões disponíveis de momento.';
+                                                return;
+                                            }
+
+                                            const insights = Array.isArray(data.insights) ? data.insights : [];
+
+                                            if (insights.length === 0) {
+                                                summaryEl.textContent = 'Tudo em dia — sem sugestões novas.';
+                                                return;
+                                            }
+
+                                            summaryEl.textContent = data.summary ||
+                                                `${insights.length} sugestão(ões) com base na análise recente da empresa.`;
+
+                                            badgeEl.textContent = `${insights.length} novos`;
+                                            badgeEl.hidden = false;
+
+                                            listEl.innerHTML = '';
+                                            insights.slice(0, 3).forEach(item => {
+                                                const col = document.createElement('div');
+                                                col.className = 'col-md-4 col-12';
+                                                col.innerHTML = `
+                                                    <div class="ai-insight-chip h-100">
+                                                        <div class="fw-semibold small">${escapeHtml(item.title)}</div>
+                                                        <div class="small text-muted mt-1">${escapeHtml(item.message)}</div>
+                                                    </div>`;
+                                                listEl.appendChild(col);
+                                            });
+
+                                            bodyEl.classList.remove('d-none');
+                                        })
+                                        .catch(err => {
+                                            console.error('Erro ao carregar insights do agente IA:', err);
+                                            summaryEl.textContent = 'Não foi possível carregar as sugestões do assistente.';
+                                        });
+                                })();
+                            </script> -->
+
                             <div class="row g-4">
 
                                 <!-- ================== COLUNA ESQUERDA: CARDS + GRÁFICO ================== -->

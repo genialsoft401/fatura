@@ -75,6 +75,81 @@
         display: none;
     }
 
+    /* ---- Botão do Assistente IA (robô piscando) ---- */
+    .ai-agent-btn {
+        position: relative;
+    }
+
+    .ai-agent-btn i {
+        color: #6f42c1;
+    }
+
+    /* Anel de pulso: só ativo quando há insights novos (classe .has-alert) */
+    .ai-agent-btn.has-alert::before {
+        content: '';
+        position: absolute;
+        inset: 2px;
+        border-radius: 10px;
+        box-shadow: 0 0 0 0 rgba(111, 66, 193, 0.55);
+        animation: aiPulseRing 1.8s ease-out infinite;
+        pointer-events: none;
+    }
+
+    .ai-agent-btn.has-alert i {
+        animation: aiIconBlink 1.8s ease-in-out infinite;
+    }
+
+    @keyframes aiPulseRing {
+        0% {
+            box-shadow: 0 0 0 0 rgba(111, 66, 193, 0.5);
+        }
+
+        70% {
+            box-shadow: 0 0 0 8px rgba(111, 66, 193, 0);
+        }
+
+        100% {
+            box-shadow: 0 0 0 0 rgba(111, 66, 193, 0);
+        }
+    }
+
+    @keyframes aiIconBlink {
+
+        0%,
+        100% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.45;
+        }
+    }
+
+    .aiInsightCount {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: #6f42c1;
+        color: #fff;
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 50px;
+        min-width: 14px;
+        text-align: center;
+    }
+
+    .aiInsightCount[hidden] {
+        display: none;
+    }
+
+    .dropdown-modern .dropdown-item.ai-insight-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        cursor: default;
+        border-left: 3px solid #6f42c1;
+    }
+
     /* Itens */
     .dropdown-modern .dropdown-item {
         padding: 10px 15px;
@@ -262,6 +337,27 @@ $csrfToken = $_SESSION['csrf_token'];
                 </div>
             </div>
 
+            <!-- 🤖 ASSISTENTE IA -->
+            <div class="position-relative">
+                <button class="btn nav-icon-btn ai-agent-btn" type="button" id="aiAgentBtn" aria-haspopup="true" aria-expanded="false" aria-label="Assistente IA" title="Assistente IA">
+                    <i class="bi bi-robot"></i>
+                    <span class="aiInsightCount" id="aiInsightCount" hidden>0</span>
+                </button>
+
+                <div class="popup-menu dropdown-modern" id="ai-menu">
+                    <div class="dropdown-header fw-semibold px-3 pt-2">
+                        <i class="bi bi-robot text-primary"></i> Assistente IA
+                    </div>
+
+                    <div id="aiInsightList">
+                        <small class="d-block px-3 py-2 text-muted">Sem novidades por agora</small>
+                    </div>
+
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item text-center text-primary" href="insights.php">Ver todos os insights</a>
+                </div>
+            </div>
+
             <!-- 👤 PERFIL -->
             <div class="perfil-container position-relative">
                 <button type="button" class="d-flex align-items-center gap-2 border-0 bg-transparent text-decoration-none"
@@ -302,6 +398,7 @@ $csrfToken = $_SESSION['csrf_token'];
         const triggers = {
             'empresaDropdown': 'empresaDropdownMenu',
             'notifBtn': 'notif-menu',
+            'aiAgentBtn': 'ai-menu',
             'perfilBtn': 'perfil-menu',
         };
 
@@ -517,6 +614,81 @@ $csrfToken = $_SESSION['csrf_token'];
             }
         }
 
+        // ---------- Assistente IA (alert_logs) ----------
+        let isLoadingAIInsights = false;
+
+        async function ajaxLoadAIInsights() {
+            if (isLoadingAIInsights) return;
+            isLoadingAIInsights = true;
+
+            const btn = document.getElementById('aiAgentBtn');
+            const countEl = document.getElementById('aiInsightCount');
+            const listEl = document.getElementById('aiInsightList');
+            if (!btn || !countEl || !listEl) {
+                isLoadingAIInsights = false;
+                return;
+            }
+
+            try {
+                // Endpoint real: GET /api/alert-logs (robotController.getAlertLogs)
+                // Devolve o array de AlertLog diretamente, sem wrapper { success, ... }.
+                const insights = await fetchJSON(`http://localhost:3000/api/alert-logs?company_id=${encodeURIComponent(companyId)}`);
+
+                if (!Array.isArray(insights)) {
+                    countEl.hidden = true;
+                    btn.classList.remove('has-alert');
+                    return;
+                }
+
+                const count = insights.length;
+
+                countEl.textContent = count > 99 ? '99+' : String(count);
+                countEl.hidden = count === 0;
+                btn.classList.toggle('has-alert', count > 0);
+
+                listEl.innerHTML = '';
+
+                if (insights.length === 0) {
+                    listEl.innerHTML = '<small class="d-block px-3 py-2 text-muted">Sem novidades por agora</small>';
+                    return;
+                }
+
+                const fragment = document.createDocumentFragment();
+
+                insights.forEach(n => {
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item ai-insight-item';
+
+                    const title = document.createElement('small');
+                    title.className = 'd-block fw-bold';
+                    title.textContent = n.title ?? '';
+                    title.style.textWrap = 'wrap';
+
+                    const message = document.createElement('small');
+                    message.className = 'd-block';
+                    message.textContent = n.message ?? '';
+                    message.style.fontSize = '0.85rem';
+                    message.style.color = '#555';
+                    message.style.textWrap = 'wrap';
+
+                    const date = document.createElement('small');
+                    date.className = 'text-muted';
+                    date.textContent = formatDateTimeToBrazilian(n.created_at);
+
+                    item.append(title, message, date);
+                    fragment.appendChild(item);
+                });
+
+                listEl.appendChild(fragment);
+            } catch (err) {
+                console.error('Erro ao carregar insights do agente IA:', err);
+                countEl.hidden = true;
+                btn.classList.remove('has-alert');
+            } finally {
+                isLoadingAIInsights = false;
+            }
+        }
+
         // Helper simples para sanitizar texto inserido via innerHTML (mensagens de erro)
         function escapeHtml(str) {
             const div = document.createElement('div');
@@ -527,7 +699,9 @@ $csrfToken = $_SESSION['csrf_token'];
         document.addEventListener('DOMContentLoaded', () => {
             carregarEmpresas();
             ajaxLoadNotifications();
+            ajaxLoadAIInsights();
             setInterval(ajaxLoadNotifications, 60000);
+            setInterval(ajaxLoadAIInsights, 60000);
         });
     })();
 </script>
