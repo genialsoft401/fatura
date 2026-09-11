@@ -831,7 +831,8 @@ $currentQuarter = (int)ceil($currentMonth / 3);
                     const link = document.getElementById(elId);
                     const path = actions?.[field];
                     if (path) {
-                        link.href = origin + path;
+                        const href = /^https?:\/\//i.test(path) ? path : origin + path;
+                        link.href = href;
                         link.classList.remove('disabled');
                     } else {
                         link.href = '#';
